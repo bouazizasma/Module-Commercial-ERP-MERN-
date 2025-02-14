@@ -5,6 +5,7 @@ const CategorieArticleModel=require ("../Models/Article/CategorieArticle");
 const FournisseurModel = require ("../Models/Fournisseur");
 const mongoose = require('mongoose');
 const upload = require("../Middlewares/multerConfig");
+//all
 const getArticles = async (req, res) => { 
     try {
         const a = await Article.find();
@@ -13,6 +14,7 @@ const getArticles = async (req, res) => {
         res.status(404).json({ message: error.message });
     }
 };
+//Create
 const createArticle = async (req, res) => {
     const {
         libelle,
@@ -120,7 +122,7 @@ const createArticle = async (req, res) => {
         res.status(500).json({ message: "Erreur lors de la création du Article.", error: error.message });
     }
 };
-
+//GetbyID
  const getArticleByID = async (req, res) => { 
     try {
         const article = await Article.findById(req.params.id)
@@ -136,6 +138,7 @@ const createArticle = async (req, res) => {
         res.status(404).json({ message: error.message });
     }
 };
+//update
  const updateArticle= async (req, res) => {
     const { id } = req.params;
     const {  libelle,libelleFamille,Nombre_unite,tva,type,prix_brut,remise,prix_net,marge,prixht,prix_totale_concré,gestion_configuration,configuration,serie,libeleCategorie,lib_fournisseur,Nature,image_article,prixmin,prixmax,user_Connectée,action_user_connecté,date_modif,time_modif,prix_achat_initiale,tva_achat,dimension_article,longueur,largeur,hauteur,movement_article} = req.body;
@@ -152,6 +155,7 @@ const createArticle = async (req, res) => {
 
     res.json(a1);
 };
+//delete
 const deleteArticle = async (req, res) => {
     try {
         const { id } = req.params;

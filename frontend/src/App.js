@@ -1,5 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import './App.css';
+import theme from '../src/theme';
+import { ThemeProvider } from "@mui/material/styles";
 import Login from '../src/pages/Login';
 import Signup from '../src/pages/Signup';
 import Fournisseur from './pages/Fournisseur/Fournisseur';
@@ -18,7 +20,8 @@ import CategorieArticle from './pages/Article/CategorieArticle';
 import CreateCategorieArticle from './pages/Article/createCategorieArticle';
 import UpdateFamilleArticle from './pages/Article/updateFamilleArticle';
 import UpdateCategorieArticle from './pages/Article/updateCategorieArticle';
-import BonCommandeFournisseur from './pages/Achat/BonCommandeFournisseur';
+import BonCommandeFournisseur from './pages/Achat/SaisieBonCommandeFournisseur';
+import ListeBonCommandeFournisseur from './pages/Achat/ListeBonCommandeFournisseurs';
 import Depot from './pages/Depot/Depot';
 import { useState } from 'react';
 import RefrshHandler from './RefrshHandler';
@@ -28,6 +31,7 @@ function App() {
     return isAuthenticated ? element : <Navigate to="/login" />
   }
   return (
+    <ThemeProvider theme={theme}>
     <div className="App">
       <RefrshHandler setIsAuthenticated={setIsAuthenticated} />
       <Routes>
@@ -53,10 +57,13 @@ function App() {
         <Route path='/categorieArticle/create' element={<PrivateRoute element={<CreateCategorieArticle/>} />} />
         <Route path='/CategorieArticle/update/:id' element={<PrivateRoute element={<UpdateCategorieArticle/>} />} />
         <Route path='/BonCommandeFournisseur' element={<PrivateRoute element={<BonCommandeFournisseur/>} />} />
+        <Route path='/ListeBonCommandeFournisseur' element={<PrivateRoute element={<ListeBonCommandeFournisseur/>} />} />
+
         <Route path='/Depot' element={<PrivateRoute element={<Depot/>} />} />
 
       </Routes>
     </div>
+    </ThemeProvider>
   );
 }
 export default App;

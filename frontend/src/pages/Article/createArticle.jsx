@@ -1,20 +1,31 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { TextField, Button,Input, Grid, Box, MenuItem, Checkbox, FormControlLabel, TextareaAutosize } from "@mui/material";
+import {
+  TextField,
+  Button,
+  Grid,
+  Box,
+  MenuItem,
+  Checkbox,
+  FormControlLabel,
+  TextareaAutosize,
+  Card,
+  CardContent,
+  Typography,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+} from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Navbar from "../../navbar/Navbar";
 import Sidenav from "../../navbar/Sidenav";
 import { useNavigate } from "react-router-dom";
 
 export default function CreateArticle() {
-    const [loggedInUser, setLoggedInUser] = useState('');
-  
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     libelle: "",
-    libelleFamille: "",
-    libeleCategorie: "",
-    Nombre_unite: "",
-    tva: "",
+    Nature: "",
     type: "",
     prix_brut: "",
     remise: "",
@@ -25,29 +36,17 @@ export default function CreateArticle() {
     gestion_configuration: "",
     configuration: "",
     serie: false,
-    series: [], 
-    lib_fournisseur: "",
-    Nature: "",
-    image_article: "",
-    prixmin: "",
-    prixmax: "",
-    user_Connectée: {loggedInUser}, 
-    action_user_connecté: "", 
-    date_modif: new Date().toISOString().split("T")[0], // Date actuelle
-    prix_achat_initiale: "",
-    tva_achat: "",
-    dimension_article: false, // Checkbox pour les dimensions
+    dimension_article: false,
     longueur: "",
     largeur: "",
     hauteur: "",
-    movement_article: "",
+    image_article: "",
   });
 
-  const [familles, setFamilles] = useState([]); // Liste des familles d'articles
-  const [categories, setCategories] = useState([]); // Liste des catégories d'articles
-  const [fournisseurs, setFournisseurs] = useState([]); // Liste des fournisseurs
+  const [familles, setFamilles] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [fournisseurs, setFournisseurs] = useState([]);
 
-  // Charger les données pour les listes déroulantes
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -63,20 +62,17 @@ export default function CreateArticle() {
         console.error("Erreur lors du chargement des données :", error);
       }
     };
-
     fetchData();
   }, []);
 
-  // Gère les changements dans les champs du formulaire
   const handleChange = (e) => {
     const { name, value, checked, type } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
-        }
-    )   
-);
+    }));
   };
+
   const handleFileChange = (e) => {
     setFormData((prev) => ({
       ...prev,
@@ -84,209 +80,95 @@ export default function CreateArticle() {
     }));
   };
 
- //create article 
- const createArticle = async () => {
-  try {
-    const formDataToSend = new FormData();
+  const createArticle = async () => {
+    try {
+      const formDataToSend = new FormData();
+      Object.keys(formData).forEach((key) => {
+        formDataToSend.append(key, formData[key]);
+      });
 
-    // Ajouter les champs au FormData
-    Object.keys(formData).forEach((key) => {
-      if (key === "image_article" && formData[key]) {
-        formDataToSend.append(key, formData[key]); // Ajouter l'image
-      } else {
-        formDataToSend.append(key, formData[key]); // Ajouter les autres champs
-      }
-    });
+      await axios.post("http://localhost:5000/article/newA", formDataToSend, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
-    //const user_Connectée = 
-    // Envoyer la requête avec FormData
-    const response = await axios.post("http://localhost:5000/article/newA", formDataToSend, {
-      headers: {
-        "Content-Type": "multipart/form-data", // Indiquer que c'est un formulaire multipart
-      },
-    });
-
-    alert("Article créé avec succès !");
-    navigate("/Articles");
-  } catch (error) {
-    console.error("Erreur lors de la création de l'article :", error.response ? error.response.data : error);
-    alert("Une erreur s'est produite lors de la création de l'article. Voir la console pour plus de détails.");
-  }
-};
+      alert("Article créé avec succès !");
+      navigate("/Articles");
+    } catch (error) {
+      console.error("Erreur lors de la création de l'article :", error.response ? error.response.data : error);
+      alert("Une erreur s'est produite lors de la création de l'article.");
+    }
+  };
 
   return (
     <>
-      {/* Barre latérale */}
       <Navbar />
-
       <Box height={100} />
       <Box sx={{ display: "flex" }}>
-        {/* Sidenav */}
         <Sidenav />
-
-        {/* Contenu */}
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            p: 3,
-            overflow: "auto",
-            maxHeight: "100vh",
-          }}
-        >
-          <Box
-            sx={{
-              position: "sticky",
-              top: 0,
-              zIndex: 2,
-              backgroundColor: "#fff",
-              paddingBottom: "10px",
-              borderBottom: "1px solid #ddd",
-            }}
-          >
-            <h2>Créer un Article</h2>
-          </Box>
+        <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: "auto", maxHeight: "100vh" }}>
+          <h2>Créer un Article</h2>
 
           <form>
-            <Grid container spacing={3}>
-             
-             
-              {/* Libelle Article */}
-              <Grid item xs={4}>
-                <TextField
-                  name="libelle"
-                  label="Libellé"
-                  fullWidth
-                  margin="normal"
-                  value={formData.libelle}
-                  onChange={handleChange}
-                />
-              </Grid>
-              {/* Nature*/}
-              <Grid item xs={4}>
-                <TextField
-                  name="Nature"
-                  label="Nature"
-                  fullWidth
-                  margin="normal"
-                  value={formData.Nature}
-                  onChange={handleChange}
-                />
-              </Grid>
-              {/* Type*/}
-              <Grid item xs={4}>
-                <TextField
-                  name="type"
-                  label="Type"
-                  fullWidth
-                  margin="normal"
-                  value={formData.type}
-                  onChange={handleChange}
-                />
-              </Grid>
-                {/* prix_brut*/}
-                <Grid item xs={4}>
-                <TextField
-                  name="prix_brut"
-                  label="Prix Brut"
-                  fullWidth
-                  margin="normal"
-                  value={formData.prix_brut}
-                  onChange={handleChange}
-                />
-              </Grid>
-               {/* remise*/}
-               <Grid item xs={4}>
-                <TextField
-                  name="remise"
-                  label="Remise %"
-                  fullWidth
-                  margin="normal"
-                  value={formData.remise}
-                  onChange={handleChange}
-                />
-              </Grid>
-                {/* prix_net*/}
-                <Grid item xs={4}>
-                <TextField
-                  name="prix_net"
-                  label="Prix NET"
-                  fullWidth
-                  margin="normal"
-                  value={formData.prix_net}
-                  onChange={handleChange}
-                />
-              </Grid>
-              {/* marge*/}
-              <Grid item xs={4}>
-                <TextField
-                  name="marge"
-                  label="Marge"
-                  fullWidth
-                  margin="normal"
-                  value={formData.marge}
-                  onChange={handleChange}
-                />
-              </Grid>
-               {/* prixht*/}
-               <Grid item xs={4}>
-                <TextField
-                  name="prixht"
-                  label="Prix ht"
-                  fullWidth
-                  margin="normal"
-                  value={formData.prixht}
-                  onChange={handleChange}
-                />
-              </Grid>
-               {/* prix_totale_concré*/}
-               <Grid item xs={4}>
-                <TextField
-                  name="prix_totale_concre"
-                  label="Prix Totale Concré"
-                  fullWidth
-                  margin="normal"
-                  value={formData.prix_totale_concre}
-                  onChange={handleChange}
-                />
-              </Grid>
-                {/* gestion_configuration*/}
-                <Grid item xs={4}>
-                <TextField
-                  name="gestion_configuration"
-                  label="gestion_configuration "
-                  fullWidth
-                  margin="normal"
-                  value={formData.gestion_configuration}
-                  onChange={handleChange}
-                />
-              </Grid>
-              {/* Liste déroulante pour Famille */}
-              <Grid item xs={4}>
-                <TextField
-                  name="libelleFamille"
-                  label="Famille de l'article"
-                  fullWidth
-                  margin="normal"
-                  value={formData.libelleFamille}
-                  onChange={handleChange}
-                  select
-                >
-                  {familles.map((famille) => (
-                    <MenuItem key={famille._id} value={famille._id}>
-                      {famille.designationFamille}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-
-              {/* Liste déroulante pour Catégorie */}
-              <Grid item xs={4}>
+{/* Info Générales*/}
+            <Card sx={{ mb: 3 }}>
+              <CardContent>
+                <Typography variant="h6">Informations Générales</Typography>
+                <Grid container spacing={3}>
+                  {/* Libelle Article*/}
+                  <Grid item xs={3}>
+                    <TextField
+                      name="libelle"
+                      label="Libellé"
+                      fullWidth
+                      value={formData.libelle}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+                  {/* Nature */}
+                  <Grid item xs={3}>
+                    <TextField
+                      name="Nature"
+                      label="Nature"
+                      fullWidth
+                      value={formData.Nature}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+                  {/* Type */}
+                  <Grid item xs={3}>
+                    <TextField
+                      name="type"
+                      label="Type"
+                      fullWidth
+                      value={formData.type}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+           {/* Liste déroulante pour Famille */}
+                  <Grid item xs={3}>
+                    <TextField
+                      name="libelleFamille"
+                      label="Famille de l'article"
+                      fullWidth
+                      select
+                      value={formData.libelleFamille}
+                      onChange={handleChange}
+                    >
+                      {familles.map((famille) => (
+                        <MenuItem key={famille._id} value={famille._id}>
+                          {famille.designationFamille}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </Grid>
+            {/* Liste déroulante pour Catégorie */}
+            <Grid item xs={3}>
                 <TextField
                   name="libeleCategorie"
                   label="Catégorie de l'article"
                   fullWidth
-                  margin="normal"
                   value={formData.libeleCategorie}
                   onChange={handleChange}
                   select
@@ -298,14 +180,12 @@ export default function CreateArticle() {
                   ))}
                 </TextField>
               </Grid>
-
-              {/* Liste déroulante pour Fournisseur */}
-              <Grid item xs={4}>
+               {/* Liste déroulante pour Fournisseur */}
+               <Grid item xs={3}>
                 <TextField
                   name="lib_fournisseur"
                   label="Fournisseur"
                   fullWidth
-                  margin="normal"
                   value={formData.lib_fournisseur}
                   onChange={handleChange}
                   select
@@ -318,41 +198,125 @@ export default function CreateArticle() {
                 </TextField>
               </Grid>
               {/* Quantitee */}
-              <Grid item xs={4}>
+              <Grid item xs={3}>
                 <TextField
                   name="Nombre_unite"
                   label="Nombre d'unités"
                   fullWidth
-                  margin="normal"
                   value={formData.Nombre_unite}
                   onChange={handleChange}
                   type="number"
                 />
               </Grid>
+
+                </Grid>
+              </CardContent>
+            </Card>
+{/* Prix et Remises*/}
+            <Card sx={{ mb: 3 }}>
+              <CardContent>
+                <Accordion>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography variant="h6">Prix et Remises</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Grid container spacing={3}>
+                      {/* prix brut */}
+                      <Grid item xs={3}>
+                        <TextField
+                          name="prix_brut"
+                          label="Prix Brut"
+                          fullWidth
+                          value={formData.prix_brut}
+                          onChange={handleChange}
+                        />
+                      </Grid>
+                      {/* Remise */}
+                      <Grid item xs={3}>
+                        <TextField
+                          name="remise"
+                          label="Remise %"
+                          fullWidth
+                          value={formData.remise}
+                          onChange={handleChange}
+                        />
+                      </Grid>
+                      {/* Prix net  */ }
+                      <Grid item xs={3}>
+                        <TextField
+                          name="prix_net"
+                          label="Prix NET"
+                          fullWidth
+                          value={formData.prix_net}
+                          onChange={handleChange}
+                        />
+                      </Grid>
+                       {/* marge*/}
+              <Grid item xs={3}>
+                <TextField
+                  name="marge"
+                  label="Marge"
+                  fullWidth
+                  value={formData.marge}
+                  onChange={handleChange}
+                />
+              </Grid>
+               {/* prixht*/}
+               <Grid item xs={3}>
+                <TextField
+                  name="prixht"
+                  label="Prix ht"
+                  fullWidth
+                  value={formData.prixht}
+                  onChange={handleChange}
+                />
+              </Grid>
+               {/* prix_totale_concré*/}
+               <Grid item xs={3}>
+                <TextField
+                  name="prix_totale_concre"
+                  label="Prix Totale Concré"
+                  fullWidth
+                  value={formData.prix_totale_concre}
+                  onChange={handleChange}
+                />
+              </Grid>
             {/* prixmin */}
-                <Grid item xs={4}>
+                <Grid item xs={3}>
                 <TextField
                   name="prixmin"
                   label="Prix Min"
                   fullWidth
-                  margin="normal"
                   value={formData.prixmin}
                   onChange={handleChange}
                 />
               </Grid>
               {/* prixmax */}
-              <Grid item xs={4}>
+              <Grid item xs={3}>
                 <TextField
                   name="prixmax"
                   label="Prix Max"
                   fullWidth
-                  margin="normal"
                   value={formData.prixmax}
                   onChange={handleChange}
                 />
               </Grid>
-                {/* tva_achat */}
-                <Grid item xs={4}>
+
+
+                    </Grid>
+                  </AccordionDetails>
+                </Accordion>
+              </CardContent>
+            </Card>
+
+{/* TVA */ }
+            <Card sx={{ mb: 3 }}>
+              <CardContent>
+                <Typography variant="h6">TVA</Typography>
+                <Grid container spacing={3}>
+                 
+             {/* tva_achat */}
+           <Grid item xs={3}>
                 <TextField
                   name="tva_achat"
                   label="Tva Achat"
@@ -364,7 +328,7 @@ export default function CreateArticle() {
               </Grid>
 
               {/* tva */}
-              <Grid item xs={4}>
+              <Grid item xs={3}>
                 <TextField
                   name="tva"
                   label="TVA"
@@ -374,31 +338,32 @@ export default function CreateArticle() {
                   onChange={handleChange}
                 />
               </Grid>
-               {/* configuration*/}
-             <Grid item xs={4}>
-                <TextareaAutosize
-                  name="configuration"
-                  placeholder="Configuration"
-                  minRows={5}
-                  style={{ width: "100%" }}
-                  value={formData.configuration}
-                  onChange={handleChange}
-                />
-              </Grid>
+           
 
-               {/* movement_article */}
-               <Grid item xs={4}>
+                </Grid>
+              </CardContent>
+            </Card>
+{/* Détails*/}
+            <Card sx={{ mb: 3 }}>
+              <CardContent>
+                <Accordion>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography variant="h6">Détails</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Grid container spacing={3}>
+                       {/* movement_article */}
+                 <Grid item xs={3}>
                 <TextField
                   name="movement_article"
                   label="Movement Article"
                   fullWidth
-                  margin="normal"
                   value={formData.movement_article}
                   onChange={handleChange}
                 />
               </Grid>
-                  {/* Checkbox pour activer la série */}
-              <Grid item xs={12}>
+                {/* Checkbox pour activer la série */}
+                <Grid item xs={3}>
                <FormControlLabel
                    control={
                  <Checkbox
@@ -410,11 +375,8 @@ export default function CreateArticle() {
                label="Série"
                 />
              </Grid>
-
-     
-
-              {/* Checkbox pour les dimensions */}
-              <Grid item xs={12}>
+           {/* Checkbox pour les dimensions */}
+   <Grid item xs={4}>
                 <FormControlLabel
                   control={
                     <Checkbox
@@ -429,7 +391,7 @@ export default function CreateArticle() {
               {/* Champs conditionnels pour les dimensions */}
               {formData.dimension_article && (
                 <>
-                  <Grid item xs={4}>
+                  <Grid item xs={3}>
                     <TextField
                       name="longueur"
                       label="Longueur"
@@ -439,7 +401,7 @@ export default function CreateArticle() {
                       onChange={handleChange}
                     />
                   </Grid>
-                  <Grid item xs={4}>
+                  <Grid item xs={3}>
                     <TextField
                       name="largeur"
                       label="Largeur"
@@ -449,7 +411,7 @@ export default function CreateArticle() {
                       onChange={handleChange}
                     />
                   </Grid>
-                  <Grid item xs={4}>
+                  <Grid item xs={3}>
                     <TextField
                       name="hauteur"
                       label="Hauteur"
@@ -461,50 +423,41 @@ export default function CreateArticle() {
                   </Grid>
                 </>
               )}
-
-              
-              {/* Image */}
-              <Grid item xs={4}>
-             <Button
-                  variant="contained"
-                component="label"
-                color="primary"
-                 sx={{ textTransform: "none" }}
-                >
-              Choisir une image
-             <input
-              type="file"
-              hidden
-             accept="image/*"
-            onChange={handleFileChange}
-            />
-            </Button>
-
-         {formData.image_article && (
-         <Box mt={2}>
-          <img
-        src={URL.createObjectURL(formData.image_article)}
-        alt="Aperçu"
-        style={{ width: "100px", height: "100px", objectFit: "cover", borderRadius: "8px" }}
-             />
-         </Box>
-            )}
-            </Grid>
+                    
 
 
-
-              {/* Bouton de soumission */}
-              <Grid item xs={12}>
-                <Button
-                  onClick={createArticle}
-                  color="primary"
-                  variant="contained"
-                  style={{ marginTop: "20px", float: "right" }}
-                >
-                  Créer
+                    </Grid>
+                  </AccordionDetails>
+                </Accordion>
+              </CardContent>
+            </Card>
+{/* Image*/}
+            <Card sx={{ mb: 3 }}>
+              <CardContent>
+                <Typography variant="h6">Image de l'Article</Typography>
+                <Button variant="contained" component="label" sx={{ textTransform: "none" }}>
+                  Choisir une image
+                  <input type="file" hidden accept="image/*" onChange={handleFileChange} />
                 </Button>
-              </Grid>
-            </Grid>
+                {formData.image_article && (
+                  <Box mt={2}>
+                    <img
+                      src={URL.createObjectURL(formData.image_article)}
+                      alt="Aperçu"
+                      style={{ width: "100px", height: "100px", objectFit: "cover", borderRadius: "8px" }}
+                    />
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+            <Button
+              onClick={createArticle}
+              color="primary"
+              variant="contained"
+              style={{ marginTop: "20px", float: "right" }}
+            >
+              Créer
+            </Button>
           </form>
         </Box>
       </Box>

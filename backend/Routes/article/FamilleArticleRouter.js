@@ -6,7 +6,7 @@ const {
   getFamilleArticleByID,
   updateFamilleArticle,
   deleteFamilleArticle,
-} = require('../Controllers/FamilleArticleController');
+} = require('../../Controllers/FamilleArticleController');
 
 // Create a new FamilleArticle
 router.post('/NewFA', createFamilleArticle);

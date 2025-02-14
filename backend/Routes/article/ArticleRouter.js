@@ -1,7 +1,7 @@
 const express =require ("express");
 const router = express.Router();
-const upload = require('../Middlewares/multerConfig');
-const { getArticles, getArticleByID, createArticle, updateArticle, deleteArticle} = require('../Controllers/ArticleController');
+const upload = require('../../Middlewares/multerConfig');
+const { getArticles, getArticleByID, createArticle, updateArticle, deleteArticle} = require('../../Controllers/ArticleController');
 
 /**
  * @route   

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Buffer } from "buffer";
 import Sidenav from "../../navbar/Sidenav";
 import Box from "@mui/material/Box";
 import { useNavigate } from "react-router-dom";
@@ -26,7 +25,6 @@ export default function Depot() {
   const [selectedDepotId, setSelectedDepotId] = useState(null); // Fournisseur à supprimer
   
   const navigate = useNavigate();
-  
 
   // Fetch fournisseurs from the backend
   const fetchDepots = async () => {

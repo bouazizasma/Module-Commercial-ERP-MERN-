@@ -6,7 +6,7 @@ const {
   getCategorieArticleByID,
   updateCategorieArticle,
   deleteCategorieArticle,
-} = require('../Controllers/CategorieArticleController');
+} = require('../../Controllers/CategorieArticleController');
 
 // Create a new CategorieArticle
 router.post('/newCA', createCategorieArticle);
