@@ -3,7 +3,7 @@ import axios from "axios";
 import Sidenav from "../../navbar/Sidenav";
 import Box from "@mui/material/Box";
 import Navbar from "../../navbar/Navbar";
-
+import { Visibility, Delete, Edit } from "@mui/icons-material";
 import {
   Card, CardContent, Typography, Grid, Button, TextField, MenuItem, Select, FormControl, InputLabel, IconButton, Drawer, Modal, Backdrop, Fade, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
 } from "@mui/material";
@@ -198,211 +198,214 @@ export default function ListeBonCommandeFournisseur() {
             width: "100%",
           }}
         >
-          <h1>Liste des bons de commande fournisseur</h1>
-          <Box height={50} />
+        <Box sx={{ flexGrow: 1, p: 3 }}>
+     <h1>Liste des bons de commande fournisseur</h1>
+       <Box height={50} />
 
-          {/* Barre de recherche et bouton Filtre */}
-          <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-            <TextField
-              fullWidth
-              label="Rechercher"
-              variant="outlined"
-              value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
-              sx={{
-                mb: 2,
-                borderRadius: "20px",
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "40px",
-                },
-                width: "400px",
-              }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton>
-                      <Search />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <Box width={150} />
+ {/* Barre de recherche et bouton Filtre */}
+ <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+    <TextField
+      fullWidth
+      label="Rechercher"
+      variant="outlined"
+      value={searchTerm}
+      onChange={(e) => handleSearch(e.target.value)}
+      sx={{
+        mb: 2,
+        borderRadius: "20px",
+        "& .MuiOutlinedInput-root": {
+          borderRadius: "40px",
+        },
+        width: "400px",
+      }}
+      InputProps={{
+        endAdornment: (
+          <InputAdornment position="end">
+            <IconButton>
+              <Search />
+            </IconButton>
+          </InputAdornment>
+        ),
+      }}
+    />
+    <Box width={150} />
 
-            {/* Bouton pour ouvrir la sidebar des filtres */}
-            <Button
-              onClick={() => setIsFilterSidebarOpen(!isFilterSidebarOpen)}
-              startIcon={<FilterList />}
-              sx={{ ml: 5 }}
-            >
-              Filtre
-            </Button>
-          </Box>
+    {/* Bouton pour ouvrir la sidebar des filtres */}
+    <Button
+      onClick={() => setIsFilterSidebarOpen(!isFilterSidebarOpen)}
+      startIcon={<FilterList />}
+      sx={{ ml: 30}}
+    >
+      Filtre
+    </Button>
+  </Box>
+  {/* Sidebar pour les filtres avancés */}
+  <Drawer
+    anchor="right" // Position de la sidebar (à droite)
+    open={isFilterSidebarOpen} // Contrôle l'ouverture/fermeture
+    onClose={() => setIsFilterSidebarOpen(false)} // Fermer la sidebar
+  >
+    <Box sx={{ width: 300, p: 3 }}>
+      <Typography variant="h6" sx={{ mb: 2 }}>
+        Filtres Avancés
+      </Typography>
 
-          {/* Sidebar pour les filtres avancés */}
-          <Drawer
-            anchor="right"
-            open={isFilterSidebarOpen}
-            onClose={() => setIsFilterSidebarOpen(false)}
-          >
-            <Box sx={{ width: 300, p: 3 }}>
-              <Typography variant="h6" sx={{ mb: 2 }}>
-                Filtres Avancés
-              </Typography>
+      {/* Filtre par fournisseur */}
+      <FormControl fullWidth sx={{ mb: 2 }}>
+        <InputLabel>Fournisseur</InputLabel>
+        <Select
+          value={filters.fournisseur}
+          onChange={(e) => handleFilterChange("fournisseur", e.target.value)}
+        >
+          <MenuItem value="">Tous</MenuItem>
+          {[...new Set(bonsCommande.map((bon) => bon.fournisseur?.raison_sociale))].map((name, index) => (
+            <MenuItem key={index} value={name}>
+              {name}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
 
-              {/* Filtre par fournisseur */}
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Fournisseur</InputLabel>
-                <Select
-                  value={filters.fournisseur}
-                  onChange={(e) => handleFilterChange("fournisseur", e.target.value)}
-                >
-                  <MenuItem value="">Tous</MenuItem>
-                  {[...new Set(bonsCommande.map((bon) => bon.fournisseur?.raison_sociale))].map((name, index) => (
-                    <MenuItem key={index} value={name}>
-                      {name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+      {/* Filtre par article */}
+      <FormControl fullWidth sx={{ mb: 2 }}>
+        <InputLabel>Article</InputLabel>
+        <Select
+          value={filters.article}
+          onChange={(e) => handleFilterChange("article", e.target.value)}
+        >
+          <MenuItem value="">Tous</MenuItem>
+          {[...new Set(bonsCommande.flatMap((bon) => bon.lignes.map((ligne) => ligne.article.libelle)))].map((article, index) => (
+            <MenuItem key={index} value={article}>
+              {article}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
 
-              {/* Filtre par article */}
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Article</InputLabel>
-                <Select
-                  value={filters.article}
-                  onChange={(e) => handleFilterChange("article", e.target.value)}
-                >
-                  <MenuItem value="">Tous</MenuItem>
-                  {[...new Set(bonsCommande.flatMap((bon) => bon.lignes.map((ligne) => ligne.article.libelle)))].map((article, index) => (
-                    <MenuItem key={index} value={article}>
-                      {article}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+      {/* Filtre par année */}
+      <FormControl fullWidth sx={{ mb: 2 }}>
+        <InputLabel>Année</InputLabel>
+        <Select
+          value={filters.year}
+          onChange={(e) => handleFilterChange("year", e.target.value)}
+        >
+          <MenuItem value="">Toutes</MenuItem>
+          {[...new Set(bonsCommande.map((bon) => new Date(bon.dateCommande).getFullYear().toString()))].map((year, index) => (
+            <MenuItem key={index} value={year}>
+              {year}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
 
-              {/* Filtre par année */}
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Année</InputLabel>
-                <Select
-                  value={filters.year}
-                  onChange={(e) => handleFilterChange("year", e.target.value)}
-                >
-                  <MenuItem value="">Toutes</MenuItem>
-                  {[...new Set(bonsCommande.map((bon) => new Date(bon.dateCommande).getFullYear().toString()))].map((year, index) => (
-                    <MenuItem key={index} value={year}>
-                      {year}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+      {/* Filtre par mois */}
+      <FormControl fullWidth sx={{ mb: 2 }}>
+        <InputLabel>Mois</InputLabel>
+        <Select
+          value={filters.month}
+          onChange={(e) => handleFilterChange("month", e.target.value)}
+        >
+          <MenuItem value="">Tous</MenuItem>
+          {Array.from({ length: 12 }, (_, i) => (i + 1).toString()).map((month, index) => (
+            <MenuItem key={index} value={month}>
+              {month}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
 
-              {/* Filtre par mois */}
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Mois</InputLabel>
-                <Select
-                  value={filters.month}
-                  onChange={(e) => handleFilterChange("month", e.target.value)}
-                >
-                  <MenuItem value="">Tous</MenuItem>
-                  {Array.from({ length: 12 }, (_, i) => (i + 1).toString()).map((month, index) => (
-                    <MenuItem key={index} value={month}>
-                      {month}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+      {/* Bouton pour réinitialiser les filtres */}
+      <Button
+        onClick={resetFilters}
+        startIcon={<Clear />}
+        fullWidth
+        variant="outlined"
+        sx={{ mt: 2 }}
+      >
+        Réinitialiser les filtres
+      </Button>
+    </Box>
+  </Drawer>
 
-              {/* Bouton pour réinitialiser les filtres */}
-              <Button
-                onClick={resetFilters}
-                startIcon={<Clear />}
-                fullWidth
-                variant="outlined"
-                sx={{ mt: 2 }}
-              >
-                Réinitialiser les filtres
-              </Button>
-            </Box>
-          </Drawer>
+  {/* Tableau des bons de commande */}
+  <TableContainer component={Paper} sx={{ mt: 3, boxShadow: 3 }}>
+    <Table sx={{ minWidth: 650 }} aria-label="simple table">
+      <TableHead>
+        <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+          <TableCell sx={{ fontWeight: "bold" }}>Numéro de commande</TableCell>
+          <TableCell sx={{ fontWeight: "bold" }}>Date de commande</TableCell>
+          <TableCell sx={{ fontWeight: "bold" }}>Fournisseur</TableCell>
+          <TableCell sx={{ fontWeight: "bold" }}>Total HT</TableCell>
+          <TableCell sx={{ fontWeight: "bold" }}>Total TTC</TableCell>
+          <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {paginatedBonsCommande.map((bonCommande, index) => (
+          <TableRow key={index} sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
+            <TableCell>{bonCommande.numero_commande}</TableCell>
+            <TableCell>{new Date(bonCommande.dateCommande).toLocaleDateString()}</TableCell>
+            <TableCell>{bonCommande.fournisseur ? bonCommande.fournisseur.raison_sociale : "Non spécifié"}</TableCell>
+            <TableCell>{bonCommande.total_hors_Taxe} TND</TableCell>
+            <TableCell>{bonCommande.total_ttc} TND</TableCell>
+            <TableCell>
+  {/* Icône pour "Détails" */}
+  <IconButton
+    onClick={() => handleOpenModal(bonCommande)}
+    sx={{ color: "black" }} // Couleur noire
+  >
+    <Visibility />
+  </IconButton>
 
-          {/* Affichage des bons de commande filtrés */}
-          <Stack spacing={2}>
-            {paginatedBonsCommande.map((bonCommande, index) => (
-              <Card key={index} sx={{ width: "100%", boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.45)" }}>
-                <CardContent>
-                  <Typography variant="h5" component="div">
-                    Bon de Commande N° {bonCommande.numero_commande}
-                  </Typography>
-                  <Typography sx={{ mb: 1.5 }} color="text.secondary">
-                    Date: {new Date(bonCommande.dateCommande).toLocaleDateString()}
-                  </Typography>
-                  <Typography variant="body2">
-                    Fournisseur: {bonCommande.fournisseur ? bonCommande.fournisseur.raison_sociale : "Non spécifié"}
-                  </Typography>
-                  <Typography variant="body2">
-                    Total HT: {bonCommande.total_hors_Taxe} TND
-                  </Typography>
-                  <Typography variant="body2">
-                    Total TTC: {bonCommande.total_ttc} TND
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    sx={{ mt: 2, mr: 2 }}
-                    onClick={() => handleOpenModal(bonCommande)}
-                  >
-                    Voir les détails
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="error"
-                    sx={{ mt: 2, mr: 2 }}
-                    onClick={() => handleDeleteBonCommande(bonCommande._id)}
-                  >
-                    Supprimer
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="warning"
-                    sx={{ mt: 2, mr: 2 }}
-                    onClick={() => handleEditBonCommande(bonCommande)}
-                  >
-                    Modifier
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </Stack>
+  {/* Icône pour "Supprimer" */}
+  <IconButton
+    onClick={() => handleDeleteBonCommande(bonCommande._id)}
+    sx={{ color: "black" }} // Couleur noire
+  >
+    <Delete />
+  </IconButton>
 
-          {/* Pagination */}
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-            <Button
-              variant="contained"
-              color="#00000F"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(currentPage - 1)}
-              sx={{ mr: 2 }}
-            >
-              Précédent
-            </Button>
-            <Button
-              variant="contained"
-              color="#000000"
-              disabled={currentPage * itemsPerPage >= filteredBonsCommande.length}
-              onClick={() => setCurrentPage(currentPage + 1)}
-            >
-              Suivant
-            </Button>
-          </Box>
+  {/* Icône pour "Modifier" */}
+  <IconButton
+    onClick={() => handleEditBonCommande(bonCommande)}
+    sx={{ color: "black" }} // Couleur noire
+  >
+    <Edit />
+  </IconButton>
+</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  </TableContainer>
 
-          {/* Affichage du numéro de page */}
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-            <Typography variant="body1">
-              Page {currentPage} sur {Math.ceil(filteredBonsCommande.length / itemsPerPage)}
-            </Typography>
-          </Box>
+  {/* Pagination */}
+  <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+    <Button
+      variant="contained"
+      disabled={currentPage === 1}
+      onClick={() => setCurrentPage(currentPage - 1)}
+      sx={{ mr: 2 }}
+    >
+      Précédent
+    </Button>
+    <Button
+      variant="contained"
+      disabled={currentPage * itemsPerPage >= filteredBonsCommande.length}
+      onClick={() => setCurrentPage(currentPage + 1)}
+    >
+      Suivant
+    </Button>
+  </Box>
+  <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+    <Typography variant="body1">
+      Page {currentPage} sur {Math.ceil(filteredBonsCommande.length / itemsPerPage)}
+    </Typography>
+  </Box>
+</Box>
+
+         
+
 
           {/* Pop-up pour afficher les détails du bon de commande */}
           <Modal
@@ -506,6 +509,8 @@ export default function ListeBonCommandeFournisseur() {
               </Box>
             </Fade>
           </Modal>
+
+
 
           {/* Formulaire de modification */}
           <Modal

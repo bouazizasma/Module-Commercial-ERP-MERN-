@@ -16,6 +16,8 @@ import MailIcon from "@mui/icons-material/Mail";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import MoreIcon from "@mui/icons-material/MoreVert";
 import { useAppStore } from "../appStore";
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListIcon from '@mui/icons-material/List';
 //import { Update } from "@mui/icons-material";
 
 const AppBar = styled(

@@ -31,7 +31,6 @@ function App() {
     return isAuthenticated ? element : <Navigate to="/login" />
   }
   return (
-    <ThemeProvider theme={theme}>
     <div className="App">
       <RefrshHandler setIsAuthenticated={setIsAuthenticated} />
       <Routes>
@@ -63,7 +62,6 @@ function App() {
 
       </Routes>
     </div>
-    </ThemeProvider>
   );
 }
 export default App;

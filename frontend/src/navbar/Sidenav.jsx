@@ -1,25 +1,26 @@
+
+
 import * as React from "react";
 import { styled, useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
+import {  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Paper, Grid,TextField, IconButton,} from "@mui/material";
+
 import MuiDrawer from "@mui/material/Drawer";
 import List from "@mui/material/List";
 import CssBaseline from "@mui/material/CssBaseline";
 import Divider from "@mui/material/Divider";
-import IconButton from "@mui/material/IconButton";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import ListItem from "@mui/material/ListItem";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
+import ListItem from "@mui/material/ListItem";
+import ListIcon from '@mui/icons-material/List';
+import ListItemButton from "@mui/material/ListItemButton";
 import InboxIcon from "@mui/icons-material/MoveToInbox";
 import { useNavigate } from "react-router-dom";
 import { useAppStore } from "../appStore";
 import Collapse from "@mui/material/Collapse";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
-import ListIcon from '@mui/icons-material/List';
-
 
 const drawerWidth = 268;
 
@@ -48,7 +49,7 @@ const closedMixin = (theme) => ({
 
 const DrawerHeader = styled("div")(({ theme }) => ({
   display: "flex",
-  background: "#FFFFFF",
+  background: "#f5f5f5",
 
   alignItems: "center",
   justifyContent: "flex-end",
@@ -63,7 +64,7 @@ const Drawer = styled(MuiDrawer, {
   flexShrink: 0,
   whiteSpace: "nowrap",
   boxSizing: "border-box",
-  background: "#FFFFFF",
+  background: "#f5f5f5",
   
 
   variants: [
@@ -218,7 +219,7 @@ export default function Sidenav() {
               </ListItemButton>
             </List>
           </Collapse>
-          {/* Saisie BonCommandeFournisseur*/}
+          {/* BonCommandeFournisseur*/}
           <ListItem
             disablePadding
             sx={{ display: "block" }}
@@ -235,7 +236,7 @@ export default function Sidenav() {
             >
               <svg xmlns="http://www.w3.org/2000/svg" height="30px" viewBox="0 -960 960 960" width="30px" fill="#5f6368"><path d="M240-80q-50 0-85-35t-35-85v-120h120v-560h600v680q0 50-35 85t-85 35H240Zm480-80q17 0 28.5-11.5T760-200v-600H320v480h360v120q0 17 11.5 28.5T720-160ZM360-600v-80h360v80H360Zm0 120v-80h360v80H360ZM240-160h360v-80H200v40q0 17 11.5 28.5T240-160Zm0 0h-40 400-360Z"/></svg>
               <ListItemText
-                primary={" Saisie BCF"}
+                primary={"BonCommandeFournisseur"}
                 sx={{ opacity: open ? 1 : 0 }}
               />
             </ListItemButton>
@@ -262,10 +263,6 @@ export default function Sidenav() {
               />
             </ListItemButton>
           </ListItem>
-
-         
-
-
 
           {/* DEPOT*/}
           <ListItem
