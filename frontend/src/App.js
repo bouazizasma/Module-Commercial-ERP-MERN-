@@ -8,7 +8,6 @@ import Fournisseur from './pages/Fournisseur/Fournisseur';
 import Client from './pages/Client/Client';
 import CreateFournisseur from './pages/Fournisseur/createFournisseur';
 import UpdateFournisseur from './pages/Fournisseur/updateFournisseur';
-import DetailsFournisseur from './pages/Fournisseur/detailsFournisseur';
 import CreateClient from './pages/Client/createClient';
 import UpdateClient from './pages/Client/updateClient';
 import Dashbord from "../src/pages/Dashbord";
@@ -20,8 +19,13 @@ import CategorieArticle from './pages/Article/CategorieArticle';
 import CreateCategorieArticle from './pages/Article/createCategorieArticle';
 import UpdateFamilleArticle from './pages/Article/updateFamilleArticle';
 import UpdateCategorieArticle from './pages/Article/updateCategorieArticle';
+import UpdateArticle from './pages/Article/updateArticle';
 import BonCommandeFournisseur from './pages/Achat/SaisieBonCommandeFournisseur';
 import ListeBonCommandeFournisseur from './pages/Achat/ListeBonCommandeFournisseurs';
+import BonReceptionFournisseur from './pages/Achat/SaisieBonReceptionFournisseur';
+import ListeBonReceptionFournisseur from './pages/Achat/ListeBonReceptionFournisseur';
+import UpdateBonCommande from './pages/Achat/UpdateBonCommande';
+import ListeFactures from './pages/Achat/ListeFacturesFournisseur';
 import Depot from './pages/Depot/Depot';
 import { useState } from 'react';
 import RefrshHandler from './RefrshHandler';
@@ -42,13 +46,12 @@ function App() {
         <Route path='/Fournisseur' element={<PrivateRoute element={<Fournisseur/>} />} />
         <Route path='/Fournisseur/create' element={<PrivateRoute element={<CreateFournisseur/>} />} />
         <Route path='/Fournisseur/update/:id' element={<PrivateRoute element={<UpdateFournisseur/>} />} />
-        <Route path='/Fournisseur/details/:id' element={<PrivateRoute element={<DetailsFournisseur/>} />} />
-
         <Route path='/Client' element={<PrivateRoute element={<Client/>} />} />
         <Route path='/Client/create' element={<PrivateRoute element={<CreateClient/>} />} />
         <Route path='/Client/update/:id' element={<PrivateRoute element={<UpdateClient/>} />} />
         <Route path='/Articles' element={<PrivateRoute element={<Article/>} />} />
         <Route path='/Article/create' element={<PrivateRoute element={<CreateArticle/>} />} />
+        <Route path='/Article/update/:id' element={<PrivateRoute element={<UpdateArticle/>} />} />
         <Route path='/FamilleArticle' element={<PrivateRoute element={<FamilleArticle/>} />} />
         <Route path='/FamilleArticle/create' element={<PrivateRoute element={<CreateFamilleArticle/>} />} />
         <Route path='/FamilleArticle/update/:id' element={<PrivateRoute element={<UpdateFamilleArticle/>} />} />
@@ -56,7 +59,13 @@ function App() {
         <Route path='/categorieArticle/create' element={<PrivateRoute element={<CreateCategorieArticle/>} />} />
         <Route path='/CategorieArticle/update/:id' element={<PrivateRoute element={<UpdateCategorieArticle/>} />} />
         <Route path='/BonCommandeFournisseur' element={<PrivateRoute element={<BonCommandeFournisseur/>} />} />
+        <Route path='/BonReceptionFournisseur' element={<PrivateRoute element={<BonReceptionFournisseur/>} />} />
         <Route path='/ListeBonCommandeFournisseur' element={<PrivateRoute element={<ListeBonCommandeFournisseur/>} />} />
+        <Route path='/ListeBonReceptionFournisseur' element={<PrivateRoute element={<ListeBonReceptionFournisseur/>} />} />
+
+        <Route path='/ListeBonCommandeFournisseur/update/:id' element={<PrivateRoute element={<UpdateBonCommande/>} />} />
+        <Route path='/ListeFactures' element={<PrivateRoute element={<ListeFactures/>} />} />
+
 
         <Route path='/Depot' element={<PrivateRoute element={<Depot/>} />} />
 

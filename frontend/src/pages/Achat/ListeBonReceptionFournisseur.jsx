@@ -8,14 +8,15 @@ import { useNavigate } from "react-router-dom";
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import {
   Card, CardContent, Typography, Grid, Button, TextField, MenuItem, Select, FormControl, InputLabel, IconButton, Drawer, Modal, Backdrop, Fade, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
-} from "@mui/material";
+ , Dialog, DialogTitle, DialogContent, DialogActions} from "@mui/material";
 import { Stack } from "@mui/material";
 import { FilterList, Search, Clear } from "@mui/icons-material";
+import ReceiptIcon from '@mui/icons-material/Receipt';
 import { InputAdornment } from "@mui/material";
 import jsPDF from "jspdf";
 import 'jspdf-autotable';
-export default function ListeBonCommandeFournisseur() {
-  const [bonsCommande, setBonsCommande] = useState([]);
+export default function ListeBonReceptionFournisseur() {
+  const [bonsReception, setBonsReception] = useState([]);
   const [editLignes, setEditLignes] = useState([]); // État pour les lignes modifiables
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
@@ -24,13 +25,15 @@ export default function ListeBonCommandeFournisseur() {
     month: "",
     article: "",
   });
+  const [pdfUrl, setPdfUrl] = useState(""); 
+  const [openPreviewModal, setOpenPreviewModal] = useState(false);
   const [error, setError] = useState(null);
   const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
-  const [selectedBonCommande, setSelectedBonCommande] = useState(null);
+  const [selectedBonReception, setSelectedBonReception] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1); // État pour la pagination
   const itemsPerPage = 5; // Nombre d'éléments par page
-  const [editBonCommande, setEditBonCommande] = useState(null); // État pour le bon de commande en cours de modification
+  const [editBon, setEditBonReception] = useState(null); // État pour le bon de reception en cours de modification
   const [isEditModalOpen, setIsEditModalOpen] = useState(false); // État pour contrôler l'affichage du formulaire de modification
   const [fournisseurs, setFournisseurs] = useState([]);
   const [articles, setArticles] = useState([]);
@@ -42,8 +45,8 @@ export default function ListeBonCommandeFournisseur() {
     const fetchData = async () => {
       try {
         // Récupérer les bons de commande
-        const bonsCommandeResponse = await axios.get("http://localhost:5000/achat/BCF/all");
-        setBonsCommande(bonsCommandeResponse.data);
+        const bonsReceptionResponse = await axios.get("http://localhost:5000/achat/BEF/all");
+        setBonsReception(bonsReceptionResponse.data);
 
         // Récupérer les fournisseurs
         const fournisseursResponse = await axios.get("http://localhost:5000/fournisseur/fournisseurs");
@@ -67,52 +70,27 @@ export default function ListeBonCommandeFournisseur() {
 
   //handleDOWNLOAD
 
-  {/*const handleDownload = (bonCommande) => {
+  const handleDownload = (bonReception) => {
     const doc = new jsPDF();
     doc.setFontSize(18);
-    doc.text("Bon de Commande", 10, 10);
+    doc.text("Bon de Reception", 10, 10);
     doc.setFontSize(12);
-    doc.text(`Commande N°: ${bonCommande.numero_commande}`, 10, 20);
-    doc.text(`Date Commande: ${new Date(bonCommande.dateCommande).toLocaleDateString()}`, 10, 30);
-    const fournisseur = fournisseurs.find(f => f._id === bonCommande.fournisseur._id);
-    doc.text(`À l'intention de: ${fournisseur.raison_sociale}`, 10, 40);
-    doc.text(`Adresse: ${fournisseur.adresse || 'N/A'}`, 10, 50);
-    doc.text(`Téléphone: ${fournisseur.telephone || 'N/A'}`, 10, 60);
-    doc.autoTable({
-      startY: 70,
-      head: [['Article', 'Quantité', 'Prix Unitaire', 'Total']],
-      body: bonCommande.lignes.map(ligne => [
-        ligne.article.libelle,
-        ligne.quantite,
-        `${ligne.prix_unitaire.toFixed(2)} TND`,
-        `${(ligne.quantite * ligne.prix_unitaire).toFixed(2)} TND`
-      ]),
-    });
-    doc.save(`bon_de_commande_${bonCommande.numero_commande}.pdf`);
-  }; 
-  */}
+    doc.text(`Date: ${new Date(bonReception.dateReception).toLocaleDateString()}`, 10, 20);
+    doc.text(`Bon de Reception: ${bonReception.numero_Bon}`, 10, 30);
 
-  const handleDownload = (bonCommande) => {
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text("Bon de Commande", 10, 10);
-    doc.setFontSize(12);
-    doc.text(`Date: ${new Date(bonCommande.dateCommande).toLocaleDateString()}`, 10, 20);
-    doc.text(`Bon de Commande: ${bonCommande.numero_Bon}`, 10, 30);
-
-    const fournisseur = fournisseurs.find(f => f._id === bonCommande.fournisseur._id);
+    const fournisseur = fournisseurs.find(f => f._id === bonReception.fournisseur._id);
     doc.text(`${fournisseur.raison_sociale}`, 10, 50);
     doc.text(`${fournisseur.adresse || 'N/A'}`, 10, 60);
     doc.text(`Tel: ${fournisseur.telephone || 'N/A'}`, 10, 70);
     //doc.text(`Email: ${fournisseur.email || 'N/A'}`, 10, 80);
   
-    doc.text(`Objet : Commande`  , 10, 90);
+    doc.text(`Objet : Reception`  , 10, 90);
   
     // Tableau des articles commandés
     doc.autoTable({
       startY: 100,
       head: [['Description', 'Unité', 'Quantité', 'Prix Unitaire HT', 'Total Net']],
-      body: bonCommande.lignes.map(ligne => [
+      body: bonReception.lignes.map(ligne => [
         ligne.article.libelle,
         'DT',
         ligne.quantite,
@@ -122,41 +100,66 @@ export default function ListeBonCommandeFournisseur() {
     });
   
     // Totaux
-    const totalHT = bonCommande.lignes.reduce((acc, ligne) => acc + (ligne.quantite * ligne.prix_unitaire), 0);
+    const totalHT = bonReception.lignes.reduce((acc, ligne) => acc + (ligne.quantite * ligne.prix_unitaire), 0);
     const totalTTC = totalHT * 1.2;
   
     doc.text(`Montant Total HT: ${totalHT.toFixed(2)} DT`, 10, doc.autoTable.previous.finalY + 10);
     doc.text(`Total TTC (20%): ${totalTTC.toFixed(2)} DT`, 10, doc.autoTable.previous.finalY + 20);
     doc.text(`Montant Total TTC: ${totalTTC.toFixed(2)} DT`, 10, doc.autoTable.previous.finalY + 30);
   
-    doc.save(`bon_de_commande_${bonCommande.numero_Bon}.pdf`);
+    doc.save(`bon_de_Reception_${bonReception.numero_Bon}.pdf`);
   };
-  // Filtrage des bons de commande
-  const filteredBonsCommande = useMemo(() => {
-    return bonsCommande.filter((bonCommande) => {
+
+  //handleDOWNLOADFACTURE 
+  const handleDownloadFacture = async (bonReception) => {
+    try {
+      console.log("bonReception:", bonReception); // Debug
+     console.log("bonReception._id:", bonReception._id); // Debug
+
+      const response = await axios.post("http://localhost:5000/factureF/generer",
+       {
+        enteteAchatId: bonReception._id, // Assurez-vous que bonReception._id est bien défini
+      },
+      { headers: { "Content-Type": "application/json" }}
+    );
+  
+      if (response.data.pdfUrl) {
+        setPdfUrl(response.data.pdfUrl); // Stocker l'URL du PDF
+        setOpenPreviewModal(true); // Ouvrir la modal de prévisualisation
+      }
+    } 
+    
+    catch (error) {
+      console.error("Erreur lors de la génération de la facture :", error);
+      alert("Erreur lors de la génération de la facture.");
+    }
+  };
+  // Filtrage des bons de Reception
+  const filteredBonsReception = useMemo(() => {
+    return bonsReception.filter((bonReception) => {
       const matchesSearchTerm =
-        bonCommande.numero_Bon.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (bonCommande.fournisseur && bonCommande.fournisseur.raison_sociale.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (bonCommande.lignes && bonCommande.lignes.some((ligne) =>
+      bonReception.numero_Bon.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (bonReception.fournisseur && bonReception.fournisseur.raison_sociale.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (bonReception.lignes && bonReception.lignes.some((ligne) =>
           ligne.article.libelle.toLowerCase().includes(searchTerm.toLowerCase())
         ));
 
       const matchesFilters =
-        (!filters.fournisseur || (bonCommande.fournisseur && bonCommande.fournisseur.raison_sociale === filters.fournisseur)) &&
-        (!filters.year || new Date(bonCommande.dateCommande).getFullYear().toString() === filters.year) &&
-        (!filters.month || (new Date(bonCommande.dateCommande).getMonth() + 1).toString() === filters.month) &&
-        (!filters.article || (bonCommande.lignes && bonCommande.lignes.some((ligne) => ligne.article.libelle === filters.article)));
+        (!filters.fournisseur || (bonReception.fournisseur && bonReception.fournisseur.raison_sociale === filters.fournisseur)) &&
+        (!filters.year || new Date(bonReception.dateReception).getFullYear().toString() === filters.year) &&
+        (!filters.month || (new Date(bonReception.dateReception).getMonth() + 1).toString() === filters.month) &&
+        (!filters.article || (bonReception.lignes && bonReception.lignes.some((ligne) => ligne.article.libelle === filters.article)));
 
       return matchesSearchTerm && matchesFilters;
     });
-  }, [bonsCommande, searchTerm, filters]);
+  }, [bonsReception, searchTerm, filters]);
 
   // Pagination
-  const paginatedBonsCommande = useMemo(() => {
+  const paginatedBonsReception = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    return filteredBonsCommande.slice(startIndex, endIndex);
-  }, [filteredBonsCommande, currentPage]);
+    return filteredBonsReception.slice(startIndex, endIndex);
+  }, [filteredBonsReception, currentPage]);
 
   // Gestion de la recherche
   const handleSearch = (term) => {
@@ -164,68 +167,28 @@ export default function ListeBonCommandeFournisseur() {
     setCurrentPage(1); // Réinitialiser à la première page lors d'une nouvelle recherche
   };
 
-  // Suppression d'un bon de commande
-  const handleDeleteBonCommande = async (id) => {
+  // Suppression d'un bon de reception
+  const handleDeleteBonReception = async (id) => {
     try {
-      const confirmDelete = window.confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande ?");
+      const confirmDelete = window.confirm("Êtes-vous sûr de vouloir supprimer ce bon de Réception ?");
       if (!confirmDelete) return;
 
-      await axios.delete(`http://localhost:5000/achat/BCF${id}`);
-      setBonsCommande(bonsCommande.filter((bon) => bon._id !== id)); // Mettre à jour l'état local
-      alert("Bon de commande supprimé avec succès !");
+      await axios.delete(`http://localhost:5000/achat/BEF${id}`);
+      setBonsReception(bonsReception.filter((bon) => bon._id !== id)); // Mettre à jour l'état local
+      alert("Bon de Reception supprimé avec succès !");
     } catch (error) {
-      console.error("Erreur lors de la suppression du bon de commande :", error);
-      alert("Erreur lors de la suppression du bon de commande.");
+      console.error("Erreur lors de la suppression du bon de reception :", error);
+      alert("Erreur lors de la suppression du bon de reception.");
     }
   };
 
-  // Ouverture du formulaire de modification
- {/*} const handleEditBonCommande = (bonCommande) => {
-    setEditBonCommande(bonCommande); // Stocker les données du bon de commande à modifier
-    setEditLignes(bonCommande.lignes); // Initialiser les lignes modifiables
-    setIsEditModalOpen(true); // Ouvrir le formulaire de modification
-  };
-*/}
-
-{/*const handleEditBonCommande = (bonCommande) => {
-  setEditBonCommande(bonCommande); // Stocker les données du bon de commande à modifier
-  setEditLignes(bonCommande.lignes); // Initialiser les lignes modifiables
-  setIsEditing(true); // Activer le mode édition
-}; */}
-const handleEditBonCommande = (bonCommande) => {
-  setEditBonCommande(bonCommande); // Stocker les données du bon de commande à modifier
-  setEditLignes(bonCommande.lignes); // Initialiser les lignes modifiables
+  
+const handleEditBonReception = (bonReception) => {
+  setEditBonReception(bonReception); // Stocker les données du bon de Reception à modifier
+  setEditLignes(bonReception.lignes); // Initialiser les lignes modifiables
   setIsEditModalOpen(true); // Activer le mode édition
 };
 
-
-  // Soumission du formulaire de modification
- {/*} const handleSubmitEdit = async (e, id) => {
-    e.preventDefault();
-    try {
-      const total_hors_Taxe = editLignes.reduce((acc, ligne) => acc + ligne.total_ht, 0);
-      const total_ttc = total_hors_Taxe * 1.2;
-
-      const updatedBonCommande = {
-        ...editBonCommande,
-        lignes: editLignes,
-        total_hors_Taxe,
-        total_ttc,
-        date_modification: new Date(), // Ajouter la date de modification
-      };
-
-      const response = await axios.put(`http://localhost:5000/boncommandeF/${id}`, updatedBonCommande);
-      setBonsCommande((prev) =>
-        prev.map((bon) => (bon._id === id ? response.data : bon))
-      );
-      setIsEditModalOpen(false);
-      alert("Bon de commande mis à jour avec succès !");
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour du bon de commande :", error);
-      alert("Erreur lors de la mise à jour du bon de commande.");
-    }
-  };
-*/}
   // Gestion des filtres
   const handleFilterChange = (filterName, value) => {
     setFilters((prevFilters) => ({ ...prevFilters, [filterName]: value }));
@@ -245,15 +208,15 @@ const handleEditBonCommande = (bonCommande) => {
   };
 
   // Ouverture de la modal de détails
-  const handleOpenModal = (bonCommande) => {
-    setSelectedBonCommande(bonCommande);
+  const handleOpenModal = (bonReception) => {
+    setSelectedBonReception(bonReception);
     setIsModalOpen(true);
   };
 
   // Fermeture de la modal de détails
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setSelectedBonCommande(null);
+    setSelectedBonReception(null);
   };
 
   // Affichage des filtres actifs
@@ -281,7 +244,7 @@ const handleEditBonCommande = (bonCommande) => {
           }}
         >
         <Box sx={{ flexGrow: 1, p: 3 }}>
-     <h1>Liste des bons de commande fournisseur</h1>
+     <h1>Liste des bons de Reception fournisseur</h1>
        <Box height={50} />
 
  {/* Barre de recherche et bouton Filtre */}
@@ -340,7 +303,7 @@ const handleEditBonCommande = (bonCommande) => {
           onChange={(e) => handleFilterChange("fournisseur", e.target.value)}
         >
           <MenuItem value="">Tous</MenuItem>
-          {[...new Set(bonsCommande.map((bon) => bon.fournisseur?.raison_sociale))].map((name, index) => (
+          {[...new Set(bonsReception.map((bon) => bon.fournisseur?.raison_sociale))].map((name, index) => (
             <MenuItem key={index} value={name}>
               {name}
             </MenuItem>
@@ -356,7 +319,7 @@ const handleEditBonCommande = (bonCommande) => {
           onChange={(e) => handleFilterChange("article", e.target.value)}
         >
           <MenuItem value="">Tous</MenuItem>
-          {[...new Set(bonsCommande.flatMap((bon) => bon.lignes.map((ligne) => ligne.article.libelle)))].map((article, index) => (
+          {[...new Set(bonsReception.flatMap((bon) => bon.lignes.map((ligne) => ligne.article.libelle)))].map((article, index) => (
             <MenuItem key={index} value={article}>
               {article}
             </MenuItem>
@@ -372,7 +335,7 @@ const handleEditBonCommande = (bonCommande) => {
           onChange={(e) => handleFilterChange("year", e.target.value)}
         >
           <MenuItem value="">Toutes</MenuItem>
-          {[...new Set(bonsCommande.map((bon) => new Date(bon.dateCommande).getFullYear().toString()))].map((year, index) => (
+          {[...new Set(bonsReception.map((bon) => new Date(bon.dateReception).getFullYear().toString()))].map((year, index) => (
             <MenuItem key={index} value={year}>
               {year}
             </MenuItem>
@@ -409,31 +372,33 @@ const handleEditBonCommande = (bonCommande) => {
     </Box>
   </Drawer>
 
-  {/* Tableau des bons de commande */}
+  {/* Tableau des bons de réception */}
   <TableContainer component={Paper} sx={{ mt: 3, boxShadow: 3 }}>
-    <Table sx={{ minWidth: 650 }} aria-label="simple table">
+    <Table sx={{ minWidth: 550 }} aria-label="simple table">
       <TableHead>
         <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-          <TableCell sx={{ fontWeight: "bold" }}>Numéro de commande</TableCell>
-          <TableCell sx={{ fontWeight: "bold" }}>Date de commande</TableCell>
+          <TableCell sx={{ fontWeight: "bold" }}>Numéro de réception</TableCell>
+          <TableCell sx={{ fontWeight: "bold" }}>Date de réception</TableCell>
           <TableCell sx={{ fontWeight: "bold" }}>Fournisseur</TableCell>
           <TableCell sx={{ fontWeight: "bold" }}>Total HT</TableCell>
           <TableCell sx={{ fontWeight: "bold" }}>Total TTC</TableCell>
           <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
+          <TableCell sx={{ fontWeight: "bold" }}>Facturer</TableCell>
+
         </TableRow>
       </TableHead>
       <TableBody>
-        {paginatedBonsCommande.map((bonCommande, index) => (
+        {paginatedBonsReception.map((bonReception, index) => (
           <TableRow key={index} sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
-            <TableCell>{bonCommande.numero_Bon}</TableCell>
-            <TableCell>{new Date(bonCommande.dateCommande).toLocaleDateString()}</TableCell>
-            <TableCell>{bonCommande.fournisseur ? bonCommande.fournisseur.raison_sociale : "Non spécifié"}</TableCell>
-            <TableCell>{bonCommande.total_hors_Taxe} TND</TableCell>
-            <TableCell>{bonCommande.total_ttc} TND</TableCell>
+            <TableCell>{bonReception.numero_Bon}</TableCell>
+            <TableCell>{new Date(bonReception.dateReception).toLocaleDateString()}</TableCell>
+            <TableCell>{bonReception.fournisseur ? bonReception.fournisseur.raison_sociale : "Non spécifié"}</TableCell>
+            <TableCell>{bonReception.total_hors_Taxe} TND</TableCell>
+            <TableCell>{bonReception.total_ttc} TND</TableCell>
             <TableCell>
   {/* Icône pour "Détails" */}
   <IconButton
-    onClick={() => handleOpenModal(bonCommande)}
+    onClick={() => handleOpenModal(bonReception)}
     sx={{ color: "black" }} // Couleur noire
   >
     <Visibility />
@@ -441,7 +406,7 @@ const handleEditBonCommande = (bonCommande) => {
 
   {/* Icône pour "Supprimer" */}
   <IconButton
-    onClick={() => handleDeleteBonCommande(bonCommande._id)}
+    onClick={() => handleDeleteBonReception(bonReception._id)}
     sx={{ color: "black" }} // Couleur noire
   >
     <Delete />
@@ -449,18 +414,27 @@ const handleEditBonCommande = (bonCommande) => {
 
   {/* Icône pour "Modifier" */}
   <IconButton
-    onClick={() => navigate(`/ListeBonCommandeFournisseur/update/${bonCommande._id}`)}
+    onClick={() => navigate(`/ListeBonReceptionFournisseur/update/${bonReception._id}`)}
     sx={{ color: "black" }} // Couleur noire
   >
     <Edit />
   </IconButton>
+  {/* Icone pour Download */}
   <IconButton
-  onClick={() => handleDownload(bonCommande)}
+  onClick={() => handleDownload(bonReception)}
   sx={{ color: "black" }} // Couleur noire
 >
   <FileDownloadIcon />
 </IconButton>
-
+  </TableCell>
+   {/* Facturer */}
+  <TableCell>
+<IconButton
+  onClick={() => handleDownloadFacture(bonReception)}
+  sx={{ color: "black" }} // Couleur noire
+>
+  <ReceiptIcon />
+</IconButton>
 </TableCell>
           </TableRow>
         ))}
@@ -480,7 +454,7 @@ const handleEditBonCommande = (bonCommande) => {
     </Button>
     <Button
       variant="contained"
-      disabled={currentPage * itemsPerPage >= filteredBonsCommande.length}
+      disabled={currentPage * itemsPerPage >= filteredBonsReception.length}
       onClick={() => setCurrentPage(currentPage + 1)}
     >
       Suivant
@@ -488,15 +462,11 @@ const handleEditBonCommande = (bonCommande) => {
   </Box>
   <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
     <Typography variant="body1">
-      Page {currentPage} sur {Math.ceil(filteredBonsCommande.length / itemsPerPage)}
+      Page {currentPage} sur {Math.ceil(filteredBonsReception.length / itemsPerPage)}
     </Typography>
   </Box>
 </Box>
-
-         
-
-
-          {/* Pop-up pour afficher les détails du bon de commande */}
+          {/* Pop-up pour afficher les détails du bon de Reception */}
           <Modal
             open={isModalOpen}
             onClose={handleCloseModal}
@@ -523,10 +493,10 @@ const handleEditBonCommande = (bonCommande) => {
                   overflowY: "auto",
                 }}
               >
-                {selectedBonCommande && (
+                {selectedBonReception && (
                   <>
                     <Typography variant="h4" component="h2" sx={{ mb: 3 }}>
-                      Détails du Bon de Commande N° {selectedBonCommande.numero_Bon}
+                      Détails du Bon de Reception N° {selectedBonReception.numero_Bon}
                     </Typography>
 
                     {/* Informations de base */}
@@ -534,21 +504,21 @@ const handleEditBonCommande = (bonCommande) => {
                       Informations Générales
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
-                      <strong>Date de commande:</strong> {new Date(selectedBonCommande.dateCommande).toLocaleDateString()}
+                      <strong>Date de Reception:</strong> {new Date(selectedBonReception.dateReception).toLocaleDateString()}
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
-                      <strong>Fournisseur:</strong> {selectedBonCommande.fournisseur ? selectedBonCommande.fournisseur.raison_sociale : "Non spécifié"}
+                      <strong>Fournisseur:</strong> {selectedBonReception.fournisseur ? selectedBonReception.fournisseur.raison_sociale : "Non spécifié"}
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
-                      <strong>Total HT:</strong> {selectedBonCommande.total_hors_Taxe} TND
+                      <strong>Total HT:</strong> {selectedBonReception.total_hors_Taxe} TND
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
-                      <strong>Total TTC:</strong> {selectedBonCommande.total_ttc} TND
+                      <strong>Total TTC:</strong> {selectedBonReception.total_ttc} TND
                     </Typography>
 
-                    {/* Lignes de commande */}
+                    {/* Lignes de bon Reception */}
                     <Typography variant="h6" sx={{ mt: 3, mb: 2 }}>
-                      Articles Commandés
+                      Articles Réceptionnées
                     </Typography>
                     <TableContainer component={Paper}>
                       <Table>
@@ -562,7 +532,7 @@ const handleEditBonCommande = (bonCommande) => {
                           </TableRow>
                         </TableHead>
                         <TableBody>
-                          {selectedBonCommande.lignes.map((ligne, index) => (
+                          {selectedBonReception.lignes.map((ligne, index) => (
                             <TableRow key={index}>
                               <TableCell>{ligne.article ? ligne.article.libelle : 'Article inconnu'}</TableCell>
                               <TableCell>{ligne.quantite}</TableCell>
@@ -575,12 +545,12 @@ const handleEditBonCommande = (bonCommande) => {
                       </Table>
                     </TableContainer>
 
-                    {/* Bouton pour modifier le bon de commande */}
+                    {/* Bouton pour modifier le bon de Reception */}
                     <Button
                       variant="contained"
                       color="warning"
                       sx={{ mt: 2, mr: 65 }}
-                      onClick={() => handleEditBonCommande(selectedBonCommande)}
+                      onClick={() => handleEditBonReception(selectedBonReception)}
                     >
                       Modifier
                     </Button>
@@ -598,10 +568,37 @@ const handleEditBonCommande = (bonCommande) => {
               </Box>
             </Fade>
           </Modal>
+{/* Prévisualisation de facture */}
+          <Dialog open={openPreviewModal} onClose={() => setOpenPreviewModal(false)} maxWidth="md" fullWidth>
+  <DialogTitle>Prévisualisation de la Facture</DialogTitle>
+  <DialogContent>
+    <iframe
+      src={pdfUrl}
+      width="100%"
+      height="500px"
+      style={{ border: "none" }}
+      title="Prévisualisation de la Facture"
+    />
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={() => setOpenPreviewModal(false)}>Fermer</Button>
+    <Button
+      onClick={() => {
+        const link = document.createElement("a");
+        link.href = pdfUrl;
+        link.download = `facture_${selectedBonReception?.numero_Bon}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }}
+      color="primary"
+    >
+      Télécharger
+    </Button>
+  </DialogActions>
+</Dialog>
 
-
-
-          {/* Formulaire de modification */}
+        
         
           
         

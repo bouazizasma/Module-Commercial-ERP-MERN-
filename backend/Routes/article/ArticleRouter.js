@@ -30,7 +30,7 @@ router.get('/:id', getArticleByID);
  * @desc    
  * @access  
  */
-router.put('/:id', updateArticle);
+router.put('/:id', upload.single('image_article'), updateArticle);
 
 /**
  * @route  

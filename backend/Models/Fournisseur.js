@@ -64,8 +64,5 @@ const FournisseurSchema = new Schema({
        // required: [true, 'Le champ taux_retenu est obligatoire.'],
     }
 });
-
-
-
 const FournisseurModel = mongoose.model('fournisseur', FournisseurSchema);
 module.exports = FournisseurModel;

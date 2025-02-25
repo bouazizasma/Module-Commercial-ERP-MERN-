@@ -16,7 +16,6 @@ const ClientSchema = new Schema({
         type: String,
       //  required: [true, 'Le champ matricule_fiscale est obligatoire.'],
         unique: true
-
     },
     adresse: {
         type: String,
@@ -62,12 +61,7 @@ const ClientSchema = new Schema({
         type: String,
        // required: [true, 'Le champ taux_retenu est obligatoire.'],
     }
-    
-    
    
 });
-
-
-
 const ClientModel = mongoose.model('client', ClientSchema);
 module.exports = ClientModel;

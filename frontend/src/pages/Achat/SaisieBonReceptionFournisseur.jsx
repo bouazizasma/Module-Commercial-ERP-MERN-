@@ -20,7 +20,7 @@ import 'react-pdf/dist/esm/Page/TextLayer.css';
 // Configurez le worker avec un CDN
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-export default function BonCommandeFournisseur() {
+export default function BonReceptionFournisseur() {
   const [fournisseurs, setFournisseurs] = useState([]);
   const [articles, setArticles] = useState([]);
   const [depots, setDepots] = useState([]);
@@ -30,7 +30,7 @@ export default function BonCommandeFournisseur() {
   const [quantite, setQuantite] = useState(1);
   const [prixUnitaire, setPrixUnitaire] = useState(0);
   const [lignes, setLignes] = useState([]);
-  const [dateCommande, setDateCommande] = useState(new Date());
+  const [dateReception, setDateReception] = useState(new Date());
   const [adresse, setAdresse] = useState('');
   const [matriculeFiscale, setMatriculeFiscale] = useState('');
   const [totalHT, setTotalHT] = useState(0);
@@ -38,7 +38,7 @@ export default function BonCommandeFournisseur() {
   const [openModal, setOpenModal] = useState(false);
   const [pdfUrl, setPdfUrl] = useState('');
   const [openSuccessModal, setOpenSuccessModal] = useState(false);
-  const [bonCommande, setBonCommande] = useState(null); // Nouvel état pour stocker le bon de commande
+  const [bonRception, setBonRception] = useState(null); // Nouvel état pour stocker le bon de réception
 
   useEffect(() => {
     axios.get("http://localhost:5000/fournisseur/fournisseurs").then(response => setFournisseurs(response.data));
@@ -67,90 +67,55 @@ export default function BonCommandeFournisseur() {
   const handleRemoveLigne = (index) => {
     setLignes(lignes.filter((_, i) => i !== index));
   };
-
-  {/*const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedFournisseur || lignes.length === 0 || !selectedDepot) {
-      alert("Veuillez remplir tous les champs.");
-      return;
-    }
-    const bonCommande = {
-      fournisseur: selectedFournisseur,
-      lignes,
-      total_ht: totalHT,
-      total_ttc: totalTTC,
-      depot: selectedDepot,
-      dateCommande: dateCommande.toISOString(),
-    };
-    try {
-      const response = await axios.post("http://localhost:5000/boncommandeF/create", bonCommande);
-      alert('Bon de commande créé avec succès !');
-      const pdfBlob = generatePDF(bonCommande);
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      console.log("PDF URL:", pdfUrl); // Ajoutez ce log pour vérifier l'URL
-      setPdfUrl(pdfUrl);
-      setOpenModal(true);
-      setSelectedFournisseur('');
-      setSelectedArticle('');
-      setLignes([]);
-      setSelectedDepot('');
-      setDateCommande(new Date());
-    } catch (error) {
-      console.error("Erreur lors de la création du bon de commande:", error);
-      alert("Erreur lors de la création du bon de commande.");
-    }
-  };
-*/}
-
 const handleSubmit = async (e) => {
   e.preventDefault();
   if (!selectedFournisseur || lignes.length === 0 || !selectedDepot) {
     alert("Veuillez remplir tous les champs.");
     return;
   }
-  const bonCommande = {
+  const bonRception = {
     fournisseur: selectedFournisseur,
     lignes,
     total_ht: totalHT,
     total_ttc: totalTTC,
     depot: selectedDepot,
-    dateCommande: dateCommande.toISOString(),
+    dateReception: dateReception.toISOString(),
   };
   try {
-    const response = await axios.post("http://localhost:5000/achat/BCF/create", bonCommande);
-    setBonCommande(bonCommande); // Stocker le bon de commande dans l'état
+    const response = await axios.post("http://localhost:5000/achat/BEF/create", bonRception);
+    setBonRception(bonRception); // Stocker le bon de réception dans l'état
     setOpenSuccessModal(true); // Afficher la pop-up de succès
       } catch (error) {
-    console.error("Erreur lors de la création du bon de commande:", error);
-    alert("Erreur lors de la création du bon de commande.");
+    console.error("Erreur lors de la création du bon de réception:", error);
+    alert("Erreur lors de la création du bon de réception.");
   }
 };
 
 const handleSuccessModalClose = () => {
   setOpenSuccessModal(false); // Fermer la pop-up de succès
-  if (bonCommande) {
-    const pdfBlob = generatePDF(bonCommande); // Générer le PDF
+  if (bonRception) {
+    const pdfBlob = generatePDF(bonRception); // Générer le PDF
     const pdfUrl = URL.createObjectURL(pdfBlob); // Créer l'URL du PDF
     setPdfUrl(pdfUrl); // Mettre à jour l'état avec l'URL du PDF
     setOpenModal(true); // Ouvrir la modal de prévisualisation du PDF
   }
 };
 
-  const generatePDF = (bonCommande) => {
+  const generatePDF = (bonRception) => {
     const doc = new jsPDF();
     doc.setFontSize(18);
-    doc.text("Bon de Commande", 10, 10);
+    doc.text("Bon de Reception", 10, 10);
     doc.setFontSize(12);
-    doc.text(`Commande N°: ${bonCommande.numero_commande}`, 10, 20);
-    doc.text(`Date Commande: ${new Date(bonCommande.dateCommande).toLocaleDateString()}`, 10, 30);
-    const fournisseur = fournisseurs.find(f => f._id === bonCommande.fournisseur);
+    doc.text(`bon de receptionn N°: ${bonRception.numero_Bon}`, 10, 20);
+    doc.text(`Date Reception: ${new Date(bonRception.dateReception).toLocaleDateString()}`, 10, 30);
+    const fournisseur = fournisseurs.find(f => f._id === bonRception.fournisseur);
     doc.text(`À l'intention de: ${fournisseur.raison_sociale}`, 10, 40);
     doc.text(`Adresse: ${fournisseur.adresse || 'N/A'}`, 10, 50);
     doc.text(`Téléphone: ${fournisseur.telephone || 'N/A'}`, 10, 60);
     doc.autoTable({
       startY: 70,
       head: [['Article', 'Quantité', 'Prix Unitaire', 'Total']],
-      body: bonCommande.lignes.map(ligne => [
+      body: bonRception.lignes.map(ligne => [
         ligne.libelle,
         ligne.quantite,
         `${ligne.prix_unitaire.toFixed(2)} TND`,
@@ -169,7 +134,7 @@ const handleSuccessModalClose = () => {
   const handleDownload = () => {
     const link = document.createElement('a');
     link.href = pdfUrl;
-    link.download = 'bon_de_commande.pdf';
+    link.download = 'bon_de_Reception.pdf';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -183,7 +148,7 @@ const handleSuccessModalClose = () => {
       <Box sx={{ display: "flex" }}>
         <Sidenav />
         <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: "auto", maxHeight: "100vh" }}>
-          <Typography variant="h4" sx={{ mb: 3 }}>Créer un bon de commande fournisseur</Typography>
+          <Typography variant="h4" sx={{ mb: 3 }}>Créer un bon de Réception fournisseur</Typography>
           {/* Fournisseur*/}
           <Card sx={{ mb: 3 }}>
             <CardContent>
@@ -219,9 +184,9 @@ const handleSuccessModalClose = () => {
                 <Grid item xs={12} sm={6} md={4}>
                   <LocalizationProvider dateAdapter={AdapterDateFns}>
                     <DatePicker
-                      label="Date de commande"
-                      value={dateCommande}
-                      onChange={(newValue) => setDateCommande(newValue)}
+                      label="Date de Reception"
+                      value={dateReception}
+                      onChange={(newValue) => setDateReception(newValue)}
                       renderInput={(params) => <TextField {...params} fullWidth />}
                     />
                   </LocalizationProvider>
@@ -362,7 +327,7 @@ const handleSuccessModalClose = () => {
               {/* Bouton à droite */}
               <Grid item>
                 <Button type="submit" variant="contained" color="primary" onClick={handleSubmit}>
-                  Créer le bon de commande
+                  Créer le bon de Réception
                 </Button>
               </Grid>
             </Grid>
@@ -372,7 +337,7 @@ const handleSuccessModalClose = () => {
       <Dialog open={openSuccessModal} onClose={handleSuccessModalClose}>
   <DialogTitle>Succès</DialogTitle>
   <DialogContent>
-    <Typography>Le bon de commande a été créé avec succès.</Typography>
+    <Typography>Le bon de réception a été créé avec succès.</Typography>
   </DialogContent>
   <DialogActions>
     <Button onClick={handleSuccessModalClose} color="primary">
@@ -383,7 +348,7 @@ const handleSuccessModalClose = () => {
 
       {/* Modal pour afficher le PDF */}
       <Dialog open={openModal} onClose={handleCloseModal} maxWidth="md" fullWidth>
-        <DialogTitle>Prévisualisation du Bon de Commande</DialogTitle>
+        <DialogTitle>Prévisualisation du Bon de réception</DialogTitle>
         <DialogContent>
         <Document file={pdfUrl}
         onLoadSuccess={() => console.log("PDF loaded successfully")}

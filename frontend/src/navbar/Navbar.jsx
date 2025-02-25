@@ -16,9 +16,13 @@ import MailIcon from "@mui/icons-material/Mail";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import MoreIcon from "@mui/icons-material/MoreVert";
 import { useAppStore } from "../appStore";
+import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react'
+
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListIcon from '@mui/icons-material/List';
 //import { Update } from "@mui/icons-material";
+import { handleError, handleSuccess } from '../utils';
 
 const AppBar = styled(
   MuiAppBar,
@@ -92,7 +96,19 @@ export default function Navbar() {
   const handleMobileMenuOpen = (event) => {
     setMobileMoreAnchorEl(event.currentTarget);
   };
-
+  const [loggedInUser, setLoggedInUser] = useState('');
+        const navigate = useNavigate();
+        useEffect(() => {
+            setLoggedInUser(localStorage.getItem('loggedInUser'))
+        }, [])
+        const handleLogout = (e) => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('loggedInUser');
+            handleSuccess('User Loggedout');
+            setTimeout(() => {
+                navigate('/login');
+            }, 1000)
+        }
   const menuId = "primary-search-account-menu";
   const renderMenu = (
     <Menu
@@ -112,6 +128,8 @@ export default function Navbar() {
     >
       <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
       <MenuItem onClick={handleMenuClose}>My account</MenuItem>
+      <MenuItem onClick={handleLogout}>LOGOUT</MenuItem>
+
     </Menu>
   );
 

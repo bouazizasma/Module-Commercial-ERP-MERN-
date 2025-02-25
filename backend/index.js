@@ -10,9 +10,10 @@ const ClientRouter =require('./Routes/ClientRouter');
 const ArticleRouter = require ('./Routes/article/ArticleRouter');
 const CategorieArticleRouter = require ('./Routes/article/CategorieArticleRouter');
 const FamilleArticleRouter=require ('./Routes/article/FamilleArticleRouter');
-const BonCommandeFournisseur  =require('./Routes/achat/BonCommandeRouter');
+const EnteteAchatRouter  =require('./Routes/achat/EnteteAchatRouter');
 const Depot = require('./Routes/DepotRouter');
-const LigneCommandeFournisseur = require ('./Routes/achat/LignesCommandeFournisseurRouter');
+const LignesAchatRouter = require ('./Routes/achat/LignesAchatRouter');
+const factureFournisseurRouter = require ('./Routes/achat/FactureFournisseurRouter');
 require('dotenv').config();
 require('./Models/db');
 const PORT = process.env.PORT || 5000;
@@ -32,8 +33,9 @@ app.use('/client', ClientRouter);
 app.use('/article', ArticleRouter);
 app.use('/categorieArticle', CategorieArticleRouter);
 app.use('/familleArticle', FamilleArticleRouter);
-app.use('/boncommandeF', BonCommandeFournisseur);
-app.use('/ligneCommandeF', LigneCommandeFournisseur);
+app.use('/achat', EnteteAchatRouter);
+app.use('/Lachat', LignesAchatRouter);
+app.use("/factureF", factureFournisseurRouter);
 app.use('/depot', Depot);
 
 

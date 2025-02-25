@@ -51,7 +51,7 @@ export default function UpdateCategorieArticle() {
     {/* Navbar fixe */}
           <Navbar />
           <Box height={100} />
-         < Box sx={{ display: "flex" }}>
+         < Box sx={{ display: "flex"  }}>
         {/* Sidenav */}
         <Sidenav />
         {/* Contenu principal */}
@@ -62,6 +62,7 @@ export default function UpdateCategorieArticle() {
             p: 3,
             overflow: "auto", // Activer le scroll pour le contenu
             maxHeight: "100vh", // Fixer une hauteur maximale pour le contenu principal
+            
           }}
         >
      <Box

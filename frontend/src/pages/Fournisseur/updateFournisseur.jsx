@@ -1,10 +1,21 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { TextField, Button, Grid } from "@mui/material";
+import {
+  TextField,
+  Button,
+  Grid,
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+} from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Navbar from "../../navbar/Navbar";
 import Sidenav from "../../navbar/Sidenav";
-import { useParams, useNavigate } from "react-router-dom"; // Add useNavigate
-import Box from "@mui/material/Box";
+import { useParams, useNavigate } from "react-router-dom";
 
 export default function UpdateFournisseur() {
   const { id } = useParams(); // Get the ID from the URL
@@ -70,177 +81,165 @@ export default function UpdateFournisseur() {
 
   return (
     <>
-    {/* Navbar fixe */}
-          <Navbar />
-          <Box height={100} />
-         < Box sx={{ display: "flex" }}>
-        {/* Sidenav */}
+      <Navbar />
+      <Box height={100} />
+      <Box sx={{ display: "flex" }}>
         <Sidenav />
-        {/* Contenu principal */}
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            p: 3,
-            overflow: "auto", // Activer le scroll pour le contenu
-            maxHeight: "100vh", // Fixer une hauteur maximale pour le contenu principal
-          }}
-        >
-     <Box
-            sx={{
-              position: "sticky",
-              top: 0,
-              zIndex: 2,
-              backgroundColor: "#fff",
-              paddingBottom: "10px",
-              borderBottom: "1px solid #ddd",
-            }}
-          >
+        <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: "auto", maxHeight: "100vh" }}>
           <h2>Modifier un Fournisseur</h2>
+
           <form>
-            <Grid container spacing={3}>
-              <Grid item xs={4}>
-                <TextField
-                  name="raison_sociale"
-                  label="Raison Sociale"
-                  fullWidth
-                  margin="normal"
-                  value={formData.raison_sociale}
-                  onChange={handleChange}
-                />
-              </Grid>
-              <Grid item xs={4}>
-                <TextField
-                  name="matricule_fiscale"
-                  label="Matricule Fiscale"
-                  fullWidth
-                  margin="normal"
-                  value={formData.matricule_fiscale}
-                  onChange={handleChange}
-                />
-              </Grid>
-              <Grid item xs={4}>
-                <TextField
-                  name="adresse"
-                  label="Adresse"
-                  fullWidth
-                  margin="normal"
-                  value={formData.adresse}
-                  onChange={handleChange}
-                />
-              </Grid>
-              <Grid item xs={4}>
-                <TextField
-                  name="telephone1"
-                  label="Téléphone 1"
-                  fullWidth
-                  margin="normal"
-                  value={formData.telephone[0] || ""}
-                  onChange={handleChange}
-                />
-              </Grid>
-              <Grid item xs={4}>
-                <TextField
-                  name="telephone2"
-                  label="Téléphone 2"
-                  fullWidth
-                  margin="normal"
-                  value={formData.telephone[1] || ""}
-                  onChange={handleChange}
-                />
-              </Grid>
-              <Grid item xs={4}>
-                <TextField
-                  name="fax"
-                  label="Fax"
-                  fullWidth
-                  margin="normal"
-                  value={formData.fax}
-                  onChange={handleChange}
-                />
-              </Grid>
-              
-              <Grid item xs={4}>
-                <TextField
-                  name="register_commerce"
-                  label="Register Commerce"
-                  fullWidth
-                  margin="normal"
-                  value={formData.register_commerce}
-                  onChange={handleChange}
-                />
-              </Grid>
-              <Grid item xs={4}>
-                <TextField
-                  name="solde_initial"
-                  label="Solde Initial"
-                  fullWidth
-                  margin="normal"
-                  value={formData.solde_initial}
-                  onChange={handleChange}
-                />
-              </Grid>
-              <Grid item xs={4}>
-                <TextField
-                  name="montant_rapprochement"
-                  label="Montant Rapprochement"
-                  fullWidth
-                  margin="normal"
-                  value={formData.montant_rapprochement}
-                  onChange={handleChange}
-                />
-              </Grid>
-              <Grid item xs={4}>
-                <TextField
-                  name="code_rapprochement"
-                  label="Code Rapprochement"
-                  fullWidth
-                  margin="normal"
-                  value={formData.code_rapprochement}
-                  onChange={handleChange}
-                />
-              </Grid>
-              <Grid item xs={4}>
-                <TextField
-                  name="rapebe"
-                  label="Rapprochement Bon Entrée "
-                  fullWidth
-                  margin="normal"
-                  value={formData.rapebe}
-                  onChange={handleChange}
-                />
-              </Grid>
-              <Grid item xs={4}>
-                <TextField
-                  name="solde_initial_ebe"
-                  label="Solde Initial De Bon Entrée "
-                  fullWidth
-                  margin="normal"
-                  value={formData.solde_initial_ebe}
-                  onChange={handleChange}
-                />
-              </Grid>
-              <Grid item xs={4}>
-                <TextField
-                  name="montant_paie_ebe"
-                  label="Montant Paie De Bon Entrée "
-                  fullWidth
-                  margin="normal"
-                  value={formData.montant_paie_ebe}
-                  onChange={handleChange}
-                />
-              </Grid>
-              <Grid item xs={4}>
-                <TextField
-                  name="taux_retenu"
-                  label="Taux Retenu "
-                  fullWidth
-                  margin="normal"
-                  value={formData.taux_retenu}
-                  onChange={handleChange}
-                />
-              </Grid>
-            </Grid>
+            {/* Informations Générales */}
+            <Card sx={{ mb: 3 }}>
+              <CardContent>
+                <Typography variant="h6" sx={{ textAlign: 'left' }}>Informations Générales</Typography>
+                <Grid container spacing={3}>
+                  <Grid item xs={3}>
+                    <TextField
+                      name="raison_sociale"
+                      label="Raison Sociale"
+                      fullWidth
+                      value={formData.raison_sociale}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+                  <Grid item xs={3}>
+                    <TextField
+                      name="matricule_fiscale"
+                      label="Matricule Fiscale"
+                      fullWidth
+                      value={formData.matricule_fiscale}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+                  <Grid item xs={3}>
+                    <TextField
+                      name="adresse"
+                      label="Adresse"
+                      fullWidth
+                      value={formData.adresse}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+                  <Grid item xs={3}>
+                    <TextField
+                      name="telephone1"
+                      label="Téléphone 1"
+                      fullWidth
+                      value={formData.telephone[0] || ""}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+                  <Grid item xs={3}>
+                    <TextField
+                      name="telephone2"
+                      label="Téléphone 2"
+                      fullWidth
+                      value={formData.telephone[1] || ""}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+                  <Grid item xs={3}>
+                    <TextField
+                      name="fax"
+                      label="Fax"
+                      fullWidth
+                      value={formData.fax}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+
+            {/* Informations Complémentaires */}
+            <Card sx={{ mb: 3 }}>
+              <CardContent>
+                <Accordion>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography variant="h6">Informations Complémentaires</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Grid container spacing={3}>
+                      <Grid item xs={3}>
+                        <TextField
+                          name="register_commerce"
+                          label="Register Commerce"
+                          fullWidth
+                          value={formData.register_commerce}
+                          onChange={handleChange}
+                        />
+                      </Grid>
+                      <Grid item xs={3}>
+                        <TextField
+                          name="solde_initial"
+                          label="Solde Initial"
+                          fullWidth
+                          value={formData.solde_initial}
+                          onChange={handleChange}
+                        />
+                      </Grid>
+                      <Grid item xs={3}>
+                        <TextField
+                          name="montant_rapprochement"
+                          label="Montant Rapprochement"
+                          fullWidth
+                          value={formData.montant_rapprochement}
+                          onChange={handleChange}
+                        />
+                      </Grid>
+                      <Grid item xs={3}>
+                        <TextField
+                          name="code_rapprochement"
+                          label="Code Rapprochement"
+                          fullWidth
+                          value={formData.code_rapprochement}
+                          onChange={handleChange}
+                        />
+                      </Grid>
+                      <Grid item xs={3}>
+                        <TextField
+                          name="rapebe"
+                          label="RAPEBE"
+                          fullWidth
+                          value={formData.rapebe}
+                          onChange={handleChange}
+                        />
+                      </Grid>
+                      <Grid item xs={3}>
+                        <TextField
+                          name="solde_initial_ebe"
+                          label="Solde Initial ebe"
+                          fullWidth
+                          value={formData.solde_initial_ebe}
+                          onChange={handleChange}
+                        />
+                      </Grid>
+                      <Grid item xs={3}>
+                        <TextField
+                          name="montant_paie_ebe"
+                          label="Montant paie ebe"
+                          fullWidth
+                          value={formData.montant_paie_ebe}
+                          onChange={handleChange}
+                        />
+                      </Grid>
+                      <Grid item xs={3}>
+                        <TextField
+                          name="taux_retenu"
+                          label="Taux Retenu"
+                          fullWidth
+                          value={formData.taux_retenu}
+                          onChange={handleChange}
+                        />
+                      </Grid>
+                    </Grid>
+                  </AccordionDetails>
+                </Accordion>
+              </CardContent>
+            </Card>
+
+            {/* Bouton de mise à jour */}
             <Button
               onClick={updateFournisseur}
               color="warning"
@@ -252,8 +251,6 @@ export default function UpdateFournisseur() {
           </form>
         </Box>
       </Box>
-      </Box>
-
     </>
   );
 }

@@ -114,7 +114,7 @@ export default function CreateArticle() {
 {/* Info Générales*/}
             <Card sx={{ mb: 3 }}>
               <CardContent>
-                <Typography variant="h6">Informations Générales</Typography>
+                <Typography variant="h6" sx={{ textAlign: 'left' }}>Informations Générales</Typography>
                 <Grid container spacing={3}>
                   {/* Libelle Article*/}
                   <Grid item xs={3}>

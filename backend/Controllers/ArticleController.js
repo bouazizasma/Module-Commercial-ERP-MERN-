@@ -18,16 +18,16 @@ const getArticles = async (req, res) => {
 const createArticle = async (req, res) => {
     const {
         libelle,
-        libelleFamille,
+        libelleFamille,   
         Nombre_unite,
         tva,
         type,
         prix_brut,
         remise,
-        prix_net,
+        prix_net, 
         marge,
         prixht,
-        prix_totale_concré,
+        prix_totale_concre,
         gestion_configuration,
         configuration,
         serie, // <- Ici
@@ -123,12 +123,9 @@ const createArticle = async (req, res) => {
     }
 };
 //GetbyID
- const getArticleByID = async (req, res) => { 
+{/*} const getArticleByID = async (req, res) => { 
     try {
-        const article = await Article.findById(req.params.id)
-        .populate('codeFamille')
-        .populate('codeCategorie')
-        ;
+        const article = await Article.findById(req.params.id).populate('libelleFamille').populate('libeleCategorie');
         if (!article) {
             return res.status(404).json({ message: 'Article not found' });
           }
@@ -137,24 +134,171 @@ const createArticle = async (req, res) => {
     } catch (error) {
         res.status(404).json({ message: error.message });
     }
-};
-//update
- const updateArticle= async (req, res) => {
-    const { id } = req.params;
-    const {  libelle,libelleFamille,Nombre_unite,tva,type,prix_brut,remise,prix_net,marge,prixht,prix_totale_concré,gestion_configuration,configuration,serie,libeleCategorie,lib_fournisseur,Nature,image_article,prixmin,prixmax,user_Connectée,action_user_connecté,date_modif,time_modif,prix_achat_initiale,tva_achat,dimension_article,longueur,largeur,hauteur,movement_article} = req.body;
-    
-    const familleArticle = await FamilleArticleModel.findById(codeFamile);
-    const categorieArticle = await CategorieArticleModel.findById(codeCategorie);
+}; */}
 
-    if (!familleArticle || !categorieArticle) {
-      return res.status(404).json({ message: 'Referenced FamilleArticle or CategorieArticle not found' });
+const getArticleByID = async (req, res) => {
+    try {
+      const article = await Article.findById(req.params.id)
+        .populate('libelleFamille', '_id') // Renvoie uniquement l'ID de la famille
+        .populate('libeleCategorie', '_id'); // Renvoie uniquement l'ID de la catégorie
+  
+      if (!article) {
+        return res.status(404).json({ message: 'Article not found' });
+      }
+  
+      res.status(200).json(article);
+    } catch (error) {
+      res.status(404).json({ message: error.message });
     }
-    const a1 = { libelle,libelleFamille,Nombre_unite,tva,type,prix_brut,remise,prix_net,marge,prixht,prix_totale_concré,gestion_configuration,configuration,serie,libeleCategorie,lib_fournisseur,Nature,image_article,prixmin,prixmax,user_Connectée,action_user_connecté,date_modif,time_modif,prix_achat_initiale,tva_achat,dimension_article,longueur,largeur,hauteur,movement_article, _id: id };
+  };
+//update
+{/*const updateArticle = async (req, res) => {
+    const { id } = req.params;
+    const { libelle, libelleFamille, libeleCategorie, lib_fournisseur, Nombre_unite, tva, type, prix_brut, remise, prix_net, marge, prixht, prix_totale_concre, gestion_configuration, configuration, serie, Nature, prixmin, prixmax, prix_achat_initiale, tva_achat, dimension_article, longueur, largeur, hauteur, movement_article } = req.body;
 
-    await Article.findByIdAndUpdate(id, a1);
+    // Log incoming data for debugging
+    console.log("Incoming data:", req.body);
 
-    res.json(a1);
-};
+    // Validate Article ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ message: "Invalid Article ID" });
+    }
+
+    // Validate FamilleArticle ID
+    if (libelleFamille && !mongoose.Types.ObjectId.isValid(libelleFamille)) {
+        return res.status(400).json({ message: "Invalid FamilleArticle ID" });
+    }
+
+    // Validate CategorieArticle ID
+    if (libeleCategorie && !mongoose.Types.ObjectId.isValid(libeleCategorie)) {
+        return res.status(400).json({ message: "Invalid CategorieArticle ID" });
+    }
+
+    // Validate Fournisseur ID
+    if (lib_fournisseur && !mongoose.Types.ObjectId.isValid(lib_fournisseur)) {
+        return res.status(400).json({ message: "Invalid Fournisseur ID" });
+    }
+
+    // Check references
+    if (libelleFamille) {
+        const familleArticle = await FamilleArticleModel.findById(libelleFamille);
+        if (!familleArticle) {
+            return res.status(404).json({ message: "FamilleArticle non trouvée" });
+        }
+    }
+    if (libeleCategorie) {
+        const categorieArticle = await CategorieArticleModel.findById(libeleCategorie);
+        if (!categorieArticle) {
+            return res.status(404).json({ message: "CategorieArticle non trouvée" });
+        }
+    }
+    if (lib_fournisseur) {
+        const fournisseur = await FournisseurModel.findById(lib_fournisseur);
+        if (!fournisseur) {
+            return res.status(404).json({ message: "Fournisseur non trouvé" });
+        }
+    }
+
+    // Handle image upload
+    const image_article = req.file ? req.file.buffer : null;
+
+    // Update the article
+    const updatedArticle = await Article.findByIdAndUpdate(
+        id,
+        { libelle, libelleFamille, libeleCategorie, lib_fournisseur, image_article, Nombre_unite, tva, type, prix_brut, remise, prix_net, marge, prixht, prix_totale_concre, gestion_configuration, configuration, serie, Nature, prixmin, prixmax, prix_achat_initiale, tva_achat, dimension_article, longueur, largeur, hauteur, movement_article },
+        { new: true }
+    );
+
+    res.json(updatedArticle);
+};  */}
+
+const updateArticle = async (req, res) => {
+    const { id } = req.params;
+    const { libelle, libelleFamille, libeleCategorie, lib_fournisseur, Nombre_unite, tva, type, prix_brut, remise, prix_net, marge, prixht, prix_totale_concre, gestion_configuration, configuration, serie, Nature, prixmin, prixmax, prix_achat_initiale, tva_achat, dimension_article, longueur, largeur, hauteur, movement_article } = req.body;
+  
+    // Log incoming data for debugging
+    console.log("Incoming data:", req.body);
+  
+    // Validate Article ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid Article ID" });
+    }
+  
+    // Validate FamilleArticle ID
+    if (libelleFamille && !mongoose.Types.ObjectId.isValid(libelleFamille)) {
+      return res.status(400).json({ message: "Invalid FamilleArticle ID" });
+    }
+  
+    // Validate CategorieArticle ID
+    if (libeleCategorie && !mongoose.Types.ObjectId.isValid(libeleCategorie)) {
+      return res.status(400).json({ message: "Invalid CategorieArticle ID" });
+    }
+  
+    // Validate Fournisseur ID
+    if (lib_fournisseur && !mongoose.Types.ObjectId.isValid(lib_fournisseur)) {
+      return res.status(400).json({ message: "Invalid Fournisseur ID" });
+    }
+  
+    // Check references
+    if (libelleFamille) {
+      const familleArticle = await FamilleArticleModel.findById(libelleFamille);
+      if (!familleArticle) {
+        return res.status(404).json({ message: "FamilleArticle non trouvée" });
+      }
+    }
+    if (libeleCategorie) {
+      const categorieArticle = await CategorieArticleModel.findById(libeleCategorie);
+      if (!categorieArticle) {
+        return res.status(404).json({ message: "CategorieArticle non trouvée" });
+      }
+    }
+    if (lib_fournisseur) {
+      const fournisseur = await FournisseurModel.findById(lib_fournisseur);
+      if (!fournisseur) {
+        return res.status(404).json({ message: "Fournisseur non trouvé" });
+      }
+    }
+  
+    // Handle image upload
+    const image_article = req.file ? req.file.buffer : null;
+  
+    // Update the article
+    const updatedArticle = await Article.findByIdAndUpdate(
+      id,
+      { 
+        libelle, 
+        libelleFamille, 
+        libeleCategorie, 
+        lib_fournisseur, 
+        image_article: image_article || undefined, // Conserve l'image existante si aucune nouvelle image n'est fournie
+        Nombre_unite, 
+        tva, 
+        type, 
+        prix_brut, 
+        remise, 
+        prix_net, 
+        marge, 
+        prixht, 
+        prix_totale_concre, 
+        gestion_configuration, 
+        configuration, 
+        serie, 
+        Nature, 
+        prixmin, 
+        prixmax, 
+        prix_achat_initiale, 
+        tva_achat, 
+        dimension_article, 
+        longueur, 
+        largeur, 
+        hauteur, 
+        movement_article 
+      },
+      { new: true }
+    );
+  
+    res.json(updatedArticle);
+  };
 //delete
 const deleteArticle = async (req, res) => {
     try {
@@ -177,5 +321,100 @@ const deleteArticle = async (req, res) => {
         res.status(500).json({ message: 'Erreur du serveur.', error });
     }
 };
+//update
+{/*const updateArticle = async (req, res) => {
+    const { id } = req.params;
+    const { libelle, libelleFamille, libeleCategorie, lib_fournisseur, ...rest } = req.body;
+  
+    // Vérifier que les ObjectId sont valides
+    if (libelleFamille && !mongoose.Types.ObjectId.isValid(libelleFamille)) {
+      return res.status(400).json({ message: "libelleFamille n'est pas un ObjectId valide" });
+    }
+    if (libeleCategorie && !mongoose.Types.ObjectId.isValid(libeleCategorie)) {
+      return res.status(400).json({ message: "libeleCategorie n'est pas un ObjectId valide" });
+    }
+    if (lib_fournisseur && !mongoose.Types.ObjectId.isValid(lib_fournisseur)) {
+      return res.status(400).json({ message: "lib_fournisseur n'est pas un ObjectId valide" });
+    }
+  
+    // Vérifier les références
+    if (libelleFamille) {
+      const familleArticle = await FamilleArticleModel.findById(libelleFamille);
+      if (!familleArticle) {
+        return res.status(404).json({ message: "FamilleArticle non trouvée" });
+      }
+    }
+    if (libeleCategorie) {
+      const categorieArticle = await CategorieArticleModel.findById(libeleCategorie);
+      if (!categorieArticle) {
+        return res.status(404).json({ message: "CategorieArticle non trouvée" });
+      }
+    }
+    if (lib_fournisseur) {
+      const fournisseur = await FournisseurModel.findById(lib_fournisseur);
+      if (!fournisseur) {
+        return res.status(404).json({ message: "Fournisseur non trouvé" });
+      }
+    }
+  
+    // Mettre à jour l'article
+    const updatedArticle = await Article.findByIdAndUpdate(
+      id,
+      { libelle, libelleFamille, libeleCategorie, lib_fournisseur, ...rest },
+      { new: true }
+    );
+  
+    res.json(updatedArticle);
+  }; */}
 
+//update 
+{/*}
+  const updateArticle = async (req, res) => {
+    const { id } = req.params;
+    const { libelle, libelleFamille, libeleCategorie, lib_fournisseur, ...rest } = req.body;
+
+    // Vérifier que les ObjectId sont valides
+    if (libelleFamille && !mongoose.Types.ObjectId.isValid(libelleFamille)) {
+        return res.status(400).json({ message: "libelleFamille n'est pas un ObjectId valide" });
+    }
+    if (libeleCategorie && !mongoose.Types.ObjectId.isValid(libeleCategorie)) {
+        return res.status(400).json({ message: "libeleCategorie n'est pas un ObjectId valide" });
+    }
+    if (lib_fournisseur && !mongoose.Types.ObjectId.isValid(lib_fournisseur)) {
+        return res.status(400).json({ message: "lib_fournisseur n'est pas un ObjectId valide" });
+    }
+
+    // Vérifier les références
+    if (libelleFamille) {
+        const familleArticle = await FamilleArticleModel.findById(libelleFamille);
+        if (!familleArticle) {
+            return res.status(404).json({ message: "FamilleArticle non trouvée" });
+        }
+    }
+    if (libeleCategorie) {
+        const categorieArticle = await CategorieArticleModel.findById(libeleCategorie);
+        if (!categorieArticle) {
+            return res.status(404).json({ message: "CategorieArticle non trouvée" });
+        }
+    }
+    if (lib_fournisseur) {
+        const fournisseur = await FournisseurModel.findById(lib_fournisseur);
+        if (!fournisseur) {
+            return res.status(404).json({ message: "Fournisseur non trouvé" });
+        }
+    }
+
+    // Récupérer l'image si elle est fournie
+    const image_article = req.file ? req.file.buffer : null;
+
+    // Mettre à jour l'article
+    const updatedArticle = await Article.findByIdAndUpdate(
+        id,
+        { libelle, libelleFamille, libeleCategorie, lib_fournisseur, image_article,Nombre_unite,tva,type,prix_brut,remise,prix_net,marge,prixht,prix_totale_concre,gestion_configuration,configuration,serie,Nature, prixmin,prixmax,prix_achat_initiale,tva_achat,dimension_article,longueur,largeur,hauteur,movement_article  },
+        { new: true }
+    );
+
+    res.json(updatedArticle);
+}; 
+*/}
 module.exports={getArticles, getArticleByID, createArticle, updateArticle, deleteArticle};
