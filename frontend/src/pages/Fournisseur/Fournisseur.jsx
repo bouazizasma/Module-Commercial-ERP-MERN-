@@ -26,9 +26,12 @@ import {
   Fade,
   Typography,
   Card,
-  Grid
+  Grid,
+  Snackbar,
+  Alert,
+  CardContent
 } from "@mui/material";
-import { Visibility, Delete, Edit, Search } from "@mui/icons-material";
+import { Visibility, Delete, Edit, Search, Add, Business, Phone, Email, LocationOn, CheckCircle } from "@mui/icons-material";
 
 export default function Fournisseur() {
   const [fournisseurs, setFournisseurs] = useState([]);
@@ -38,6 +41,7 @@ export default function Fournisseur() {
   const [selectedFournisseurs, setSelectedFournisseurs] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedFournisseur, setSelectedFournisseur] = useState(null);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
   const navigate = useNavigate();
 
   const fetchFournisseurs = async () => {
@@ -93,7 +97,8 @@ export default function Fournisseur() {
   }, []);
 
   const filteredFournisseurs = fournisseurs.filter((fournisseur) =>
-    fournisseur.raison_sociale.toLowerCase().includes(searchTerm.toLowerCase())
+    fournisseur.raison_sociale.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    fournisseur.matricule_fiscale.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleSelectFournisseur = (id) => {
@@ -112,276 +117,198 @@ export default function Fournisseur() {
     }
   };
 
+  const handleDeleteClick = (fournisseur) => {
+    setSelectedFournisseur(fournisseur);
+    setOpenDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await deleteFournisseur(selectedFournisseur._id);
+      setOpenDialog(false);
+      setOpenSnackbar(true);
+    } catch (error) {
+      console.error("Erreur lors de la suppression:", error);
+    }
+  };
+
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false);
+  };
+
   return (
     <>
       <Navbar />
-      <Box height={150} />
-      <Box sx={{ overflow: "auto", flexGrow: 1, p: 3, display: "flex", backgroundColor: "#FFFFFF" }}>
+      <Box height={70} />
+      <Box sx={{ display: "flex" }}>
         <Sidenav />
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            p: 3,
-            overflow: "auto",
-            backgroundColor: "#FFFFFF",
-            maxWidth: "none",
-            maxHeight: "100vh",
-            marginLeft: "10px",
-            width: "100%",
-          }}
-        >
-          <h1>Fournisseurs</h1>
-          <Box height={50} />
+        <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: "auto", maxHeight: "100vh" }}>
+          <Card sx={{ mb: 3, boxShadow: 3, borderRadius: 2 }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h4" component="h1" sx={{ color: '#1976d2', fontWeight: 'bold' }}>
+                  <Business sx={{ mr: 1, verticalAlign: 'middle' }} />
+                  Gestion des Fournisseurs
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => navigate('/createFournisseur')}
+                  startIcon={<Add />}
+                  sx={{ 
+                    borderRadius: '8px',
+                    backgroundColor: '#1976d2',
+                    '&:hover': { backgroundColor: '#1565c0' }
+                  }}
+                >
+                  Nouveau Fournisseur
+                </Button>
+              </Box>
 
-          <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-            <TextField
-              fullWidth
-              label="Rechercher"
-              variant="outlined"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              sx={{
-                mb: 2,
-                borderRadius: "20px",
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "40px",
-                },
-                width: "400px",
-              }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton>
-                      <Search />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <Box width={150} />
-            <Button
-              variant="contained"
-              color="success"
-              sx={{ ml: 20 }}
-              onClick={() => navigate("/Fournisseur/create")}
-            >
-              Créer un fournisseur
-            </Button>
-          </Box>
-
-          {selectedFournisseurs.length > 0 && (
-            <Button
-              variant="contained"
-              color="error"
-              sx={{ mb: 2 }}
-              onClick={deleteSelectedFournisseurs}
-            >
-              Supprimer les fournisseurs sélectionnés
-            </Button>
-          )}
-
-          <TableContainer component={Paper} sx={{ mt: 3, boxShadow: 3 }}>
-            <Table>
-              <TableHead>
-                <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                  <TableCell>
-                    <Checkbox
-                      checked={selectedFournisseurs.length === filteredFournisseurs.length}
-                      indeterminate={
-                        selectedFournisseurs.length > 0 &&
-                        selectedFournisseurs.length < filteredFournisseurs.length
+              {/* Barre de recherche */}
+              <Card sx={{ mb: 3, backgroundColor: '#f8f9fa', boxShadow: 2 }}>
+                <CardContent>
+                  <TextField
+                    fullWidth
+                    label="Rechercher un fournisseur"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Search color="primary" />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px',
+                        backgroundColor: '#fff',
                       }
-                      onChange={handleSelectAll}
-                    />
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Code</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Raison Sociale</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Matricule Fiscale</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Adresse</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredFournisseurs.map((fournisseur) => (
-                  <TableRow key={fournisseur._id}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedFournisseurs.includes(fournisseur._id)}
-                        onChange={() => handleSelectFournisseur(fournisseur._id)}
-                      />
-                    </TableCell>
-                    <TableCell>{fournisseur.code}</TableCell>
-                    <TableCell>{fournisseur.raison_sociale}</TableCell>
-                    <TableCell>{fournisseur.matricule_fiscale}</TableCell>
-                    <TableCell>{fournisseur.adresse}</TableCell>
-                    <TableCell>
-                      <IconButton
-                        onClick={() => handleOpenModal(fournisseur)}
-                        sx={{ color: "black" }}
-                      >
-                        <Visibility />
-                      </IconButton>
-                      <IconButton
-                        onClick={() => handleOpenDialog(fournisseur._id)}
-                        sx={{ color: "black" }}
-                      >
-                        <Delete />
-                      </IconButton>
-                      <IconButton
-                        onClick={() => navigate(`/Fournisseur/update/${fournisseur._id}`)}
-                        sx={{ color: "black" }}
-                      >
-                        <Edit />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                    }}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Tableau des fournisseurs */}
+              <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 2 }}>
+                <Table>
+                  <TableHead>
+                    <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Raison Sociale</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Matricule Fiscale</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Téléphone</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Email</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Adresse</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {filteredFournisseurs.map((fournisseur) => (
+                      <TableRow key={fournisseur._id} hover>
+                        <TableCell>{fournisseur.raison_sociale}</TableCell>
+                        <TableCell>{fournisseur.matricule_fiscale}</TableCell>
+                        <TableCell>{fournisseur.telephone}</TableCell>
+                        <TableCell>{fournisseur.email}</TableCell>
+                        <TableCell>{fournisseur.adresse}</TableCell>
+                        <TableCell>
+                          <IconButton
+                            color="primary"
+                            onClick={() => navigate(`/updateFournisseur/${fournisseur._id}`)}
+                            sx={{ mr: 1 }}
+                          >
+                            <Edit />
+                          </IconButton>
+                          <IconButton
+                            color="error"
+                            onClick={() => handleDeleteClick(fournisseur)}
+                          >
+                            <Delete />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </CardContent>
+          </Card>
         </Box>
       </Box>
 
-      <Dialog open={openDialog} onClose={handleCloseDialog}>
-        <DialogTitle>Supprimer le fournisseur</DialogTitle>
+      {/* Dialog de confirmation de suppression */}
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        PaperProps={{
+          sx: { borderRadius: 2 }
+        }}
+      >
+        <DialogTitle>Confirmer la suppression</DialogTitle>
         <DialogContent>
-          <p>Êtes-vous sûr de vouloir supprimer ce fournisseur ?</p>
+          <Typography>
+            Êtes-vous sûr de vouloir supprimer le fournisseur "{selectedFournisseur?.raison_sociale}" ?
+          </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog} color="primary">
-            Non
+          <Button
+            onClick={() => setOpenDialog(false)}
+            sx={{ 
+              color: '#666',
+              '&:hover': { backgroundColor: '#f5f5f5' }
+            }}
+          >
+            Annuler
           </Button>
           <Button
-            onClick={() => {
-              deleteFournisseur(selectedFournisseurId);
-              handleCloseDialog();
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+            sx={{ 
+              borderRadius: '8px',
+              '&:hover': { backgroundColor: '#d32f2f' }
             }}
-            color="secondary"
           >
-            Oui
+            Supprimer
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Modal pour afficher les détails du fournisseur */}
-      <Modal
-  open={isModalOpen}
-  onClose={handleCloseModal}
-  closeAfterTransition
-  BackdropComponent={Backdrop}
-  BackdropProps={{
-    timeout: 500,
-  }}
->
-  <Fade in={isModalOpen}>
-    <Box
-      sx={{
-        position: "absolute",
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-        width: "80%",
-        maxWidth: "800px",
-        bgcolor: "#FFFFFF",
-        boxShadow: 24,
-        p: 4,
-        borderRadius: 2,
-        maxHeight: "90vh",
-        overflowY: "auto",
-      }}
-    >
-      {selectedFournisseur && (
-        <>
-          {/* Titre de la pop-up */}
-          <Typography variant="h4" component="h2" sx={{ mb: 3, fontWeight: "bold", color: "#1976d2" }}>
-            Détails du Fournisseur
+      {/* Snackbar de notification */}
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={2000}
+        onClose={handleCloseSnackbar}
+        TransitionComponent={Fade}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity="success" 
+          sx={{ 
+            width: '100%',
+            backgroundColor: '#4caf50',
+            color: 'white',
+            '& .MuiAlert-icon': {
+              color: 'white',
+            },
+            '& .MuiAlert-action': {
+              color: 'white',
+            },
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            borderRadius: '8px',
+            padding: '16px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+          }}
+        >
+          <CheckCircle sx={{ fontSize: 28 }} />
+          <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+            Le fournisseur a été supprimé avec succès !
           </Typography>
-
-          {/* Section Informations Générales */}
-          <Card sx={{ mb: 3, p: 2, boxShadow: 3 }}>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#555" }}>
-              Informations Générales
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="body1" sx={{ mb: 1 }}>
-                  <strong>Code:</strong> {selectedFournisseur.code}
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 1 }}>
-                  <strong>Raison Sociale:</strong> {selectedFournisseur.raison_sociale}
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 1 }}>
-                  <strong>Matricule Fiscale:</strong> {selectedFournisseur.matricule_fiscale}
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 1 }}>
-                  <strong>Adresse:</strong> {selectedFournisseur.adresse}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="body1" sx={{ mb: 1 }}>
-                  <strong>Téléphone:</strong> {selectedFournisseur.telephone.join(" | ")}
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 1 }}>
-                  <strong>Fax:</strong> {selectedFournisseur.fax}
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 1 }}>
-                  <strong>Register Commerce:</strong> {selectedFournisseur.register_commerce}
-                </Typography>
-              </Grid>
-            </Grid>
-          </Card>
-
-          {/* Section Informations Financières */}
-          <Card sx={{ mb: 3, p: 2, boxShadow: 3 }}>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#555" }}>
-              Informations Financières
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="body1" sx={{ mb: 1 }}>
-                  <strong>Solde Initial:</strong> {selectedFournisseur.solde_initial}
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 1 }}>
-                  <strong>Montant Rapprochement:</strong> {selectedFournisseur.montant_rapprochement}
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 1 }}>
-                  <strong>Code Rapprochement:</strong> {selectedFournisseur.code_rapprochement}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="body1" sx={{ mb: 1 }}>
-                  <strong>Rapebe:</strong> {selectedFournisseur.rapebe}
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 1 }}>
-                  <strong>Solde Initial Ebe:</strong> {selectedFournisseur.solde_initial_ebe}
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 1 }}>
-                  <strong>Montant Paie Ebe:</strong> {selectedFournisseur.montant_paie_ebe}
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 1 }}>
-                  <strong>Taux Retenu:</strong> {selectedFournisseur.taux_retenu}
-                </Typography>
-              </Grid>
-            </Grid>
-          </Card>
-
-          {/* Bouton de fermeture */}
-          <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
-            <Button
-              variant="contained"
-              color="error"
-              onClick={handleCloseModal}
-              sx={{ mt: 2 }}
-            >
-              Fermer
-            </Button>
-          </Box>
-        </>
-      )}
-    </Box>
-  </Fade>
-</Modal>
+        </Alert>
+      </Snackbar>
     </>
   );
 }

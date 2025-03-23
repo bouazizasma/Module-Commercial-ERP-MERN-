@@ -29,6 +29,11 @@ export default function BonReceptionFournisseur() {
   const [selectedDepot, setSelectedDepot] = useState('');
   const [quantite, setQuantite] = useState(1);
   const [prixUnitaire, setPrixUnitaire] = useState(0);
+  const [remise, setRemise] = useState(0);
+  const [tva, setTva] = useState(0);
+  const [dc, setDc] = useState(0);
+  const [fodec, setFodec] = useState(0);
+  const [prix_uTTC, setPrix_uTTC] = useState(0);
   const [lignes, setLignes] = useState([]);
   const [dateReception, setDateReception] = useState(new Date());
   const [adresse, setAdresse] = useState('');
@@ -47,8 +52,19 @@ export default function BonReceptionFournisseur() {
   }, []);
 
   useEffect(() => {
-    const totalHT = lignes.reduce((sum, ligne) => sum + (ligne.quantite * ligne.prix_unitaire), 0);
-    const totalTTC = totalHT * 1.2;
+    const totalHT = lignes.reduce((sum, ligne) => {
+      const montantHT = ligne.quantite * ligne.prix_unitaire;
+      const montantRemise = montantHT * (ligne.remise / 100);
+      return sum + (montantHT - montantRemise);
+    }, 0);
+    const totalTTC = lignes.reduce((sum, ligne) => {
+      const montantHT = ligne.quantite * ligne.prix_unitaire;
+      const montantRemise = montantHT * (ligne.remise / 100);
+      const montantTVA = (montantHT - montantRemise) * (ligne.tva / 100);
+      const montantDC = (montantHT - montantRemise) * (ligne.dc / 100);
+      const montantFODEC = (montantHT - montantRemise) * (ligne.fodec / 100);
+      return sum + (montantHT - montantRemise + montantTVA + montantDC + montantFODEC);
+    }, 0);
     setTotalHT(totalHT);
     setTotalTTC(totalTTC);
   }, [lignes]);
@@ -59,9 +75,33 @@ export default function BonReceptionFournisseur() {
       return;
     }
     const article = articles.find(a => a._id === selectedArticle);
-    setLignes([...lignes, { article: selectedArticle, libelle: article.libelle, quantite, prix_unitaire: article.prix_net }]);
+    const montantHT = quantite * article.prix_net;
+    const montantRemise = montantHT * (remise / 100);
+    const montantTVA = (montantHT - montantRemise) * (tva / 100);
+    const montantDC = (montantHT - montantRemise) * (dc / 100);
+    const montantFODEC = (montantHT - montantRemise) * (fodec / 100);
+    const montantTTC = montantHT - montantRemise + montantTVA + montantDC + montantFODEC;
+
+    setLignes([...lignes, { 
+      article: selectedArticle, 
+      libelle: article.libelle, 
+      quantite, 
+      prix_unitaire: article.prix_net,
+      remise,
+      tva,
+      dc,
+      fodec,
+      prix_uTTC: montantTTC / quantite, // Prix unitaire TTC
+      total_ht: montantHT - montantRemise,
+      total_ttc: montantTTC
+    }]);
     setQuantite(1);
     setPrixUnitaire(0);
+    setRemise(0);
+    setTva(0);
+    setDc(0);
+    setFodec(0);
+    setPrix_uTTC(0);
   };
 
   const handleRemoveLigne = (index) => {
@@ -83,9 +123,13 @@ const handleSubmit = async (e) => {
   };
   try {
     const response = await axios.post("http://localhost:5000/achat/BEF/create", bonRception);
-    setBonRception(bonRception); // Stocker le bon de réception dans l'état
-    setOpenSuccessModal(true); // Afficher la pop-up de succès
-      } catch (error) {
+    // Stocker le bon de réception avec le numéro retourné par le serveur
+    setBonRception({
+      ...bonRception,
+      numero_Bon: response.data.numero_Bon
+    });
+    setOpenSuccessModal(true);
+  } catch (error) {
     console.error("Erreur lors de la création du bon de réception:", error);
     alert("Erreur lors de la création du bon de réception.");
   }
@@ -106,24 +150,25 @@ const handleSuccessModalClose = () => {
     doc.setFontSize(18);
     doc.text("Bon de Reception", 10, 10);
     doc.setFontSize(12);
-    doc.text(`bon de receptionn N°: ${bonRception.numero_Bon}`, 10, 20);
+    // Vérifier si le numéro de bon existe
+    const numeroBon = bonRception.numero_Bon || 'Non assigné';
+    doc.text(`Bon de réception N°: ${numeroBon}`, 10, 20);
     doc.text(`Date Reception: ${new Date(bonRception.dateReception).toLocaleDateString()}`, 10, 30);
     const fournisseur = fournisseurs.find(f => f._id === bonRception.fournisseur);
-    doc.text(`À l'intention de: ${fournisseur.raison_sociale}`, 10, 40);
-    doc.text(`Adresse: ${fournisseur.adresse || 'N/A'}`, 10, 50);
-    doc.text(`Téléphone: ${fournisseur.telephone || 'N/A'}`, 10, 60);
+    doc.text(`À l'intention de: ${fournisseur?.raison_sociale || 'N/A'}`, 10, 40);
+    doc.text(`Adresse: ${fournisseur?.adresse || 'N/A'}`, 10, 50);
+    doc.text(`Téléphone: ${fournisseur?.telephone || 'N/A'}`, 10, 60);
     doc.autoTable({
       startY: 70,
       head: [['Article', 'Quantité', 'Prix Unitaire', 'Total']],
       body: bonRception.lignes.map(ligne => [
-        ligne.libelle,
-        ligne.quantite,
-        `${ligne.prix_unitaire.toFixed(2)} TND`,
-        `${(ligne.quantite * ligne.prix_unitaire).toFixed(2)} TND`
+        ligne.libelle || '',
+        ligne.quantite || 0,
+        `${(ligne.prix_unitaire || 0).toFixed(2)} TND`,
+        `${((ligne.quantite || 0) * (ligne.prix_unitaire || 0)).toFixed(2)} TND`
       ]),
     });
     const pdfBlob = doc.output('blob');
-    console.log("PDF Blob:", pdfBlob); // Vérifiez le Blob dans la console
     return pdfBlob;
   };
   const handleCloseModal = () => {
@@ -140,11 +185,10 @@ const handleSuccessModalClose = () => {
     document.body.removeChild(link);
     handleCloseModal();
   };
-
   return (
     <>
       <Navbar />
-      <Box height={20} />
+      <Box height={80} />
       <Box sx={{ display: "flex" }}>
         <Sidenav />
         <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: "auto", maxHeight: "100vh" }}>
@@ -196,11 +240,11 @@ const handleSuccessModalClose = () => {
           </Card>
 
           {/*article */}
-          <Card sx={{ p: 3, mb: 3 }}>
+          <Card sx={{ p: 3, mb: 3, boxShadow: 3, borderRadius: 2, backgroundColor: '#f8f9fa' }}>
             <CardContent>
-              <Typography variant="h6" sx={{ textAlign: 'left' }}>Informations Articles</Typography>
+              <Typography variant="h6" sx={{ textAlign: 'left', mb: 3, color: '#1976d2', fontWeight: 'bold' }}>Informations Articles</Typography>
               <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} sm={6} md={4}>
+                <Grid item xs={12} sm={6} md={3}>
                   <Autocomplete
                     options={articles}
                     getOptionLabel={(option) => option.libelle}
@@ -209,9 +253,26 @@ const handleSuccessModalClose = () => {
                       if (newValue) {
                         setSelectedArticle(newValue._id);
                         setPrixUnitaire(newValue.prix_net || 0);
+                        setRemise(newValue.remise || 0);
+                        setTva(newValue.tva || 0);
+                        setDc(newValue.dc || 0);
+                        setFodec(newValue.fodec || 0);
+                        // Calculer le prix TTC
+                        const montantHT = newValue.prix_net || 0;
+                        const montantRemise = montantHT * ((newValue.remise || 0) / 100);
+                        const montantTVA = (montantHT - montantRemise) * ((newValue.tva || 0) / 100);
+                        const montantDC = (montantHT - montantRemise) * ((newValue.dc || 0) / 100);
+                        const montantFODEC = (montantHT - montantRemise) * ((newValue.fodec || 0) / 100);
+                        const prixTTC = montantHT - montantRemise + montantTVA + montantDC + montantFODEC;
+                        setPrix_uTTC(prixTTC);
                       } else {
                         setSelectedArticle('');
                         setPrixUnitaire(0);
+                        setRemise(0);
+                        setTva(0);
+                        setDc(0);
+                        setFodec(0);
+                        setPrix_uTTC(0);
                       }
                     }}
                     renderInput={(params) => (
@@ -227,6 +288,7 @@ const handleSuccessModalClose = () => {
                     onChange={(e) => setQuantite(parseInt(e.target.value))}
                     fullWidth
                     required
+                    sx={{ backgroundColor: 'white' }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6} md={2}>
@@ -237,6 +299,62 @@ const handleSuccessModalClose = () => {
                     fullWidth
                     required
                     disabled
+                    sx={{ backgroundColor: '#f5f5f5' }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6} md={2}>
+                  <TextField
+                    label="Remise (%)"
+                    type="number"
+                    value={remise}
+                    fullWidth
+                    required
+                    disabled
+                    sx={{ backgroundColor: '#f5f5f5' }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6} md={2}>
+                  <TextField
+                    label="TVA (%)"
+                    type="number"
+                    value={tva}
+                    fullWidth
+                    required
+                    disabled
+                    sx={{ backgroundColor: '#f5f5f5' }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6} md={2}>
+                  <TextField
+                    label="DC (%)"
+                    type="number"
+                    value={dc}
+                    fullWidth
+                    required
+                    disabled
+                    sx={{ backgroundColor: '#f5f5f5' }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6} md={2}>
+                  <TextField
+                    label="FODEC (%)"
+                    type="number"
+                    value={fodec}
+                    fullWidth
+                    required
+                    disabled
+                    sx={{ backgroundColor: '#f5f5f5' }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6} md={2}>
+                  <TextField
+                    label="Prix TTC"
+                    type="number"
+                    value={prix_uTTC}
+                    fullWidth
+                    required
+                    disabled
+                    sx={{ backgroundColor: '#f5f5f5' }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
@@ -257,7 +375,16 @@ const handleSuccessModalClose = () => {
                   />
                 </Grid>
                 <Grid item xs={12} sm={6} md={1}>
-                  <IconButton color="primary" onClick={handleAddLigne}>
+                  <IconButton 
+                    color="primary" 
+                    onClick={handleAddLigne} 
+                    sx={{ 
+                      backgroundColor: '#e3f2fd', 
+                      '&:hover': { backgroundColor: '#bbdefb' },
+                      width: '100%',
+                      height: '100%'
+                    }}
+                  >
                     <AddCircleOutlineIcon fontSize="large" />
                   </IconButton>
                 </Grid>
@@ -267,28 +394,47 @@ const handleSuccessModalClose = () => {
 
           {/*lignes */}
           {lignes.length > 0 && (
-            <Card sx={{ p: 3, mb: 3 }}>
+            <Card sx={{ p: 3, mb: 3, boxShadow: 3, borderRadius: 2, backgroundColor: '#f8f9fa' }}>
               <CardContent>
-                <TableContainer component={Paper}>
+                <Typography variant="h6" sx={{ textAlign: 'left', mb: 3, color: '#1976d2', fontWeight: 'bold' }}>Articles Sélectionnés</Typography>
+                <TableContainer component={Paper} sx={{ boxShadow: 2 }}>
                   <Table>
                     <TableHead>
-                      <TableRow>
-                        <TableCell>Article</TableCell>
-                        <TableCell>Quantité</TableCell>
-                        <TableCell>Prix Unitaire</TableCell>
-                        <TableCell>Total</TableCell>
-                        <TableCell>Action</TableCell>
+                      <TableRow sx={{ backgroundColor: '#e3f2fd' }}>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Article</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Quantité</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Prix Unitaire</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Remise (%)</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>TVA (%)</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>DC (%)</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>FODEC (%)</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Prix TTC</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Total HT</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Total TTC</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Action</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {lignes.map((ligne, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{ligne.libelle}</TableCell>
-                          <TableCell>{ligne.quantite}</TableCell>
-                          <TableCell>{ligne.prix_unitaire} TND</TableCell>
-                          <TableCell>{(ligne.quantite * ligne.prix_unitaire).toFixed(2)} TND</TableCell>
+                        <TableRow key={index} sx={{ '&:hover': { backgroundColor: '#f5f5f5' } }}>
+                          <TableCell>{ligne.libelle || ''}</TableCell>
+                          <TableCell>{ligne.quantite || 0}</TableCell>
+                          <TableCell>{(ligne.prix_unitaire || 0).toFixed(2)} TND</TableCell>
+                          <TableCell>{(ligne.remise || 0).toFixed(2)}%</TableCell>
+                          <TableCell>{(ligne.tva || 0).toFixed(2)}%</TableCell>
+                          <TableCell>{(ligne.dc || 0).toFixed(2)}%</TableCell>
+                          <TableCell>{(ligne.fodec || 0).toFixed(2)}%</TableCell>
+                          <TableCell>{(ligne.prix_uTTC || 0).toFixed(2)} TND</TableCell>
+                          <TableCell>{(ligne.total_ht || 0).toFixed(2)} TND</TableCell>
+                          <TableCell>{(ligne.total_ttc || 0).toFixed(2)} TND</TableCell>
                           <TableCell>
-                            <IconButton color="error" onClick={() => handleRemoveLigne(index)}>
+                            <IconButton 
+                              color="error" 
+                              onClick={() => handleRemoveLigne(index)}
+                              sx={{ 
+                                '&:hover': { backgroundColor: '#ffebee' }
+                              }}
+                            >
                               <DeleteIcon />
                             </IconButton>
                           </TableCell>
@@ -313,20 +459,27 @@ const handleSuccessModalClose = () => {
               boxShadow: 3,
               zIndex: 1000,
               p: 2,
+              borderTop: '1px solid #e0e0e0',
             }}
           >
             <Grid container alignItems="center" justifyContent="space-between">
-              {/* Totaux HT et TTC au centre */}
               <Grid item>
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <Typography variant="h6">Total HT: {totalHT.toFixed(2)} TND</Typography>
-                  <Typography variant="h6">Total TTC: {totalTTC.toFixed(2)} TND</Typography>
+                <Box sx={{ display: 'flex', gap: 3 }}>
+                  <Typography variant="h6" sx={{ color: '#1976d2' }}>Total HT: {totalHT.toFixed(2)} TND</Typography>
+                  <Typography variant="h6" sx={{ color: '#1976d2' }}>Total TTC: {totalTTC.toFixed(2)} TND</Typography>
                 </Box>
               </Grid>
-
-              {/* Bouton à droite */}
               <Grid item>
-                <Button type="submit" variant="contained" color="primary" onClick={handleSubmit}>
+                <Button 
+                  type="submit" 
+                  variant="contained" 
+                  color="primary" 
+                  onClick={handleSubmit}
+                  sx={{ 
+                    backgroundColor: '#1976d2',
+                    '&:hover': { backgroundColor: '#1565c0' }
+                  }}
+                >
                   Créer le bon de Réception
                 </Button>
               </Grid>

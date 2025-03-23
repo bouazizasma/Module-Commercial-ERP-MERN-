@@ -40,6 +40,15 @@ const ArticleSchema = new Schema({
     remise: { //pourcentage 
         type:Number, 
     },
+    //droit de consommation
+    dc :{
+        type :Number,
+    },
+    //fodec
+    fodec:{
+        type:Number,
+    },
+    
     prix_net: {    
         type: Number,
     },
@@ -47,7 +56,7 @@ const ArticleSchema = new Schema({
         type: String,
     },
     prixht: {
-        type: String,
+        type: Number,
     },
     prix_totale_concre: {
         type: Number,
@@ -81,6 +90,7 @@ const ArticleSchema = new Schema({
     prixmax: {   
         type: Number,
     },
+
     user_Connectée: {   //user connecté maintenant il me récupère dans cet champ le nom de user connecté  et on peut pas le modifié comme un champ clos 
         type: String,
     },

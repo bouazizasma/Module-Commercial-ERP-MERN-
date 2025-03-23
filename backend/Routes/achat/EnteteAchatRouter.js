@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const {createBonCommande,getBonCommandeByID, getBCF, deleteBCF, updateBCF , createBonReception, getBEF} = require('../../Controllers/EnteteAchatControlleur');
+const {createBonCommande,getBonCommandeByID, getBCF, deleteBCF, updateBCF , createBonReception, getBEF, deleteBEF, deleteMultipleBEF, getBonReceptionByID} = require('../../Controllers/EnteteAchatControlleur');
 
 ////////////////////
 //all BCF
@@ -22,8 +22,17 @@ router.delete('/BCF/:id', deleteBCF);
 //get All BEF
 router.get('/BEF/all', getBEF);
 
+router.get('/BEF/:id', getBonReceptionByID);
+
 //post BEF
 router.post('/BEF/create', createBonReception);
+
+//delete BEF
+router.delete('/BEF/:id', deleteBEF);
+
+//delete Multiple 
+router.post('/BEF/deleteMultiple', deleteMultipleBEF);
+
 
 module.exports = router;
 

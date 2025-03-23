@@ -9,15 +9,14 @@ const EnteteAchatSchema = new Schema({
     fournisseur: {type: Schema.Types.ObjectId,ref: 'fournisseur',required: true},
     adresse_Fournisseur :{type: String,},
     matriculeFiscale_Fournisseur :{type: String,},
-    statut: {type: String,enum: ['En attente', 'Confirmée', 'Livrée', 'Annulée'],default: 'En attente'},
+    statut: {type: String,enum: ['En attente', 'Confirmée', 'Livrée', 'Facturé' ,'Annulée'],default: 'En attente'},
     depot :{type : Schema.Types.ObjectId,ref: 'depot',required: true, },       
-   type :{type :String,},
-   lignes: [{ type: Schema.Types.ObjectId, ref: "LigneAchat" }], // Référence vers les lignes de commande
-
+    facture: { type: Schema.Types.ObjectId, ref: "FactureFournisseur" } ,
+    type :{type :String,},
+    lignes: [{ type: Schema.Types.ObjectId, ref: "LigneAchat" }], 
 },
 {
   timestamps:true ,
-
 }
 );
 const EnteteAchatModel = mongoose.model('EnteteAchat', EnteteAchatSchema);

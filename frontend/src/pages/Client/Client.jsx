@@ -21,15 +21,23 @@ import {
   TextField,
   InputAdornment,
   Checkbox,
-  Modal,
-  Backdrop,
-  Fade,
   Typography,
   Card,
-  CardContent,
-  Grid,
+  Stack,
+  Chip,
 } from "@mui/material";
-import { Visibility, Delete, Edit, Search } from "@mui/icons-material";
+import { 
+  Visibility, 
+  Delete, 
+  Edit, 
+  Search, 
+  Person, 
+  Phone, 
+  LocationOn, 
+  Business, 
+  Email,
+  Badge 
+} from "@mui/icons-material";
 
 export default function Client() {
   const [clients, setClients] = useState([]);
@@ -116,8 +124,8 @@ export default function Client() {
   return (
     <>
       <Navbar />
-      <Box height={50} />
-      <Box sx={{ overflow: "auto", flexGrow: 1, p: 3, display: "flex", backgroundColor: "#FFFFFF" }}>
+      <Box height={150} />
+      <Box sx={{ overflow: "auto", flexGrow: 1, p: 3, display: "flex", backgroundColor: "#f5f5f5" }}>
         <Sidenav />
         <Box
           component="main"
@@ -125,268 +133,286 @@ export default function Client() {
             flexGrow: 1,
             p: 3,
             overflow: "auto",
-            backgroundColor: "#FFFFFF",
+            backgroundColor: "#f5f5f5",
             maxWidth: "none",
             maxHeight: "100vh",
-            marginLeft: "10px",
             width: "100%",
           }}
         >
-          <h1>Clients</h1>
-          <Box height={50} />
+          <Card sx={{ p: 3, mb: 3, borderRadius: 2, boxShadow: 3 }}>
+            <Stack direction="row" alignItems="center" spacing={2} mb={3}>
+              <Person sx={{ fontSize: 40, color: "#1976d2" }} />
+              <Typography variant="h4" component="h1" sx={{ fontWeight: "bold" }}>
+                Liste des Clients
+              </Typography>
+            </Stack>
 
-          <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-            <TextField
-              fullWidth
-              label="Rechercher"
-              variant="outlined"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              sx={{
-                mb: 2,
-                borderRadius: "20px",
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "40px",
-                },
-                width: "400px",
-              }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton>
-                      <Search />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <Box width={150} />
-            <Button
-              variant="contained"
-              color="success"
-              sx={{ ml: 20 }}
-              onClick={() => navigate("/Client/create")}
-            >
-              Créer un client
-            </Button>
-          </Box>
+            {/* Barre de recherche et bouton Créer */}
+            <Box sx={{ display: "flex", alignItems: "center", mb: 3, gap: 2 }}>
+              <TextField
+                fullWidth
+                label="Rechercher un client"
+                variant="outlined"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                sx={{
+                  maxWidth: "400px",
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "8px",
+                  },
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search sx={{ color: "#1976d2" }} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <Button
+                variant="contained"
+                onClick={() => navigate("/Client/create")}
+                startIcon={<Person />}
+                sx={{
+                  borderRadius: "8px",
+                  textTransform: "none",
+                  backgroundColor: "#2e7d32",
+                  "&:hover": {
+                    backgroundColor: "#1b5e20",
+                  },
+                }}
+              >
+                Créer un client
+              </Button>
+            </Box>
 
-          {selectedClients.length > 0 && (
-            <Button
-              variant="contained"
-              color="error"
-              sx={{ mb: 2 }}
-              onClick={deleteSelectedClients}
-            >
-              Supprimer les clients sélectionnés
-            </Button>
-          )}
+            {selectedClients.length > 0 && (
+              <Button
+                variant="contained"
+                color="error"
+                sx={{ mb: 2, borderRadius: "8px" }}
+                onClick={deleteSelectedClients}
+                startIcon={<Delete />}
+              >
+                Supprimer les clients sélectionnés ({selectedClients.length})
+              </Button>
+            )}
 
-          <TableContainer component={Paper} sx={{ mt: 3, boxShadow: 3 }}>
-            <Table>
-              <TableHead>
-                <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                  <TableCell>
-                    <Checkbox
-                      checked={selectedClients.length === filteredClients.length}
-                      indeterminate={
-                        selectedClients.length > 0 &&
-                        selectedClients.length < filteredClients.length
-                      }
-                      onChange={handleSelectAll}
-                    />
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Code</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Nom & Prenom</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Matricule Fiscale</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Adresse</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Telephone</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredClients.map((client) => (
-                  <TableRow key={client._id}>
-                    <TableCell>
+            {/* Tableau des clients */}
+            <TableContainer component={Paper} sx={{ mt: 3, boxShadow: 2, borderRadius: 2 }}>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: "#f8f9fa" }}>
+                    <TableCell padding="checkbox">
                       <Checkbox
-                        checked={selectedClients.includes(client._id)}
-                        onChange={() => handleSelectClient(client._id)}
+                        checked={selectedClients.length === filteredClients.length}
+                        indeterminate={selectedClients.length > 0 && selectedClients.length < filteredClients.length}
+                        onChange={handleSelectAll}
                       />
                     </TableCell>
-                    <TableCell>{client.code}</TableCell>
-                    <TableCell>{client.nom_prenom}</TableCell>
-                    <TableCell>{client.matricule_fiscale}</TableCell>
-                    <TableCell>{client.adresse}</TableCell>
-                    <TableCell>{client.telephone[0]} | {client.telephone[1]}</TableCell>
-                    <TableCell>
-                      <IconButton
-                        onClick={() => handleOpenModal(client)}
-                        sx={{ color: "black" }}
-                      >
-                        <Visibility />
-                      </IconButton>
-                      <IconButton
-                        onClick={() => handleOpenDialog(client._id)}
-                        sx={{ color: "black" }}
-                      >
-                        <Delete />
-                      </IconButton>
-                      <IconButton
-                        onClick={() => navigate(`/Client/update/${client._id}`)}
-                        sx={{ color: "black" }}
-                      >
-                        <Edit />
-                      </IconButton>
-                    </TableCell>
+                    <TableCell sx={{ fontWeight: "bold", color: "#1976d2" }}>Code</TableCell>
+                    <TableCell sx={{ fontWeight: "bold", color: "#1976d2" }}>Nom & Prénom</TableCell>
+                    <TableCell sx={{ fontWeight: "bold", color: "#1976d2" }}>Matricule Fiscale</TableCell>
+                    <TableCell sx={{ fontWeight: "bold", color: "#1976d2" }}>Adresse</TableCell>
+                    <TableCell sx={{ fontWeight: "bold", color: "#1976d2" }}>Téléphone</TableCell>
+                    <TableCell sx={{ fontWeight: "bold", color: "#1976d2" }}>Actions</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {filteredClients.map((client) => (
+                    <TableRow 
+                      key={client._id}
+                      sx={{ 
+                        "&:last-child td, &:last-child th": { border: 0 },
+                        "&:hover": { backgroundColor: "#f5f5f5" }
+                      }}
+                    >
+                      <TableCell padding="checkbox">
+                        <Checkbox
+                          checked={selectedClients.includes(client._id)}
+                          onChange={() => handleSelectClient(client._id)}
+                        />
+                      </TableCell>
+                      <TableCell>{client.code}</TableCell>
+                      <TableCell>{client.nom_prenom}</TableCell>
+                      <TableCell>{client.matricule_fiscale}</TableCell>
+                      <TableCell>{client.adresse}</TableCell>
+                      <TableCell>
+                        {client.telephone.map((tel, index) => (
+                          <Chip 
+                            key={index}
+                            label={tel}
+                            size="small"
+                            sx={{ mr: 1, backgroundColor: "#e3f2fd" }}
+                            icon={<Phone sx={{ fontSize: 16 }} />}
+                          />
+                        ))}
+                      </TableCell>
+                      <TableCell>
+                        <Stack direction="row" spacing={1}>
+                          <IconButton
+                            onClick={() => handleOpenModal(client)}
+                            sx={{ color: "#1976d2" }}
+                            size="small"
+                            title="Voir les détails"
+                          >
+                            <Visibility />
+                          </IconButton>
+                          <IconButton
+                            onClick={() => navigate(`/Client/update/${client._id}`)}
+                            sx={{ color: "#ff9800" }}
+                            size="small"
+                            title="Modifier"
+                          >
+                            <Edit />
+                          </IconButton>
+                          <IconButton
+                            onClick={() => handleOpenDialog(client._id)}
+                            sx={{ color: "#d32f2f" }}
+                            size="small"
+                            title="Supprimer"
+                          >
+                            <Delete />
+                          </IconButton>
+                        </Stack>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Card>
         </Box>
       </Box>
 
       {/* Dialog de confirmation de suppression */}
-      <Dialog open={openDialog} onClose={handleCloseDialog}>
-        <DialogTitle>Supprimer le client</DialogTitle>
-        <DialogContent>
-          <p>Êtes-vous sûr de vouloir supprimer ce client ?</p>
+      <Dialog 
+        open={openDialog} 
+        onClose={handleCloseDialog}
+        PaperProps={{
+          sx: { borderRadius: 2 }
+        }}
+      >
+        <DialogTitle sx={{ backgroundColor: "#f8f9fa", pb: 2 }}>
+          Confirmation de suppression
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          Êtes-vous sûr de vouloir supprimer ce client ?
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog} color="primary">
-            Non
+        <DialogActions sx={{ p: 2 }}>
+          <Button 
+            onClick={handleCloseDialog} 
+            variant="outlined"
+            sx={{ borderRadius: "8px" }}
+          >
+            Annuler
           </Button>
           <Button
             onClick={() => {
               deleteClient(selectedClientId);
               handleCloseDialog();
             }}
-            color="secondary"
+            variant="contained"
+            color="error"
+            sx={{ borderRadius: "8px" }}
           >
-            Oui
+            Supprimer
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Modal pour afficher les détails du client */}
-      <Modal
+      {/* Modal de détails du client */}
+      <Dialog
         open={isModalOpen}
         onClose={handleCloseModal}
-        closeAfterTransition
-        BackdropComponent={Backdrop}
-        BackdropProps={{
-          timeout: 500,
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 2 }
         }}
       >
-        <Fade in={isModalOpen}>
-          <Box
-            sx={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              width: "80%",
-              maxWidth: "800px",
-              bgcolor: "#FFFFFF",
-              boxShadow: 24,
-              p: 4,
-              borderRadius: 2,
-              maxHeight: "90vh",
-              overflowY: "auto",
-            }}
-          >
-            {selectedClient && (
-              <>
-                <Typography variant="h4" component="h2" sx={{ mb: 3, fontWeight: "bold", color: "#1976d2" }}>
-                  Détails du Client
+        <DialogTitle sx={{ 
+          backgroundColor: "#f8f9fa",
+          borderBottom: "1px solid #e0e0e0",
+          pb: 2
+        }}>
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Person sx={{ color: "#1976d2" }} />
+            <Typography variant="h6">
+              Détails du Client
+            </Typography>
+          </Stack>
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          {selectedClient && (
+            <Stack spacing={3}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Badge sx={{ color: "#1976d2" }} />
+                <Typography>
+                  <strong>Code :</strong> {selectedClient.code}
                 </Typography>
-
-                {/* Informations Générales */}
-                <Card sx={{ mb: 3 }}>
-                  <CardContent>
-                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#555" }}>
-                      Informations Générales
-                    </Typography>
-                    <Grid container spacing={2}>
-                      <Grid item xs={6}>
-                        <Typography variant="body1" sx={{ mb: 1 }}>
-                          <strong>Raison Sociale:</strong> {selectedClient.raison_sociale}
-                        </Typography>
-                        <Typography variant="body1" sx={{ mb: 1 }}>
-                          <strong>Matricule Fiscale:</strong> {selectedClient.matricule_fiscale}
-                        </Typography>
-                        <Typography variant="body1" sx={{ mb: 1 }}>
-                          <strong>Adresse:</strong> {selectedClient.adresse}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Typography variant="body1" sx={{ mb: 1 }}>
-                          <strong>Téléphone 1:</strong> {selectedClient.telephone[0]}
-                        </Typography>
-                        <Typography variant="body1" sx={{ mb: 1 }}>
-                          <strong>Téléphone 2:</strong> {selectedClient.telephone[1]}
-                        </Typography>
-                        <Typography variant="body1" sx={{ mb: 1 }}>
-                          <strong>Fax:</strong> {selectedClient.fax}
-                        </Typography>
-                      </Grid>
-                    </Grid>
-                  </CardContent>
-                </Card>
-
-                {/* Informations Complémentaires */}
-                <Card sx={{ mb: 3 }}>
-                  <CardContent>
-                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#555" }}>
-                      Informations Complémentaires
-                    </Typography>
-                    <Grid container spacing={2}>
-                      <Grid item xs={6}>
-                        <Typography variant="body1" sx={{ mb: 1 }}>
-                          <strong>Register Commerce:</strong> {selectedClient.register_commerce}
-                        </Typography>
-                        <Typography variant="body1" sx={{ mb: 1 }}>
-                          <strong>Solde Initial:</strong> {selectedClient.solde_initial}
-                        </Typography>
-                        <Typography variant="body1" sx={{ mb: 1 }}>
-                          <strong>Montant Rapprochement:</strong> {selectedClient.montant_rapprochement}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Typography variant="body1" sx={{ mb: 1 }}>
-                          <strong>Code Rapprochement:</strong> {selectedClient.code_rapprochement}
-                        </Typography>
-                        <Typography variant="body1" sx={{ mb: 1 }}>
-                          <strong>Rapprochement BL:</strong> {selectedClient.rapBl}
-                        </Typography>
-                        <Typography variant="body1" sx={{ mb: 1 }}>
-                          <strong>Solde Initial BL:</strong> {selectedClient.solde_initial_bl}
-                        </Typography>
-                        <Typography variant="body1" sx={{ mb: 1 }}>
-                          <strong>Montant Règlement BL:</strong> {selectedClient.montant_reglement_bl}
-                        </Typography>
-                        <Typography variant="body1" sx={{ mb: 1 }}>
-                          <strong>Taux Retenu:</strong> {selectedClient.taux_retenu}
-                        </Typography>
-                      </Grid>
-                    </Grid>
-                  </CardContent>
-                </Card>
-
-                {/* Bouton de fermeture */}
-                <Button
-                  variant="contained"
-                  color="error"
-                  onClick={handleCloseModal}
-                  sx={{ mt: 2 }}
-                >
-                  Fermer
-                </Button>
-              </>
-            )}
-          </Box>
-        </Fade>
-      </Modal>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Person sx={{ color: "#1976d2" }} />
+                <Typography>
+                  <strong>Nom & Prénom :</strong> {selectedClient.nom_prenom}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Business sx={{ color: "#1976d2" }} />
+                <Typography>
+                  <strong>Matricule Fiscale :</strong> {selectedClient.matricule_fiscale}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <LocationOn sx={{ color: "#1976d2" }} />
+                <Typography>
+                  <strong>Adresse :</strong> {selectedClient.adresse}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Phone sx={{ color: "#1976d2" }} />
+                <Typography>
+                  <strong>Téléphones :</strong>
+                  {selectedClient.telephone.map((tel, index) => (
+                    <Chip 
+                      key={index}
+                      label={tel}
+                      size="small"
+                      sx={{ ml: 1, backgroundColor: "#e3f2fd" }}
+                    />
+                  ))}
+                </Typography>
+              </Box>
+              {selectedClient.email && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Email sx={{ color: "#1976d2" }} />
+                  <Typography>
+                    <strong>Email :</strong> {selectedClient.email}
+                  </Typography>
+                </Box>
+              )}
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 3, borderTop: "1px solid #e0e0e0" }}>
+          <Button 
+            onClick={handleCloseModal}
+            variant="outlined"
+            sx={{ borderRadius: "8px" }}
+          >
+            Fermer
+          </Button>
+          <Button
+            onClick={() => navigate(`/Client/update/${selectedClient._id}`)}
+            variant="contained"
+            startIcon={<Edit />}
+            sx={{ borderRadius: "8px" }}
+          >
+            Modifier
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

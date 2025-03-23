@@ -34,6 +34,8 @@ const createArticle = async (req, res) => {
         libeleCategorie,
         lib_fournisseur,
         Nature,
+        dc,
+        fodec,
         prixmin,
         prixmax,
         user_Connectée,
@@ -78,6 +80,7 @@ const createArticle = async (req, res) => {
         }
 
         const code = counter.seq;
+        const prix_totale_concre= prixht*(1-(remise/100))*(1+(dc+fodec)/100)*(1+(tva/100));
 
         // Créer un nouvel article
         const newArticle = await Article.create({
@@ -89,6 +92,13 @@ const createArticle = async (req, res) => {
             type,
             prix_brut,
             remise,
+            //0% à 25% : Produits électroniques, électroménagers, certains équipements.
+            //10% à 50% : Véhicules, parfums, cosmétiques, boissons non alcoolisées.
+            //100% à 200% : Tabac, alcools et spiritueux.
+            dc,
+            //Fonds de Développement de la Compétitivité Industrielle
+            //généralement 1%
+            fodec,
             prix_net,
             marge,
             prixht,
@@ -214,7 +224,7 @@ const getArticleByID = async (req, res) => {
 
 const updateArticle = async (req, res) => {
     const { id } = req.params;
-    const { libelle, libelleFamille, libeleCategorie, lib_fournisseur, Nombre_unite, tva, type, prix_brut, remise, prix_net, marge, prixht, prix_totale_concre, gestion_configuration, configuration, serie, Nature, prixmin, prixmax, prix_achat_initiale, tva_achat, dimension_article, longueur, largeur, hauteur, movement_article } = req.body;
+    const { libelle, libelleFamille, libeleCategorie, lib_fournisseur, Nombre_unite, tva,dc,fodec,type, prix_brut, remise, prix_net, marge, prixht, gestion_configuration, configuration, serie, Nature, prixmin, prixmax, prix_achat_initiale, tva_achat, dimension_article, longueur, largeur, hauteur, movement_article } = req.body;
   
     // Log incoming data for debugging
     console.log("Incoming data:", req.body);
@@ -261,7 +271,10 @@ const updateArticle = async (req, res) => {
   
     // Handle image upload
     const image_article = req.file ? req.file.buffer : null;
-  
+
+  // Recalcul du prix total concret
+  const prix_totale_concre = prixht * (1 - remise / 100) * (1 + (dc + fodec) / 100) * (1 + tva / 100);
+
     // Update the article
     const updatedArticle = await Article.findByIdAndUpdate(
       id,
@@ -272,6 +285,8 @@ const updateArticle = async (req, res) => {
         lib_fournisseur, 
         image_article: image_article || undefined, // Conserve l'image existante si aucune nouvelle image n'est fournie
         Nombre_unite, 
+        dc,
+        fodec,
         tva, 
         type, 
         prix_brut, 
@@ -279,7 +294,7 @@ const updateArticle = async (req, res) => {
         prix_net, 
         marge, 
         prixht, 
-        prix_totale_concre, 
+        prix_totale_concre , 
         gestion_configuration, 
         configuration, 
         serie, 

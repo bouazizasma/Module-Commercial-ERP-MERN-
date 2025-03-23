@@ -21,14 +21,20 @@ import {
   TextField,
   InputAdornment,
   Checkbox,
-  Modal,
-  Backdrop,
-  Fade,
   Typography,
   Card,
-  Grid
+  Stack,
 } from "@mui/material";
-import { Visibility, Delete, Edit, Search } from "@mui/icons-material";
+import { 
+  Visibility, 
+  Delete, 
+  Edit, 
+  Search, 
+  Warehouse,
+  LocationOn,
+  Badge,
+  Label
+} from "@mui/icons-material";
 
 export default function Depot() {
   const [depots, setDepots] = useState([]);
@@ -116,7 +122,7 @@ export default function Depot() {
     <>
       <Navbar />
       <Box height={150} />
-      <Box sx={{ overflow: "auto", flexGrow: 1, p: 3, display: "flex", backgroundColor: "#FFFFFF" }}>
+      <Box sx={{ overflow: "auto", flexGrow: 1, p: 3, display: "flex", backgroundColor: "#f5f5f5" }}>
         <Sidenav />
         <Box
           component="main"
@@ -124,208 +130,244 @@ export default function Depot() {
             flexGrow: 1,
             p: 3,
             overflow: "auto",
-            backgroundColor: "#FFFFFF",
+            backgroundColor: "#f5f5f5",
             maxWidth: "none",
             maxHeight: "100vh",
-            marginLeft: "10px",
             width: "100%",
           }}
         >
-          <h1>Depots</h1>
-          <Box height={50} />
+          <Card sx={{ p: 3, mb: 3, borderRadius: 2, boxShadow: 3 }}>
+            <Stack direction="row" alignItems="center" spacing={2} mb={3}>
+              <Warehouse sx={{ fontSize: 40, color: "#1976d2" }} />
+              <Typography variant="h4" component="h1" sx={{ fontWeight: "bold" }}>
+                Liste des Dépôts
+              </Typography>
+            </Stack>
 
-          <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-            <TextField
-              fullWidth
-              label="Rechercher"
-              variant="outlined"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              sx={{
-                mb: 2,
-                borderRadius: "20px",
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "40px",
-                },
-                width: "400px",
-              }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton>
-                      <Search />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <Box width={150} />
-            <Button
-              variant="contained"
-              color="success"
-              sx={{ ml: 20 }}
-              onClick={() => navigate("/Depot/create")}
-            >
-              Créer un dépôt
-            </Button>
-          </Box>
+            {/* Barre de recherche et bouton Créer */}
+            <Box sx={{ display: "flex", alignItems: "center", mb: 3, gap: 2 }}>
+              <TextField
+                fullWidth
+                label="Rechercher un dépôt"
+                variant="outlined"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                sx={{
+                  maxWidth: "400px",
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "8px",
+                  },
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search sx={{ color: "#1976d2" }} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <Button
+                variant="contained"
+                onClick={() => navigate("/Depot/create")}
+                startIcon={<Warehouse />}
+                sx={{
+                  borderRadius: "8px",
+                  textTransform: "none",
+                  backgroundColor: "#2e7d32",
+                  "&:hover": {
+                    backgroundColor: "#1b5e20",
+                  },
+                }}
+              >
+                Créer un dépôt
+              </Button>
+            </Box>
 
-          {selectedDepots.length > 0 && (
-            <Button
-              variant="contained"
-              color="error"
-              sx={{ mb: 2 }}
-              onClick={deleteSelectedDepots}
-            >
-              Supprimer les dépôts sélectionnés
-            </Button>
-          )}
+            {selectedDepots.length > 0 && (
+              <Button
+                variant="contained"
+                color="error"
+                sx={{ mb: 2, borderRadius: "8px" }}
+                onClick={deleteSelectedDepots}
+                startIcon={<Delete />}
+              >
+                Supprimer les dépôts sélectionnés ({selectedDepots.length})
+              </Button>
+            )}
 
-          <TableContainer component={Paper} sx={{ mt: 3, boxShadow: 3 }}>
-            <Table>
-              <TableHead>
-                <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                  <TableCell>
-                    <Checkbox
-                      checked={selectedDepots.length === filteredDepots.length}
-                      indeterminate={
-                        selectedDepots.length > 0 &&
-                        selectedDepots.length < filteredDepots.length
-                      }
-                      onChange={handleSelectAll}
-                    />
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Code</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Code Depot</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Libelle</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredDepots.map((depot) => (
-                  <TableRow key={depot._id}>
-                    <TableCell>
+            {/* Tableau des dépôts */}
+            <TableContainer component={Paper} sx={{ mt: 3, boxShadow: 2, borderRadius: 2 }}>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: "#f8f9fa" }}>
+                    <TableCell padding="checkbox">
                       <Checkbox
-                        checked={selectedDepots.includes(depot._id)}
-                        onChange={() => handleSelectDepot(depot._id)}
+                        checked={selectedDepots.length === filteredDepots.length}
+                        indeterminate={selectedDepots.length > 0 && selectedDepots.length < filteredDepots.length}
+                        onChange={handleSelectAll}
                       />
                     </TableCell>
-                    <TableCell>{depot.code}</TableCell>
-                    <TableCell>{depot.codeDepot}</TableCell>
-                    <TableCell>{depot.libelle}</TableCell>
-                    <TableCell>
-                      <IconButton
-                        onClick={() => handleOpenModal(depot)}
-                        sx={{ color: "black" }}
-                      >
-                        <Visibility />
-                      </IconButton>
-                      <IconButton
-                        onClick={() => handleOpenDialog(depot._id)}
-                        sx={{ color: "black" }}
-                      >
-                        <Delete />
-                      </IconButton>
-                      <IconButton
-                        onClick={() => navigate(`/Depot/update/${depot._id}`)}
-                        sx={{ color: "black" }}
-                      >
-                        <Edit />
-                      </IconButton>
-                    </TableCell>
+                    <TableCell sx={{ fontWeight: "bold", color: "#1976d2" }}>Code</TableCell>
+                    <TableCell sx={{ fontWeight: "bold", color: "#1976d2" }}>Code Dépôt</TableCell>
+                    <TableCell sx={{ fontWeight: "bold", color: "#1976d2" }}>Libellé</TableCell>
+                    <TableCell sx={{ fontWeight: "bold", color: "#1976d2" }}>Actions</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {filteredDepots.map((depot) => (
+                    <TableRow 
+                      key={depot._id}
+                      sx={{ 
+                        "&:last-child td, &:last-child th": { border: 0 },
+                        "&:hover": { backgroundColor: "#f5f5f5" }
+                      }}
+                    >
+                      <TableCell padding="checkbox">
+                        <Checkbox
+                          checked={selectedDepots.includes(depot._id)}
+                          onChange={() => handleSelectDepot(depot._id)}
+                        />
+                      </TableCell>
+                      <TableCell>{depot.code}</TableCell>
+                      <TableCell>{depot.codeDepot}</TableCell>
+                      <TableCell>{depot.libelle}</TableCell>
+                      <TableCell>
+                        <Stack direction="row" spacing={1}>
+                          <IconButton
+                            onClick={() => handleOpenModal(depot)}
+                            sx={{ color: "#1976d2" }}
+                            size="small"
+                            title="Voir les détails"
+                          >
+                            <Visibility />
+                          </IconButton>
+                          <IconButton
+                            onClick={() => navigate(`/Depot/update/${depot._id}`)}
+                            sx={{ color: "#ff9800" }}
+                            size="small"
+                            title="Modifier"
+                          >
+                            <Edit />
+                          </IconButton>
+                          <IconButton
+                            onClick={() => handleOpenDialog(depot._id)}
+                            sx={{ color: "#d32f2f" }}
+                            size="small"
+                            title="Supprimer"
+                          >
+                            <Delete />
+                          </IconButton>
+                        </Stack>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Card>
         </Box>
       </Box>
 
-      <Dialog open={openDialog} onClose={handleCloseDialog}>
-        <DialogTitle>Supprimer le dépôt</DialogTitle>
-        <DialogContent>
-          <p>Êtes-vous sûr de vouloir supprimer ce dépôt ?</p>
+      {/* Dialog de confirmation de suppression */}
+      <Dialog 
+        open={openDialog} 
+        onClose={handleCloseDialog}
+        PaperProps={{
+          sx: { borderRadius: 2 }
+        }}
+      >
+        <DialogTitle sx={{ backgroundColor: "#f8f9fa", pb: 2 }}>
+          Confirmation de suppression
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          Êtes-vous sûr de vouloir supprimer ce dépôt ?
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog} color="primary">
-            Non
+        <DialogActions sx={{ p: 2 }}>
+          <Button 
+            onClick={handleCloseDialog} 
+            variant="outlined"
+            sx={{ borderRadius: "8px" }}
+          >
+            Annuler
           </Button>
           <Button
             onClick={() => {
               deleteDepot(selectedDepotId);
               handleCloseDialog();
             }}
-            color="secondary"
+            variant="contained"
+            color="error"
+            sx={{ borderRadius: "8px" }}
           >
-            Oui
+            Supprimer
           </Button>
         </DialogActions>
       </Dialog>
 
-      <Modal
+      {/* Modal de détails du dépôt */}
+      <Dialog
         open={isModalOpen}
         onClose={handleCloseModal}
-        closeAfterTransition
-        BackdropComponent={Backdrop}
-        BackdropProps={{
-          timeout: 500,
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 2 }
         }}
       >
-        <Fade in={isModalOpen}>
-          <Box
-            sx={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              width: "80%",
-              maxWidth: "800px",
-              bgcolor: "#FFFFFF",
-              boxShadow: 24,
-              p: 4,
-              borderRadius: 2,
-              maxHeight: "90vh",
-              overflowY: "auto",
-            }}
-          >
-            {selectedDepot && (
-              <>
-                <Typography variant="h4" component="h2" sx={{ mb: 3, fontWeight: "bold", color: "#1976d2" }}>
-                  Détails du Dépôt
+        <DialogTitle sx={{ 
+          backgroundColor: "#f8f9fa",
+          borderBottom: "1px solid #e0e0e0",
+          pb: 2
+        }}>
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Warehouse sx={{ color: "#1976d2" }} />
+            <Typography variant="h6">
+              Détails du Dépôt
+            </Typography>
+          </Stack>
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          {selectedDepot && (
+            <Stack spacing={3}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Badge sx={{ color: "#1976d2" }} />
+                <Typography>
+                  <strong>Code :</strong> {selectedDepot.code}
                 </Typography>
-                <Card sx={{ mb: 3, p: 2, boxShadow: 3 }}>
-                  <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#555" }}>
-                    Informations Générales
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="body1" sx={{ mb: 1 }}>
-                        <strong>Code:</strong> {selectedDepot.code}
-                      </Typography>
-                      <Typography variant="body1" sx={{ mb: 1 }}>
-                        <strong>Code Depot:</strong> {selectedDepot.codeDepot}
-                      </Typography>
-                      <Typography variant="body1" sx={{ mb: 1 }}>
-                        <strong>Libelle:</strong> {selectedDepot.libelle}
-                      </Typography>
-                    </Grid>
-                  </Grid>
-                </Card>
-                <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
-                  <Button
-                    variant="contained"
-                    color="error"
-                    onClick={handleCloseModal}
-                    sx={{ mt: 2 }}
-                  >
-                    Fermer
-                  </Button>
-                </Box>
-              </>
-            )}
-          </Box>
-        </Fade>
-      </Modal>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <LocationOn sx={{ color: "#1976d2" }} />
+                <Typography>
+                  <strong>Code Dépôt :</strong> {selectedDepot.codeDepot}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Label sx={{ color: "#1976d2" }} />
+                <Typography>
+                  <strong>Libellé :</strong> {selectedDepot.libelle}
+                </Typography>
+              </Box>
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 3, borderTop: "1px solid #e0e0e0" }}>
+          <Button 
+            onClick={handleCloseModal}
+            variant="outlined"
+            sx={{ borderRadius: "8px" }}
+          >
+            Fermer
+          </Button>
+          <Button
+            onClick={() => navigate(`/Depot/update/${selectedDepot._id}`)}
+            variant="contained"
+            startIcon={<Edit />}
+            sx={{ borderRadius: "8px" }}
+          >
+            Modifier
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

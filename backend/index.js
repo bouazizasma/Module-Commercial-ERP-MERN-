@@ -14,6 +14,9 @@ const EnteteAchatRouter  =require('./Routes/achat/EnteteAchatRouter');
 const Depot = require('./Routes/DepotRouter');
 const LignesAchatRouter = require ('./Routes/achat/LignesAchatRouter');
 const factureFournisseurRouter = require ('./Routes/achat/FactureFournisseurRouter');
+const BanqueRouter = require ('./Routes/achat/banqueRouter');
+const CaisseRouter = require('./Routes/achat/CaisseRouter');
+const PaiementFournisseur = require ('./Routes/achat/PaiementFournisseurRouter');
 require('dotenv').config();
 require('./Models/db');
 const PORT = process.env.PORT || 5000;
@@ -21,6 +24,8 @@ const PORT = process.env.PORT || 5000;
 app.get('/ping', (req, res) => {
     res.send('PONG');
 });
+
+app.use(cors());
 
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
@@ -37,6 +42,10 @@ app.use('/achat', EnteteAchatRouter);
 app.use('/Lachat', LignesAchatRouter);
 app.use("/factureF", factureFournisseurRouter);
 app.use('/depot', Depot);
+app.use('/banque', BanqueRouter);
+app.use('/caisse', CaisseRouter);
+app.use('/paiement', PaiementFournisseur);
+
 
 
 

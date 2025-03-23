@@ -4,71 +4,152 @@ import Sidenav from "../../navbar/Sidenav";
 import Box from "@mui/material/Box";
 import Navbar from "../../navbar/Navbar";
 import { Visibility, Delete, Edit } from "@mui/icons-material";
+import { Chip } from "@mui/material";
+import { format } from 'date-fns';
 import { useNavigate } from "react-router-dom";
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import {
-  Card, CardContent, Typography, Grid, Button, TextField, MenuItem, Select, FormControl, InputLabel, IconButton, Drawer, Modal, Backdrop, Fade, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
- , Dialog, DialogTitle, DialogContent, DialogActions} from "@mui/material";
+  Card, CardContent, Typography, Grid, Button, TextField, MenuItem, Select, FormControl, InputLabel, IconButton, Drawer, Modal, Backdrop, Fade, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
+  Dialog, DialogTitle, DialogContent, DialogActions, Checkbox
+} from "@mui/material";
 import { Stack } from "@mui/material";
 import { FilterList, Search, Clear } from "@mui/icons-material";
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import { InputAdornment } from "@mui/material";
 import jsPDF from "jspdf";
 import 'jspdf-autotable';
+import { Add, NavigateBefore, NavigateNext, Close } from "@mui/icons-material";
+import InfoIcon from '@mui/icons-material/Info';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import InventoryIcon from '@mui/icons-material/Inventory';
+
 export default function ListeBonReceptionFournisseur() {
   const [bonsReception, setBonsReception] = useState([]);
-  const [editLignes, setEditLignes] = useState([]); // État pour les lignes modifiables
+  const [editLignes, setEditLignes] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
     fournisseur: "",
-    year: "",
-    month: "",
-    article: "",
+    startDate: "",
+    endDate: "",
+    numeroFacture: "",
+    timbre: "1.000",
   });
-  const [pdfUrl, setPdfUrl] = useState(""); 
+  const [pdfUrl, setPdfUrl] = useState("");
   const [openPreviewModal, setOpenPreviewModal] = useState(false);
   const [error, setError] = useState(null);
   const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
   const [selectedBonReception, setSelectedBonReception] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1); // État pour la pagination
-  const itemsPerPage = 5; // Nombre d'éléments par page
-  const [editBon, setEditBonReception] = useState(null); // État pour le bon de reception en cours de modification
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false); // État pour contrôler l'affichage du formulaire de modification
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const [editBon, setEditBonReception] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [fournisseurs, setFournisseurs] = useState([]);
   const [articles, setArticles] = useState([]);
   const [depots, setDepots] = useState([]);
+  const [selectedBons, setSelectedBons] = useState([]);
+  const [isFactureModalOpen, setIsFactureModalOpen] = useState(false);
+  const [factureFournisseur, setFactureFournisseur] = useState("");
+  const [timbre, setTimbre] = useState("1.000");
+  const [selectedBonForFacture, setSelectedBonForFacture] = useState(null);
   const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    numeroFactureFournisseur: "", // Assurez-vous que cette clé est présente
+  });
 
-  // Récupération des données
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Récupérer les bons de commande
-        const bonsReceptionResponse = await axios.get("http://localhost:5000/achat/BEF/all");
-        setBonsReception(bonsReceptionResponse.data);
+        console.log("Début de la récupération des données");
+        const response = await axios.get("http://localhost:5000/achat/BEF/all");
+        console.log("Réponse brute de l'API:", response);
+        
+        if (!response.data) {
+          console.error("Pas de données dans la réponse");
+          return;
+        }
 
-        // Récupérer les fournisseurs
-        const fournisseursResponse = await axios.get("http://localhost:5000/fournisseur/fournisseurs");
-        setFournisseurs(fournisseursResponse.data);
+        console.log("Données reçues de l'API:", response.data);
+        setBonsReception(response.data);
 
-        // Récupérer les articles
-        const articlesResponse = await axios.get("http://localhost:5000/article/articles");
-        setArticles(articlesResponse.data);
+        // Récupération des autres données
+        const [fournisseursRes, articlesRes, depotsRes] = await Promise.all([
+          axios.get("http://localhost:5000/fournisseur/fournisseurs"),
+          axios.get("http://localhost:5000/article/articles"),
+          axios.get("http://localhost:5000/depot/depots")
+        ]);
 
-        // Récupérer les dépôts
-        const depotsResponse = await axios.get("http://localhost:5000/depot/depots");
-        setDepots(depotsResponse.data);
+        setFournisseurs(fournisseursRes.data);
+        setArticles(articlesRes.data);
+        setDepots(depotsRes.data);
       } catch (error) {
-        console.error("Erreur lors de la récupération des données :", error);
-        setError("Erreur lors de la récupération des données. Veuillez réessayer.");
+        console.error("Erreur détaillée lors de la récupération des données:", error);
+        if (error.response) {
+          console.error("Réponse d'erreur:", error.response.data);
+        }
+        setError(`Erreur lors de la récupération des données: ${error.message}`);
       }
     };
 
     fetchData();
   }, []);
 
-  //handleDOWNLOAD
+  // Ajout d'un useEffect pour déboguer l'état des bons de réception
+  useEffect(() => {
+    console.log("État actuel des bons de réception:", bonsReception);
+  }, [bonsReception]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value, // Met à jour dynamiquement la clé correspondante dans formData
+    }));
+  };
+  const handleSelectBon = (id) => {
+    if (selectedBons.includes(id)) {
+      setSelectedBons(selectedBons.filter((bonId) => bonId !== id));
+    } else {
+      setSelectedBons([...selectedBons, id]);
+    }
+  };
+
+  const handleGroupedFacturation = async () => {
+    try {
+      const selectedBonsData = bonsReception.filter((bon) => selectedBons.includes(bon._id));
+      const fournisseurId = selectedBonsData[0].fournisseur._id;
+
+      if (!selectedBonsData.every((bon) => bon.fournisseur._id === fournisseurId)) {
+        alert("Tous les bons sélectionnés doivent avoir le même fournisseur.");
+        return;
+      }
+
+      if (!selectedBonsData.every((bon) => bon.statut === "En attente")) {
+        alert("Tous les bons sélectionnés doivent avoir le statut 'En attente'.");
+        return;
+      }
+
+      const response = await axios.post("http://localhost:5000/factureF/plusieurs/generer", {
+        bonIds: selectedBons,
+      }, { headers: { "Content-Type": "application/json" } });
+
+      if (response.data.pdfUrl) {
+        setPdfUrl(response.data.pdfUrl);
+        setOpenPreviewModal(true);
+      }
+    } catch (error) {
+      console.error("Erreur lors de la génération de la facture groupée :", error);
+      alert("Erreur lors de la génération de la facture groupée.");
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedBons.length === filteredBonsReception.length) {
+      setSelectedBons([]);
+    } else {
+      setSelectedBons(filteredBonsReception.map((bon) => bon._id));
+    }
+  };
 
   const handleDownload = (bonReception) => {
     const doc = new jsPDF();
@@ -82,11 +163,9 @@ export default function ListeBonReceptionFournisseur() {
     doc.text(`${fournisseur.raison_sociale}`, 10, 50);
     doc.text(`${fournisseur.adresse || 'N/A'}`, 10, 60);
     doc.text(`Tel: ${fournisseur.telephone || 'N/A'}`, 10, 70);
-    //doc.text(`Email: ${fournisseur.email || 'N/A'}`, 10, 80);
-  
-    doc.text(`Objet : Reception`  , 10, 90);
-  
-    // Tableau des articles commandés
+
+    doc.text(`Objet : Reception`, 10, 90);
+
     doc.autoTable({
       startY: 100,
       head: [['Description', 'Unité', 'Quantité', 'Prix Unitaire HT', 'Total Net']],
@@ -98,83 +177,71 @@ export default function ListeBonReceptionFournisseur() {
         `${(ligne.quantite * ligne.prix_unitaire).toFixed(2)} DT`
       ]),
     });
-  
-    // Totaux
+
     const totalHT = bonReception.lignes.reduce((acc, ligne) => acc + (ligne.quantite * ligne.prix_unitaire), 0);
     const totalTTC = totalHT * 1.2;
-  
+
     doc.text(`Montant Total HT: ${totalHT.toFixed(2)} DT`, 10, doc.autoTable.previous.finalY + 10);
     doc.text(`Total TTC (20%): ${totalTTC.toFixed(2)} DT`, 10, doc.autoTable.previous.finalY + 20);
     doc.text(`Montant Total TTC: ${totalTTC.toFixed(2)} DT`, 10, doc.autoTable.previous.finalY + 30);
-  
+
     doc.save(`bon_de_Reception_${bonReception.numero_Bon}.pdf`);
   };
 
-  //handleDOWNLOADFACTURE 
   const handleDownloadFacture = async (bonReception) => {
     try {
-      console.log("bonReception:", bonReception); // Debug
-     console.log("bonReception._id:", bonReception._id); // Debug
-
-      const response = await axios.post("http://localhost:5000/factureF/generer",
-       {
-        enteteAchatId: bonReception._id, // Assurez-vous que bonReception._id est bien défini
-      },
-      { headers: { "Content-Type": "application/json" }}
-    );
-  
-      if (response.data.pdfUrl) {
-        setPdfUrl(response.data.pdfUrl); // Stocker l'URL du PDF
-        setOpenPreviewModal(true); // Ouvrir la modal de prévisualisation
+      if (bonReception.statut === "Facturé") {
+        alert("Ce bon de réception a déjà été facturé.");
+        return;
       }
-    } 
-    
-    catch (error) {
+      const response = await axios.post("http://localhost:5000/factureF/generer", {
+        enteteAchatId: bonReception._id,
+      }, { headers: { "Content-Type": "application/json" } });
+
+      if (response.data.pdfUrl) {
+        setPdfUrl(response.data.pdfUrl);
+        setOpenPreviewModal(true);
+      }
+    } catch (error) {
       console.error("Erreur lors de la génération de la facture :", error);
       alert("Erreur lors de la génération de la facture.");
     }
   };
-  // Filtrage des bons de Reception
+
   const filteredBonsReception = useMemo(() => {
-    return bonsReception.filter((bonReception) => {
-      const matchesSearchTerm =
-      bonReception.numero_Bon.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (bonReception.fournisseur && bonReception.fournisseur.raison_sociale.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (bonReception.lignes && bonReception.lignes.some((ligne) =>
-          ligne.article.libelle.toLowerCase().includes(searchTerm.toLowerCase())
-        ));
+    console.log("État actuel de bonsReception:", bonsReception);
+    
+    if (!bonsReception || !Array.isArray(bonsReception) || bonsReception.length === 0) {
+      console.log("bonsReception est vide ou invalide");
+      return [];
+    }
 
-      const matchesFilters =
-        (!filters.fournisseur || (bonReception.fournisseur && bonReception.fournisseur.raison_sociale === filters.fournisseur)) &&
-        (!filters.year || new Date(bonReception.dateReception).getFullYear().toString() === filters.year) &&
-        (!filters.month || (new Date(bonReception.dateReception).getMonth() + 1).toString() === filters.month) &&
-        (!filters.article || (bonReception.lignes && bonReception.lignes.some((ligne) => ligne.article.libelle === filters.article)));
+    // Simplifions d'abord le filtrage pour voir si les données de base s'affichent
+    return bonsReception;
+  }, [bonsReception]);
 
-      return matchesSearchTerm && matchesFilters;
-    });
-  }, [bonsReception, searchTerm, filters]);
-
-  // Pagination
   const paginatedBonsReception = useMemo(() => {
+    if (!filteredBonsReception || filteredBonsReception.length === 0) {
+      return [];
+    }
+
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return filteredBonsReception.slice(startIndex, endIndex);
-  }, [filteredBonsReception, currentPage]);
+  }, [filteredBonsReception, currentPage, itemsPerPage]);
 
-  // Gestion de la recherche
   const handleSearch = (term) => {
     setSearchTerm(term);
-    setCurrentPage(1); // Réinitialiser à la première page lors d'une nouvelle recherche
+    setCurrentPage(1);
   };
 
-  // Suppression d'un bon de reception
   const handleDeleteBonReception = async (id) => {
     try {
       const confirmDelete = window.confirm("Êtes-vous sûr de vouloir supprimer ce bon de Réception ?");
       if (!confirmDelete) return;
 
       await axios.delete(`http://localhost:5000/achat/BEF${id}`);
-      setBonsReception(bonsReception.filter((bon) => bon._id !== id)); // Mettre à jour l'état local
+      setBonsReception(bonsReception.filter((bon) => bon._id !== id));
       alert("Bon de Reception supprimé avec succès !");
     } catch (error) {
       console.error("Erreur lors de la suppression du bon de reception :", error);
@@ -182,428 +249,851 @@ export default function ListeBonReceptionFournisseur() {
     }
   };
 
-  
-const handleEditBonReception = (bonReception) => {
-  setEditBonReception(bonReception); // Stocker les données du bon de Reception à modifier
-  setEditLignes(bonReception.lignes); // Initialiser les lignes modifiables
-  setIsEditModalOpen(true); // Activer le mode édition
-};
+  const getStatusChip = (statut) => {
+    let color = "default";
 
-  // Gestion des filtres
-  const handleFilterChange = (filterName, value) => {
-    setFilters((prevFilters) => ({ ...prevFilters, [filterName]: value }));
-    setCurrentPage(1); // Réinitialiser à la première page lors d'un changement de filtre
+    switch (statut) {
+      case "Facturé":
+        color = "success";
+        break;
+      case "Annulée":
+        color = "error";
+        break;
+      case "Non Facturé":
+        color = "#f5f5f5";
+        break;
+      default:
+        color = "#f5f5f5";
+    }
+
+    return <Chip label={statut} color={color} sx={{ fontWeight: "bold", fontSize: "0.9rem" }} />;
   };
 
-  // Réinitialisation des filtres
+  const deleteSelectedBons = async () => {
+    try {
+      await axios.post("http://localhost:5000/achat/BEF/deleteMultiple", { ids: selectedBons });
+      setBonsReception(bonsReception.filter((bon) => !selectedBons.includes(bon._id)));
+      setSelectedBons([]);
+      alert("Bons de réception supprimés avec succès !");
+    } catch (error) {
+      console.error("Erreur lors de la suppression des bons de réception :", error);
+      alert("Erreur lors de la suppression des bons de réception.");
+    }
+  };
+
+  const handleEditBonReception = (bonReception) => {
+    setEditBonReception(bonReception);
+    setEditLignes(bonReception.lignes);
+    setIsEditModalOpen(true);
+  };
+
+  const handleFilterChange = (filterName, value) => {
+    setFilters((prevFilters) => ({ ...prevFilters, [filterName]: value }));
+    setCurrentPage(1);
+  };
+
   const resetFilters = () => {
     setSearchTerm("");
     setFilters({
       fournisseur: "",
-      year: "",
-      month: "",
-      article: "",
+      startDate: "",
+      endDate: "",
+      numeroFacture: "",
+      timbre: "1.000",
     });
-    setCurrentPage(1); // Réinitialiser à la première page lors de la réinitialisation des filtres
+    setCurrentPage(1);
   };
 
-  // Ouverture de la modal de détails
   const handleOpenModal = (bonReception) => {
     setSelectedBonReception(bonReception);
     setIsModalOpen(true);
   };
 
-  // Fermeture de la modal de détails
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedBonReception(null);
   };
 
-  // Affichage des filtres actifs
-  const activeFilters = Object.entries(filters).filter(([key, value]) => value !== "");
+  const handleOpenFactureModal = (bonReception) => {
+    setSelectedBonForFacture(bonReception);
+    setIsFactureModalOpen(true);
+  };
+
+  const handleCloseFactureModal = () => {
+    setIsFactureModalOpen(false);
+    setFactureFournisseur("");
+    setTimbre("1.000");
+    setSelectedBonForFacture(null);
+  };
+
+  const handleGenerateFacture = async () => {
+    if (!selectedBonForFacture) return;
+
+    try {
+      const response = await axios.post("http://localhost:5000/factureF/generer", {
+        enteteAchatId: selectedBonForFacture._id,
+        factureFournisseur: factureFournisseur,
+        timbre: timbre,
+      }, { headers: { "Content-Type": "application/json" } });
+
+      if (response.data.pdfUrl) {
+        setPdfUrl(response.data.pdfUrl);
+        setOpenPreviewModal(true);
+        handleCloseFactureModal();
+      }
+    } catch (error) {
+      console.error("Erreur lors de la génération de la facture :", error);
+      alert("Erreur lors de la génération de la facture.");
+    }
+  };
 
   if (error) {
     return <div>{error}</div>;
   }
+
   return (
     <>
       <Navbar />
-      <Box height={150} />
-      <Box sx={{ overflow: "auto", flexGrow: 1, p: 3, display: "flex", backgroundColor: "#FFFFFF" }}>
+      <Box height={200} />
+      <Box sx={{ display: "flex", backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
         <Sidenav />
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            p: 3,
-            overflow: "auto",
-            backgroundColor: "#FFFFFF",
-            maxWidth: "none",
-            maxHeight: "100vh",
-            width: "100%",
-          }}
-        >
-        <Box sx={{ flexGrow: 1, p: 3 }}>
-     <h1>Liste des bons de Reception fournisseur</h1>
-       <Box height={50} />
+        <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+          <Card sx={{ borderRadius: 2, boxShadow: 3 }}>
+            <CardContent>
+              {/* En-tête avec titre et statistiques */}
+              <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box>
+                  <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+                    Liste des Bons de Réception
+                  </Typography>
+                  <Typography variant="subtitle1" sx={{ color: 'text.secondary', mt: 1 }}>
+                    Total: {bonsReception.length} bons de réception
+                  </Typography>
+                </Box>
+                <Button
+                  variant="contained"
+                  onClick={() => navigate('/ajout-bon-reception')}
+                  startIcon={<Add />}
+                  sx={{ borderRadius: 2 }}
+                >
+                  Nouveau Bon de Réception
+                </Button>
+              </Box>
 
- {/* Barre de recherche et bouton Filtre */}
- <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-    <TextField
-      fullWidth
-      label="Rechercher"
-      variant="outlined"
-      value={searchTerm}
-      onChange={(e) => handleSearch(e.target.value)}
-      sx={{
-        mb: 2,
-        borderRadius: "20px",
-        "& .MuiOutlinedInput-root": {
-          borderRadius: "40px",
-        },
-        width: "400px",
-      }}
-      InputProps={{
-        endAdornment: (
-          <InputAdornment position="end">
-            <IconButton>
-              <Search />
-            </IconButton>
-          </InputAdornment>
-        ),
-      }}
-    />
-    <Box width={150} />
+              {/* Barre de recherche et filtres */}
+              <Box sx={{ display: "flex", alignItems: "center", mb: 3, gap: 2 }}>
+                <TextField
+                  fullWidth
+                  placeholder="Rechercher par numéro, fournisseur ou article..."
+                  variant="outlined"
+                  value={searchTerm}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  sx={{
+                    maxWidth: 400,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 2,
+                      backgroundColor: 'white'
+                    }
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Search sx={{ color: '#1976d2' }} />
+                      </InputAdornment>
+                    )
+                  }}
+                />
+                
+                <Button
+                  variant="outlined"
+                  onClick={() => setIsFilterSidebarOpen(true)}
+                  startIcon={<FilterList />}
+                  sx={{ borderRadius: 2, height: 56 }}
+                >
+                  Filtres
+                </Button>
 
-    {/* Bouton pour ouvrir la sidebar des filtres */}
-    <Button
-      onClick={() => setIsFilterSidebarOpen(!isFilterSidebarOpen)}
-      startIcon={<FilterList />}
-      sx={{ ml: 30}}
-    >
-      Filtre
-    </Button>
-  </Box>
-  {/* Sidebar pour les filtres avancés */}
-  <Drawer
-    anchor="right" // Position de la sidebar (à droite)
-    open={isFilterSidebarOpen} // Contrôle l'ouverture/fermeture
-    onClose={() => setIsFilterSidebarOpen(false)} // Fermer la sidebar
-  >
-    <Box sx={{ width: 300, p: 3 }}>
-      <Typography variant="h6" sx={{ mb: 2 }}>
-        Filtres Avancés
-      </Typography>
-
-      {/* Filtre par fournisseur */}
-      <FormControl fullWidth sx={{ mb: 2 }}>
-        <InputLabel>Fournisseur</InputLabel>
-        <Select
-          value={filters.fournisseur}
-          onChange={(e) => handleFilterChange("fournisseur", e.target.value)}
-        >
-          <MenuItem value="">Tous</MenuItem>
-          {[...new Set(bonsReception.map((bon) => bon.fournisseur?.raison_sociale))].map((name, index) => (
-            <MenuItem key={index} value={name}>
-              {name}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-
-      {/* Filtre par article */}
-      <FormControl fullWidth sx={{ mb: 2 }}>
-        <InputLabel>Article</InputLabel>
-        <Select
-          value={filters.article}
-          onChange={(e) => handleFilterChange("article", e.target.value)}
-        >
-          <MenuItem value="">Tous</MenuItem>
-          {[...new Set(bonsReception.flatMap((bon) => bon.lignes.map((ligne) => ligne.article.libelle)))].map((article, index) => (
-            <MenuItem key={index} value={article}>
-              {article}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-
-      {/* Filtre par année */}
-      <FormControl fullWidth sx={{ mb: 2 }}>
-        <InputLabel>Année</InputLabel>
-        <Select
-          value={filters.year}
-          onChange={(e) => handleFilterChange("year", e.target.value)}
-        >
-          <MenuItem value="">Toutes</MenuItem>
-          {[...new Set(bonsReception.map((bon) => new Date(bon.dateReception).getFullYear().toString()))].map((year, index) => (
-            <MenuItem key={index} value={year}>
-              {year}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-
-      {/* Filtre par mois */}
-      <FormControl fullWidth sx={{ mb: 2 }}>
-        <InputLabel>Mois</InputLabel>
-        <Select
-          value={filters.month}
-          onChange={(e) => handleFilterChange("month", e.target.value)}
-        >
-          <MenuItem value="">Tous</MenuItem>
-          {Array.from({ length: 12 }, (_, i) => (i + 1).toString()).map((month, index) => (
-            <MenuItem key={index} value={month}>
-              {month}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-
-      {/* Bouton pour réinitialiser les filtres */}
-      <Button
-        onClick={resetFilters}
-        startIcon={<Clear />}
-        fullWidth
-        variant="outlined"
-        sx={{ mt: 2 }}
-      >
-        Réinitialiser les filtres
-      </Button>
-    </Box>
-  </Drawer>
-
-  {/* Tableau des bons de réception */}
-  <TableContainer component={Paper} sx={{ mt: 3, boxShadow: 3 }}>
-    <Table sx={{ minWidth: 550 }} aria-label="simple table">
-      <TableHead>
-        <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-          <TableCell sx={{ fontWeight: "bold" }}>Numéro de réception</TableCell>
-          <TableCell sx={{ fontWeight: "bold" }}>Date de réception</TableCell>
-          <TableCell sx={{ fontWeight: "bold" }}>Fournisseur</TableCell>
-          <TableCell sx={{ fontWeight: "bold" }}>Total HT</TableCell>
-          <TableCell sx={{ fontWeight: "bold" }}>Total TTC</TableCell>
-          <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
-          <TableCell sx={{ fontWeight: "bold" }}>Facturer</TableCell>
-
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {paginatedBonsReception.map((bonReception, index) => (
-          <TableRow key={index} sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
-            <TableCell>{bonReception.numero_Bon}</TableCell>
-            <TableCell>{new Date(bonReception.dateReception).toLocaleDateString()}</TableCell>
-            <TableCell>{bonReception.fournisseur ? bonReception.fournisseur.raison_sociale : "Non spécifié"}</TableCell>
-            <TableCell>{bonReception.total_hors_Taxe} TND</TableCell>
-            <TableCell>{bonReception.total_ttc} TND</TableCell>
-            <TableCell>
-  {/* Icône pour "Détails" */}
-  <IconButton
-    onClick={() => handleOpenModal(bonReception)}
-    sx={{ color: "black" }} // Couleur noire
-  >
-    <Visibility />
-  </IconButton>
-
-  {/* Icône pour "Supprimer" */}
-  <IconButton
-    onClick={() => handleDeleteBonReception(bonReception._id)}
-    sx={{ color: "black" }} // Couleur noire
-  >
-    <Delete />
-  </IconButton>
-
-  {/* Icône pour "Modifier" */}
-  <IconButton
-    onClick={() => navigate(`/ListeBonReceptionFournisseur/update/${bonReception._id}`)}
-    sx={{ color: "black" }} // Couleur noire
-  >
-    <Edit />
-  </IconButton>
-  {/* Icone pour Download */}
-  <IconButton
-  onClick={() => handleDownload(bonReception)}
-  sx={{ color: "black" }} // Couleur noire
->
-  <FileDownloadIcon />
-</IconButton>
-  </TableCell>
-   {/* Facturer */}
-  <TableCell>
-<IconButton
-  onClick={() => handleDownloadFacture(bonReception)}
-  sx={{ color: "black" }} // Couleur noire
->
-  <ReceiptIcon />
-</IconButton>
-</TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  </TableContainer>
-
-  {/* Pagination */}
-  <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-    <Button
-      variant="contained"
-      disabled={currentPage === 1}
-      onClick={() => setCurrentPage(currentPage - 1)}
-      sx={{ mr: 2 }}
-    >
-      Précédent
-    </Button>
-    <Button
-      variant="contained"
-      disabled={currentPage * itemsPerPage >= filteredBonsReception.length}
-      onClick={() => setCurrentPage(currentPage + 1)}
-    >
-      Suivant
-    </Button>
-  </Box>
-  <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-    <Typography variant="body1">
-      Page {currentPage} sur {Math.ceil(filteredBonsReception.length / itemsPerPage)}
-    </Typography>
-  </Box>
-</Box>
-          {/* Pop-up pour afficher les détails du bon de Reception */}
-          <Modal
-            open={isModalOpen}
-            onClose={handleCloseModal}
-            closeAfterTransition
-            BackdropComponent={Backdrop}
-            BackdropProps={{
-              timeout: 500,
-            }}
-          >
-            <Fade in={isModalOpen}>
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: "50%",
-                  left: "50%",
-                  transform: "translate(-50%, -50%)",
-                  width: "80%",
-                  maxWidth: "800px",
-                  bgcolor: "#FFFFFF",
-                  boxShadow: 24,
-                  p: 4,
-                  borderRadius: 2,
-                  maxHeight: "90vh",
-                  overflowY: "auto",
-                }}
-              >
-                {selectedBonReception && (
-                  <>
-                    <Typography variant="h4" component="h2" sx={{ mb: 3 }}>
-                      Détails du Bon de Reception N° {selectedBonReception.numero_Bon}
-                    </Typography>
-
-                    {/* Informations de base */}
-                    <Typography variant="h6" sx={{ mb: 2 }}>
-                      Informations Générales
-                    </Typography>
-                    <Typography variant="body1" sx={{ mb: 1 }}>
-                      <strong>Date de Reception:</strong> {new Date(selectedBonReception.dateReception).toLocaleDateString()}
-                    </Typography>
-                    <Typography variant="body1" sx={{ mb: 1 }}>
-                      <strong>Fournisseur:</strong> {selectedBonReception.fournisseur ? selectedBonReception.fournisseur.raison_sociale : "Non spécifié"}
-                    </Typography>
-                    <Typography variant="body1" sx={{ mb: 1 }}>
-                      <strong>Total HT:</strong> {selectedBonReception.total_hors_Taxe} TND
-                    </Typography>
-                    <Typography variant="body1" sx={{ mb: 1 }}>
-                      <strong>Total TTC:</strong> {selectedBonReception.total_ttc} TND
-                    </Typography>
-
-                    {/* Lignes de bon Reception */}
-                    <Typography variant="h6" sx={{ mt: 3, mb: 2 }}>
-                      Articles Réceptionnées
-                    </Typography>
-                    <TableContainer component={Paper}>
-                      <Table>
-                        <TableHead>
-                          <TableRow>
-                            <TableCell>Article</TableCell>
-                            <TableCell>Quantité</TableCell>
-                            <TableCell>Prix Unitaire</TableCell>
-                            <TableCell>Total HT</TableCell>
-                            <TableCell>Total TTC</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {selectedBonReception.lignes.map((ligne, index) => (
-                            <TableRow key={index}>
-                              <TableCell>{ligne.article ? ligne.article.libelle : 'Article inconnu'}</TableCell>
-                              <TableCell>{ligne.quantite}</TableCell>
-                              <TableCell>{ligne.prix_unitaire} TND</TableCell>
-                              <TableCell>{ligne.total_ht} TND</TableCell>
-                              <TableCell>{ligne.total_ttc} TND</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
-
-                    {/* Bouton pour modifier le bon de Reception */}
-                    <Button
-                      variant="contained"
-                      color="warning"
-                      sx={{ mt: 2, mr: 65 }}
-                      onClick={() => handleEditBonReception(selectedBonReception)}
-                    >
-                      Modifier
-                    </Button>
-                    {/* Bouton pour fermer la pop-up */}
+                {selectedBons.length > 0 && (
+                  <Box sx={{ display: 'flex', gap: 1 }}>
                     <Button
                       variant="contained"
                       color="error"
-                      onClick={handleCloseModal}
-                      sx={{ mt: 2 }}
+                      onClick={deleteSelectedBons}
+                      startIcon={<Delete />}
+                      sx={{ borderRadius: 2 }}
                     >
-                      Fermer
+                      Supprimer ({selectedBons.length})
                     </Button>
-                  </>
+                    {selectedBons.length > 1 && (
+                      <Button
+                        variant="contained"
+                        onClick={handleGroupedFacturation}
+                        startIcon={<ReceiptIcon />}
+                        sx={{ borderRadius: 2 }}
+                      >
+                        Facturer groupé
+                      </Button>
+                    )}
+                  </Box>
                 )}
               </Box>
-            </Fade>
-          </Modal>
-{/* Prévisualisation de facture */}
-          <Dialog open={openPreviewModal} onClose={() => setOpenPreviewModal(false)} maxWidth="md" fullWidth>
-  <DialogTitle>Prévisualisation de la Facture</DialogTitle>
-  <DialogContent>
-    <iframe
-      src={pdfUrl}
-      width="100%"
-      height="500px"
-      style={{ border: "none" }}
-      title="Prévisualisation de la Facture"
-    />
-  </DialogContent>
-  <DialogActions>
-    <Button onClick={() => setOpenPreviewModal(false)}>Fermer</Button>
-    <Button
-      onClick={() => {
-        const link = document.createElement("a");
-        link.href = pdfUrl;
-        link.download = `facture_${selectedBonReception?.numero_Bon}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }}
-      color="primary"
-    >
-      Télécharger
-    </Button>
-  </DialogActions>
-</Dialog>
 
-        
-        
-          
-        
+              {/* Tableau des bons de réception */}
+              <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 2 }}>
+                <Table>
+                  <TableHead>
+                    <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
+                      <TableCell padding="checkbox">
+                        <Checkbox
+                          checked={selectedBons.length === filteredBonsReception.length}
+                          indeterminate={selectedBons.length > 0 && selectedBons.length < filteredBonsReception.length}
+                          onChange={handleSelectAll}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>N° Réception</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Fournisseur</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Total HT</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Total TTC</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Statut</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {paginatedBonsReception.length > 0 ? (
+                      paginatedBonsReception.map((bon, index) => (
+                        <TableRow 
+                          key={bon._id || index}
+                          sx={{ 
+                            '&:hover': { backgroundColor: '#f5f5f5' },
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <TableCell padding="checkbox">
+                            <Checkbox
+                              checked={selectedBons.includes(bon._id)}
+                              onChange={() => handleSelectBon(bon._id)}
+                              disabled={bon.statut === "Facturé"}
+                            />
+                          </TableCell>
+                          <TableCell>{bon.numero_Bon}</TableCell>
+                          <TableCell>
+                            {new Date(bon.dateReception).toLocaleDateString('fr-FR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            })}
+                          </TableCell>
+                          <TableCell>{bon.fournisseur?.raison_sociale || "Non spécifié"}</TableCell>
+                          <TableCell>{bon.total_hors_Taxe?.toFixed(3)} TND</TableCell>
+                          <TableCell>{bon.total_ttc?.toFixed(3)} TND</TableCell>
+                          <TableCell>
+                            <Chip 
+                              label={bon.statut}
+                              color={
+                                bon.statut === "Facturé" ? "success" :
+                                bon.statut === "Annulée" ? "error" :
+                                bon.statut === "En attente" ? "warning" : "default"
+                              }
+                              sx={{ 
+                                fontWeight: 'bold',
+                                minWidth: 100,
+                                justifyContent: 'center'
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleOpenModal(bon)}
+                                sx={{ color: 'primary.main' }}
+                                title="Voir les détails"
+                              >
+                                <Visibility />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                onClick={() => navigate(`/updateBonReception/${bon._id}`)}
+                                sx={{ color: 'warning.main' }}
+                                title="Modifier"
+                              >
+                                <Edit />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleDeleteBonReception(bon._id)}
+                                sx={{ color: 'error.main' }}
+                                title="Supprimer"
+                              >
+                                <Delete />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleDownload(bon)}
+                                sx={{ color: 'info.main' }}
+                                title="Télécharger"
+                              >
+                                <FileDownloadIcon />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleOpenFactureModal(bon)}
+                                disabled={bon.statut === "Facturé"}
+                                sx={{ color: bon.statut === "Facturé" ? 'text.disabled' : 'success.main' }}
+                                title="Générer la facture"
+                              >
+                                <ReceiptIcon />
+                              </IconButton>
+                            </Box>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
+                          <Box sx={{ textAlign: 'center' }}>
+                            <Typography variant="h6" color="text.secondary" gutterBottom>
+                              Aucun bon de réception trouvé
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              Ajoutez un nouveau bon de réception ou modifiez vos filtres
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
+              {/* Pagination */}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 3 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Affichage de {Math.min(currentPage * itemsPerPage, filteredBonsReception.length)} sur {filteredBonsReception.length} bons
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <Button
+                    variant="outlined"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    startIcon={<NavigateBefore />}
+                    sx={{ borderRadius: 2 }}
+                  >
+                    Précédent
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    disabled={currentPage * itemsPerPage >= filteredBonsReception.length}
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    endIcon={<NavigateNext />}
+                    sx={{ borderRadius: 2 }}
+                  >
+                    Suivant
+                  </Button>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
         </Box>
       </Box>
+
+      {/* Drawer des filtres */}
+      <Drawer
+        anchor="right"
+        open={isFilterSidebarOpen}
+        onClose={() => setIsFilterSidebarOpen(false)}
+        PaperProps={{
+          sx: { width: 320, p: 3, borderTopLeftRadius: 8, borderBottomLeftRadius: 8 }
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h6">Filtres avancés</Typography>
+          <IconButton onClick={() => setIsFilterSidebarOpen(false)}>
+            <Close />
+          </IconButton>
+        </Box>
+
+        <Stack spacing={3}>
+          <FormControl fullWidth>
+            <InputLabel>Fournisseur</InputLabel>
+            <Select
+              value={filters.fournisseur}
+              onChange={(e) => handleFilterChange("fournisseur", e.target.value)}
+              label="Fournisseur"
+            >
+              <MenuItem value="">Tous</MenuItem>
+              {[...new Set(bonsReception.map(bon => bon.fournisseur?.raison_sociale))]
+                .filter(Boolean)
+                .map((name, index) => (
+                  <MenuItem key={index} value={name}>{name}</MenuItem>
+                ))
+              }
+            </Select>
+          </FormControl>
+
+          <TextField
+            label="Date début"
+            type="date"
+            value={filters.startDate}
+            onChange={(e) => handleFilterChange("startDate", e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            fullWidth
+          />
+
+          <TextField
+            label="Date fin"
+            type="date"
+            value={filters.endDate}
+            onChange={(e) => handleFilterChange("endDate", e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            fullWidth
+          />
+
+          <TextField
+            label="Numéro de facture"
+            value={filters.numeroFacture}
+            onChange={(e) => handleFilterChange("numeroFacture", e.target.value)}
+            fullWidth
+          />
+
+          <FormControl fullWidth>
+            <InputLabel>Timbre</InputLabel>
+            <Select
+              value={filters.timbre}
+              onChange={(e) => handleFilterChange("timbre", e.target.value)}
+              label="Timbre"
+            >
+              <MenuItem value="1.000">1.000 TND</MenuItem>
+              <MenuItem value="-1.000">-1.000 TND</MenuItem>
+            </Select>
+          </FormControl>
+
+          <Button
+            variant="outlined"
+            onClick={resetFilters}
+            startIcon={<Clear />}
+            fullWidth
+          >
+            Réinitialiser les filtres
+          </Button>
+        </Stack>
+      </Drawer>
+
+      <Modal
+        open={isModalOpen}
+        onClose={handleCloseModal}
+        closeAfterTransition
+        BackdropComponent={Backdrop}
+        BackdropProps={{
+          timeout: 500,
+        }}
+      >
+        <Fade in={isModalOpen}>
+          <Box
+            sx={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: "90%",
+              maxWidth: "1000px",
+              bgcolor: "#FFFFFF",
+              boxShadow: 24,
+              p: 4,
+              borderRadius: 2,
+              maxHeight: "90vh",
+              overflowY: "auto",
+            }}
+          >
+            {selectedBonReception && (
+              <>
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  mb: 4,
+                  pb: 2,
+                  borderBottom: '2px solid #f0f0f0'
+                }}>
+                  <Box>
+                    <Typography variant="h4" component="h2" sx={{ 
+                      fontWeight: 'bold',
+                      color: '#1976d2',
+                      mb: 1
+                    }}>
+                      Bon de Réception N° {selectedBonReception.numero_Bon}
+                    </Typography>
+                    <Chip 
+                      label={selectedBonReception.statut}
+                      color={
+                        selectedBonReception.statut === "Facturé" ? "success" :
+                        selectedBonReception.statut === "Annulée" ? "error" :
+                        selectedBonReception.statut === "En attente" ? "warning" : "default"
+                      }
+                      sx={{ 
+                        fontWeight: 'bold',
+                        minWidth: 120,
+                        justifyContent: 'center'
+                      }}
+                    />
+                  </Box>
+                  <IconButton 
+                    onClick={handleCloseModal}
+                    sx={{ 
+                      color: 'text.secondary',
+                      '&:hover': { color: 'error.main' }
+                    }}
+                  >
+                    <Close />
+                  </IconButton>
+                </Box>
+
+                <Grid container spacing={3}>
+                  {/* Informations Générales */}
+                  <Grid item xs={12} md={6}>
+                    <Card sx={{ height: '100%', bgcolor: '#f8f9fa' }}>
+                      <CardContent>
+                        <Typography variant="h6" sx={{ 
+                          mb: 3,
+                          color: '#1976d2',
+                          fontWeight: 'bold',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1
+                        }}>
+                          <InfoIcon /> Informations Générales
+                        </Typography>
+                        <Grid container spacing={2}>
+                          <Grid item xs={6}>
+                            <Typography variant="subtitle2" color="text.secondary">
+                              Date de Reception
+                            </Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                              {new Date(selectedBonReception.dateReception).toLocaleDateString('fr-FR', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric'
+                              })}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="subtitle2" color="text.secondary">
+                              Fournisseur
+                            </Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                              {selectedBonReception.fournisseur ? selectedBonReception.fournisseur.raison_sociale : "Non spécifié"}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="subtitle2" color="text.secondary">
+                              Total HT
+                            </Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 'medium', color: '#1976d2' }}>
+                              {selectedBonReception.total_hors_Taxe?.toFixed(3)} TND
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="subtitle2" color="text.secondary">
+                              Total TTC
+                            </Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 'medium', color: '#2e7d32' }}>
+                              {selectedBonReception.total_ttc?.toFixed(3)} TND
+                            </Typography>
+                          </Grid>
+                        </Grid>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+
+                  {/* Adresse du Fournisseur */}
+                  <Grid item xs={12} md={6}>
+                    <Card sx={{ height: '100%', bgcolor: '#f8f9fa' }}>
+                      <CardContent>
+                        <Typography variant="h6" sx={{ 
+                          mb: 3,
+                          color: '#1976d2',
+                          fontWeight: 'bold',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1
+                        }}>
+                          <LocationOnIcon /> Adresse du Fournisseur
+                        </Typography>
+                        <Typography variant="body1" sx={{ mb: 1 }}>
+                          {selectedBonReception.fournisseur?.adresse || "Adresse non spécifiée"}
+                        </Typography>
+                        <Typography variant="body1" sx={{ mb: 1 }}>
+                          Tél: {selectedBonReception.fournisseur?.telephone || "Non spécifié"}
+                        </Typography>
+                        <Typography variant="body1">
+                          Email: {selectedBonReception.fournisseur?.email || "Non spécifié"}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+
+                  {/* Liste des Articles */}
+                  <Grid item xs={12}>
+                    <Card sx={{ bgcolor: '#f8f9fa' }}>
+                      <CardContent>
+                        <Typography variant="h6" sx={{ 
+                          mb: 3,
+                          color: '#1976d2',
+                          fontWeight: 'bold',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1
+                        }}>
+                          <InventoryIcon /> Articles Réceptionnés
+                        </Typography>
+                        <TableContainer>
+                          <Table>
+                            <TableHead>
+                              <TableRow sx={{ backgroundColor: '#fff' }}>
+                                <TableCell sx={{ fontWeight: 'bold' }}>Article</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold' }}>Quantité</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold' }}>Prix Unitaire</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold' }}>Total HT</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold' }}>Total TTC</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {selectedBonReception.lignes.map((ligne, index) => (
+                                <TableRow 
+                                  key={index}
+                                  sx={{ 
+                                    '&:hover': { backgroundColor: '#fff' },
+                                    transition: 'background-color 0.2s'
+                                  }}
+                                >
+                                  <TableCell>{ligne.article ? ligne.article.libelle : 'Article inconnu'}</TableCell>
+                                  <TableCell>{ligne.quantite}</TableCell>
+                                  <TableCell>{ligne.prix_unitaire?.toFixed(3)} TND</TableCell>
+                                  <TableCell>{ligne.total_ht?.toFixed(3)} TND</TableCell>
+                                  <TableCell>{ligne.total_ttc?.toFixed(3)} TND</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                </Grid>
+
+                {/* Actions */}
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'flex-end', 
+                  gap: 2,
+                  mt: 4,
+                  pt: 2,
+                  borderTop: '2px solid #f0f0f0'
+                }}>
+                  <Button
+                    variant="outlined"
+                    onClick={handleCloseModal}
+                    startIcon={<Close />}
+                    sx={{ 
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      px: 3
+                    }}
+                  >
+                    Fermer
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="warning"
+                    onClick={() => handleEditBonReception(selectedBonReception)}
+                    startIcon={<Edit />}
+                    sx={{ 
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      px: 3
+                    }}
+                  >
+                    Modifier
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="info"
+                    onClick={() => handleDownload(selectedBonReception)}
+                    startIcon={<FileDownloadIcon />}
+                    sx={{ 
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      px: 3
+                    }}
+                  >
+                    Télécharger
+                  </Button>
+                </Box>
+              </>
+            )}
+          </Box>
+        </Fade>
+      </Modal>
+
+      <Dialog open={openPreviewModal} onClose={() => setOpenPreviewModal(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Prévisualisation de la Facture</DialogTitle>
+        <DialogContent>
+          <iframe
+            src={pdfUrl}
+            width="100%"
+            height="500px"
+            style={{ border: "none" }}
+            title="Prévisualisation de la Facture"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenPreviewModal(false)}>Fermer</Button>
+          <Button
+            onClick={() => {
+              const link = document.createElement("a");
+              link.href = pdfUrl;
+              link.download = `facture_${selectedBonReception?.numero_Bon}.pdf`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }}
+            color="primary"
+          >
+            Télécharger
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog 
+        open={isFactureModalOpen} 
+        onClose={handleCloseFactureModal}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            boxShadow: 3
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          backgroundColor: '#f5f5f5',
+          borderBottom: '1px solid #e0e0e0',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1
+        }}>
+          <ReceiptIcon sx={{ color: '#1976d2' }} />
+          <Typography variant="h6" component="div">
+            Génération de Facture
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ mt: 3 }}>
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              Bon de Réception N° {selectedBonForFacture?.numero_Bon}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Fournisseur: {selectedBonForFacture?.fournisseur?.raison_sociale}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Date: {selectedBonForFacture && new Date(selectedBonForFacture.dateReception).toLocaleDateString()}
+            </Typography>
+          </Box>
+
+          <TextField
+            fullWidth
+            label="Numéro Facture Fournisseur"
+            name="numeroFactureFournisseur" // Assurez-vous que le nom correspond à la clé dans formData
+            value={formData.numeroFactureFournisseur} // Liez la valeur à l'état
+            onChange={handleChange} // Utilisez handleChange pour mettre à jour l'état
+            sx={{ 
+              mb: 3,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2
+              }
+            }}
+            placeholder="Entrez le numéro Facture Fournisseur"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <ReceiptIcon color="primary" />
+                </InputAdornment>
+              ),
+            }}
+          />
+
+          <FormControl fullWidth sx={{ mb: 3 }}>
+            <InputLabel>Timbre</InputLabel>
+            <Select
+              value={timbre}
+              onChange={(e) => setTimbre(e.target.value)}
+              sx={{
+                borderRadius: 2,
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#e0e0e0'
+                }
+              }}
+            >
+              <MenuItem value="1.000">1.000 TND</MenuItem>
+              <MenuItem value="-1.000">-1.000 TND</MenuItem>
+            </Select>
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+              Le timbre fiscal sera appliqué au montant total de la facture
+            </Typography>
+          </FormControl>
+
+          <Box sx={{ 
+            backgroundColor: '#f8f9fa', 
+            p: 2, 
+            borderRadius: 2,
+            mb: 3 
+          }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Récapitulatif
+            </Typography>
+            <Typography variant="body2">
+              Total HT: {selectedBonForFacture?.total_hors_Taxe} TND
+            </Typography>
+            <Typography variant="body2">
+              Total TTC: {selectedBonForFacture?.total_ttc} TND
+            </Typography>
+            <Typography variant="body2" color="primary">
+              Montant du Timbre: {timbre} TND
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ 
+          p: 3, 
+          borderTop: '1px solid #e0e0e0',
+          gap: 1
+        }}>
+          <Button 
+            onClick={handleCloseFactureModal}
+            variant="outlined"
+            sx={{ 
+              borderRadius: 2,
+              textTransform: 'none',
+              px: 3
+            }}
+          >
+            Annuler
+          </Button>
+          <Button 
+            onClick={handleGenerateFacture}
+            variant="contained"
+            startIcon={<ReceiptIcon />}
+            sx={{ 
+              borderRadius: 2,
+              textTransform: 'none',
+              px: 3
+            }}
+          >
+            Générer la Facture
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

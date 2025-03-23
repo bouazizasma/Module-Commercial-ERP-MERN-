@@ -27,9 +27,16 @@ import {
   Fade,
   Typography,
   Card,
-  Grid,
+  CardContent,
+  Snackbar,
+  Alert,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
-import { Visibility, Delete, Edit, Search } from "@mui/icons-material";
+import { Visibility, Delete, Edit, Search, CheckCircle, Add, Inventory } from "@mui/icons-material";
+
 export default function Article() {
   const [articles, setArticles] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
@@ -39,14 +46,18 @@ export default function Article() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState(null);
   const navigate = useNavigate();
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+ 
 
   // Fetch articles from the backend
   const fetchArticles = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/article/articles");
-      setArticles(response.data);
+      const [articlesResponse, famillesResponse] = await Promise.all([
+        axios.get("http://localhost:5000/article/articles"),
+      ]);
+      setArticles(articlesResponse.data);
     } catch (error) {
-      console.error("Error fetching articles:", error);
+      console.error("Erreur lors de la récupération des données:", error);
     }
   };
 
@@ -100,9 +111,15 @@ export default function Article() {
   }, []);
 
   // Filter articles based on search term
-  const filteredArticles = articles.filter((article) =>
-    article.libelle.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredArticles = articles.filter((article) => {
+    const searchTermLower = searchTerm.toLowerCase();
+    const code = String(article.code || '');
+    const designation = String(article.designation || '');
+    
+    const matchesSearch = code.toLowerCase().includes(searchTermLower) ||
+                         designation.toLowerCase().includes(searchTermLower);
+    return matchesSearch ;
+  });
 
   // Handle checkbox selection
   const handleSelectArticle = (id) => {
@@ -122,118 +139,117 @@ export default function Article() {
     }
   };
 
+  const handleDeleteClick = (article) => {
+    setSelectedArticle(article);
+    setOpenDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await axios.delete(`http://localhost:5000/article/${selectedArticle._id}`);
+      setArticles(articles.filter(article => article._id !== selectedArticle._id));
+      setOpenDialog(false);
+      setOpenSnackbar(true);
+    } catch (error) {
+      console.error("Erreur lors de la suppression:", error);
+    }
+  };
+
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false);
+  };
+
   return (
     <>
-      {/* Navbar fixe */}
       <Navbar />
       <Box height={70} />
-      <Box sx={{ overflow: "auto", flexGrow: 1, p: 3, display: "flex", backgroundColor: "#FFFFFF" }}>
-        {/* Sidenav */}
+      <Box sx={{ display: "flex" }}>
         <Sidenav />
-        {/* Contenu principal */}
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            p: 3,
-            overflow: "auto",
-            backgroundColor: "#FFFFFF",
-            maxWidth: "none",
-            maxHeight: "100vh",
-            marginLeft: "10px", // Compense la largeur de la Sidenav
-            width: "100%",
-          }}
-        >
-          <h1>Articles</h1>
-          <Box height={50} />
+        <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: "auto", maxHeight: "100vh" }}>
+          <Card sx={{ mb: 3, boxShadow: 3, borderRadius: 2 }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h4" component="h1" sx={{ color: '#1976d2', fontWeight: 'bold' }}>
+                  <Inventory sx={{ mr: 1, verticalAlign: 'middle' }} />
+                  Gestion des Articles
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => navigate('/createArticle')}
+                  startIcon={<Add />}
+                  sx={{ 
+                    borderRadius: '8px',
+                    backgroundColor: '#1976d2',
+                    '&:hover': { backgroundColor: '#1565c0' }
+                  }}
+                >
+                  Nouvel Article
+                </Button>
+              </Box>
 
-          {/* Barre de recherche */}
-          <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-            <TextField
-              fullWidth
-              label="Rechercher"
-              variant="outlined"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              sx={{
-                mb: 2,
-                borderRadius: "20px",
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "40px",
-                },
-                width: "400px",
-              }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton>
-                      <Search />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <Box width={150} />
-            {/* Bouton pour créer un nouvel article */}
-            <Button
-              variant="contained"
-              color="success"
-              sx={{ ml: 20 }}
-              onClick={() => navigate("/Article/create")}
-            >
-              Créer un article
-            </Button>
-          </Box>
-
-          {/* Bouton pour supprimer les articles sélectionnés */}
-          {selectedArticles.length > 0 && (
-            <Button
-              variant="contained"
-              color="error"
-              sx={{ mb: 2 }}
-              onClick={deleteSelectedArticles}
-            >
-              Supprimer les articles sélectionnés
-            </Button>
-          )}
-
-          {/* Tableau des articles */}
-          <TableContainer component={Paper} sx={{ mt: 3, boxShadow: 3 }}>
-            <Table>
-              <TableHead>
-                <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                  <TableCell>
-                    <Checkbox
-                      checked={selectedArticles.length === filteredArticles.length}
-                      indeterminate={
-                        selectedArticles.length > 0 &&
-                        selectedArticles.length < filteredArticles.length
+              {/* Barre de recherche */}
+              <Card sx={{ mb: 3, backgroundColor: '#f8f9fa', boxShadow: 2 }}>
+                <CardContent sx={{ display: 'flex', gap: 2 }}>
+                  <TextField
+                    fullWidth
+                    label="Rechercher un article"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Search color="primary" />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px',
+                        backgroundColor: '#fff',
                       }
-                      onChange={handleSelectAll}
-                    />
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Code</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Libellé</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Nombre Unité</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Nature</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Image</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredArticles.map((article) => (
-                  <TableRow key={article._id}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedArticles.includes(article._id)}
-                        onChange={() => handleSelectArticle(article._id)}
-                      />
-                    </TableCell>
-                    <TableCell>{article.code}</TableCell>
-                    <TableCell>{article.libelle}</TableCell>
-                    <TableCell>{article.Nombre_unite}</TableCell>
-                    <TableCell>{article.Nature}</TableCell>
-                    <TableCell>
+                    }}
+                  />
+                 {/* <FormControl sx={{ minWidth: 200 }}>
+                    <InputLabel>Filtrer par famille</InputLabel>
+                    <Select
+                      value={filterFamille}
+                      onChange={(e) => setFilterFamille(e.target.value)}
+                      label="Filtrer par famille"
+                    >
+                      <MenuItem value="">Toutes les familles</MenuItem>
+                      {familles.map((famille) => (
+                        <MenuItem key={famille._id} value={famille._id}>
+                          {famille.nom}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  */}
+                </CardContent>
+              </Card>
+
+              {/* Tableau des articles */}
+              <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 2 }}>
+                <Table>
+                  <TableHead>
+                    <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Code</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Désignation</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Prix TTC</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Stock</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Image</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {filteredArticles.map((article) => (
+                      <TableRow key={article._id} hover>
+                        <TableCell>{article.code}</TableCell>
+                        <TableCell>{article.libelle}</TableCell>
+                        <TableCell>{article.prix_totale_concre} TND</TableCell>
+                        <TableCell>{article.Nombre_unite}</TableCell>
+                        <TableCell>
                       {article.image_article ? (
                         <img
                           src={`data:image/jpeg;base64,${Buffer.from(article.image_article).toString("base64")}`}
@@ -243,147 +259,118 @@ export default function Article() {
                         <span>Pas d'image</span>
                       )}
                     </TableCell>
-                    <TableCell>
-                      {/* Icône pour "Détails" */}
-                      <IconButton
-                        onClick={() => handleOpenModal(article)}
-                        sx={{ color: "black" }}
-                      >
-                        <Visibility />
-                      </IconButton>
+                        <TableCell>
+                          <IconButton
+                            color="info"
+                            onClick={() => handleOpenModal(article)}
+                            sx={{ mr: 1 }}
+                          >
+                            <Visibility />
+                          </IconButton>
+                          <IconButton
+                            color="primary"
+                            onClick={() => navigate(`/updateArticle/${article._id}`)}
+                            sx={{ mr: 1 }}
+                          >
+                            <Edit />
+                          </IconButton>
+                          <IconButton
+                            color="error"
+                            onClick={() => handleDeleteClick(article)}
+                          >
+                            <Delete />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </CardContent>
+          </Card>
 
-                      {/* Icône pour "Supprimer" */}
-                      <IconButton
-                        onClick={() => handleOpenDialog(article._id)}
-                        sx={{ color: "black" }}
-                      >
-                        <Delete />
-                      </IconButton>
+          {/* Modal de détails */}
+          <Modal
+            open={isModalOpen}
+            onClose={handleCloseModal}
+            closeAfterTransition
+            BackdropComponent={Backdrop}
+            BackdropProps={{
+              timeout: 500,
+            }}
+          >
+            <Fade in={isModalOpen}>
+              <Box sx={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: 400,
+                bgcolor: 'background.paper',
+                boxShadow: 24,
+                p: 4,
+                borderRadius: 2,
+              }}>
+                {selectedArticle && (
+                  <>
+                    <Typography variant="h6" component="h2" gutterBottom>
+                      Détails de l'article
+                    </Typography>
+                    <Typography><strong>Code:</strong> {selectedArticle.code}</Typography>
+                    <Typography><strong>Désignation:</strong> {selectedArticle.libelle}</Typography>
+                    <Typography><strong>Prix d'achat:</strong> {selectedArticle.prix_achat} TND</Typography>
+                    <Typography><strong>Stock :</strong> {selectedArticle.Nombre_unite}</Typography>
+                    <Typography><strong>Famille:</strong> {selectedArticle.libelleFamille}</Typography>
+                    <Typography><strong>TVA:</strong> {selectedArticle.tva}%</Typography>
+                    <Typography><strong>Fodec:</strong> {selectedArticle.fodec}%</Typography>
+                  </>
+                )}
+              </Box>
+            </Fade>
+          </Modal>
 
-                      {/* Icône pour "Modifier" */}
-                      <IconButton
-                        onClick={() => navigate(`/Article/update/${article._id}`)}
-                        sx={{ color: "black" }}
-                      >
-                        <Edit />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          {/* Dialog de confirmation de suppression */}
+          <Dialog
+            open={openDialog}
+            onClose={handleCloseDialog}
+            aria-labelledby="alert-dialog-title"
+            aria-describedby="alert-dialog-description"
+          >
+            <DialogTitle id="alert-dialog-title">
+              {"Confirmer la suppression"}
+            </DialogTitle>
+            <DialogContent>
+              <Typography>
+                Êtes-vous sûr de vouloir supprimer cet article ?
+              </Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseDialog} color="primary">
+                Annuler
+              </Button>
+              <Button onClick={handleDeleteConfirm} color="error" autoFocus>
+                Supprimer
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          {/* Snackbar de confirmation */}
+          <Snackbar
+            open={openSnackbar}
+            autoHideDuration={6000}
+            onClose={handleCloseSnackbar}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          >
+            <Alert
+              onClose={handleCloseSnackbar}
+              severity="success"
+              sx={{ width: '100%' }}
+            >
+              Article supprimé avec succès
+            </Alert>
+          </Snackbar>
         </Box>
       </Box>
-
-      {/* Dialog de confirmation de suppression */}
-      <Dialog open={openDialog} onClose={handleCloseDialog}>
-        <DialogTitle>Supprimer l'article</DialogTitle>
-        <DialogContent>
-          <p>Êtes-vous sûr de vouloir supprimer cet article ?</p>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog} color="primary">
-            Non
-          </Button>
-          <Button
-            onClick={() => {
-              deleteArticle(selectedArticleId);
-              handleCloseDialog();
-            }}
-            color="secondary"
-          >
-            Oui
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Modal pour afficher les détails de l'article */}
-      <Modal
-        open={isModalOpen}
-        onClose={handleCloseModal}
-        closeAfterTransition
-        BackdropComponent={Backdrop}
-        BackdropProps={{
-          timeout: 500,
-        }}
-      >
-        <Fade in={isModalOpen}>
-          <Box
-            sx={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              width: "80%",
-              maxWidth: "800px",
-              bgcolor: "#FFFFFF",
-              boxShadow: 24,
-              p: 4,
-              borderRadius: 2,
-              maxHeight: "90vh",
-              overflowY: "auto",
-            }}
-          >
-            {selectedArticle && (
-              <>
-                {/* Titre de la pop-up */}
-                <Typography variant="h4" component="h2" sx={{ mb: 3, fontWeight: "bold", color: "#1976d2" }}>
-                  Détails de l'Article
-                </Typography>
-
-                {/* Section Informations Générales */}
-                <Card sx={{ mb: 3, p: 2, boxShadow: 3 }}>
-                  <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#555" }}>
-                    Informations Générales
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="body1" sx={{ mb: 1 }}>
-                        <strong>Code:</strong> {selectedArticle.code}
-                      </Typography>
-                      <Typography variant="body1" sx={{ mb: 1 }}>
-                        <strong>Libellé:</strong> {selectedArticle.libelle}
-                      </Typography>
-                      <Typography variant="body1" sx={{ mb: 1 }}>
-                        <strong>Nombre Unité:</strong> {selectedArticle.Nombre_unite}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="body1" sx={{ mb: 1 }}>
-                        <strong>Nature:</strong> {selectedArticle.Nature}
-                      </Typography>
-                      <Typography variant="body1" sx={{ mb: 1 }}>
-                        <strong>Image:</strong>
-                      </Typography>
-                      {selectedArticle.image_article ? (
-                        <img
-                          src={`data:image/jpeg;base64,${Buffer.from(selectedArticle.image_article).toString("base64")}`}
-                          style={{ width: "100px", height: "100px", borderRadius: "5px" }}
-                        />
-                      ) : (
-                        <span>Pas d'image</span>
-                      )}
-                    </Grid>
-                  </Grid>
-                </Card>
-
-                {/* Bouton de fermeture */}
-                <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
-                  <Button
-                    variant="contained"
-                    color="error"
-                    onClick={handleCloseModal}
-                    sx={{ mt: 2 }}
-                  >
-                    Fermer
-                  </Button>
-                </Box>
-              </>
-            )}
-          </Box>
-        </Fade>
-      </Modal>
     </>
   );
 }

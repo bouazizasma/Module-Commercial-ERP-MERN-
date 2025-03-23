@@ -17,162 +17,292 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
+  TextField,
+  InputAdornment,
+  Typography,
+  Card,
+  Stack,
 } from "@mui/material";
+import { 
+  Category,
+  Delete, 
+  Edit, 
+  Search,
+  Visibility,
+  Label
+} from "@mui/icons-material";
 
 export default function CategorieArticle() {
-  const [CategorieArticles, setCategorieArticles] = useState([]);
-  const [openDialog, setOpenDialog] = useState(false); // Gère l'état du Dialog
-  const [selectedCategorieArticleId, setSelectedCategorieArticleId] = useState(null); //  à supprimer
+  const [categorieArticles, setCategorieArticles] = useState([]);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedCategorieArticleId, setSelectedCategorieArticleId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCategorie, setSelectedCategorie] = useState(null);
   const navigate = useNavigate();
 
-  // Fetch fournisseurs from the backend
   const fetchCategorieArticle = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/categorieArticle/CategorieArticles"); // Update with your backend URL
+      const response = await axios.get("http://localhost:5000/categorieArticle/CategorieArticles");
       setCategorieArticles(response.data);
     } catch (error) {
       console.error("Error fetching Categorie Article:", error);
     }
   };
 
-  // Delete fournisseur by ID
   const deleteCategorieArticle = async (id) => {
     try {
       await axios.delete(`http://localhost:5000/categorieArticle/${id}`);
-      fetchCategorieArticle(); // Refresh list after deletion
+      fetchCategorieArticle();
     } catch (error) {
       console.error("Error deleting Categorie Article:", error);
     }
   };
 
-  // Open delete confirmation dialog
   const handleOpenDialog = (id) => {
-    setSelectedCategorieArticleId(id); // Set the fournisseur ID to be deleted
-    setOpenDialog(true); // Open dialog
+    setSelectedCategorieArticleId(id);
+    setOpenDialog(true);
   };
 
-  // Close the dialog
   const handleCloseDialog = () => {
-    setOpenDialog(false); // Close dialog
-    setSelectedCategorieArticleId(null); // Reset selected Client ID
+    setOpenDialog(false);
+    setSelectedCategorieArticleId(null);
   };
 
-  // Effect to fetch data when component mounts
+  const handleOpenModal = (categorie) => {
+    setSelectedCategorie(categorie);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedCategorie(null);
+  };
+
   useEffect(() => {
     fetchCategorieArticle();
   }, []);
 
+  const filteredCategories = categorieArticles.filter((categorie) =>
+    categorie.designationCategorie.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    categorie.code.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <>
-      {/* Navbar fixe */}
       <Navbar />
-
-      <Box height={100} />
-
-      <Box sx={{ display: "flex" }}>
-        {/* Sidenav */}
+      <Box height={150} />
+      <Box sx={{ overflow: "auto", flexGrow: 1, p: 3, display: "flex", backgroundColor: "#f5f5f5" }}>
         <Sidenav />
-
-        {/* Contenu principal */}
         <Box
           component="main"
           sx={{
             flexGrow: 1,
             p: 3,
-            overflow: "auto", // Activer le scroll pour le contenu
-            maxHeight: "100vh", // Fixer une hauteur maximale pour le contenu principal
+            overflow: "auto",
+            backgroundColor: "#f5f5f5",
+            maxWidth: "none",
+            maxHeight: "100vh",
+            width: "100%",
           }}
         >
-          {/* Conteneur fixe pour le titre et le bouton */}
-          <Box
-            sx={{
-              position: "sticky",
-              top: 0,
-              zIndex: 2,
-              backgroundColor: "#fff",
-              paddingBottom: "10px",
-              borderBottom: "1px solid #ddd",
-            }}
-          >
-            <h1>Categorie Article</h1>
-            <Button
-              variant="contained"
-              color="success"
-              style={{ marginBottom: "10px" }}
-              onClick={() => {
-                navigate("/categorieArticle/create");
-              }}
-            >
-              Create
-            </Button>
-          </Box>
+          <Card sx={{ p: 3, mb: 3, borderRadius: 2, boxShadow: 3 }}>
+            <Stack direction="row" alignItems="center" spacing={2} mb={3}>
+              <Category sx={{ fontSize: 40, color: "#1976d2" }} />
+              <Typography variant="h4" component="h1" sx={{ fontWeight: "bold" }}>
+                Catégories d'Articles
+              </Typography>
+            </Stack>
 
-          {/* Tableau des fournisseurs */}
-          <TableContainer component={Paper} sx={{ marginTop: "20px" }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Code</TableCell>
-                  <TableCell>Designation Categorie</TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {CategorieArticles.map((CategorieArticle) => (
-                  <TableRow key={CategorieArticle._id}>
-                    <TableCell>{CategorieArticle.code}</TableCell>
-                    <TableCell>{CategorieArticle.designationCategorie}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="contained"
-                        color="error"
-                        onClick={() => handleOpenDialog(CategorieArticle._id)} // Open dialog when delete button is clicked
-                        style={{ marginRight: "10px" }}
-                      >
-                        Delete
-                      </Button>
-                      <Button
-                        variant="contained"
-                        color="inherit"
-                        onClick={() => (window.location.href = `/details/${CategorieArticle._id}`)} // Redirect to details page
-                        style={{ marginRight: "10px" }}
-                      >
-                        Details
-                      </Button>
-                      <Button
-                        variant="contained"
-                        color="warning"
-                        onClick={() => navigate(`/CategorieArticle/update/${CategorieArticle._id}`)} // Redirect to update page
-                      >
-                        Update
-                      </Button>
-                    </TableCell>
+            {/* Barre de recherche et bouton Créer */}
+            <Box sx={{ display: "flex", alignItems: "center", mb: 3, gap: 2 }}>
+              <TextField
+                fullWidth
+                label="Rechercher une catégorie"
+                variant="outlined"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                sx={{
+                  maxWidth: "400px",
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "8px",
+                  },
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search sx={{ color: "#1976d2" }} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <Button
+                variant="contained"
+                onClick={() => navigate("/categorieArticle/create")}
+                startIcon={<Category />}
+                sx={{
+                  borderRadius: "8px",
+                  textTransform: "none",
+                  backgroundColor: "#2e7d32",
+                  "&:hover": {
+                    backgroundColor: "#1b5e20",
+                  },
+                }}
+              >
+                Créer une catégorie
+              </Button>
+            </Box>
+
+            {/* Tableau des catégories */}
+            <TableContainer component={Paper} sx={{ mt: 3, boxShadow: 2, borderRadius: 2 }}>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: "#f8f9fa" }}>
+                    <TableCell sx={{ fontWeight: "bold", color: "#1976d2" }}>Code</TableCell>
+                    <TableCell sx={{ fontWeight: "bold", color: "#1976d2" }}>Désignation</TableCell>
+                    <TableCell sx={{ fontWeight: "bold", color: "#1976d2" }}>Actions</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {filteredCategories.map((categorie) => (
+                    <TableRow 
+                      key={categorie._id}
+                      sx={{ 
+                        "&:last-child td, &:last-child th": { border: 0 },
+                        "&:hover": { backgroundColor: "#f5f5f5" }
+                      }}
+                    >
+                      <TableCell>{categorie.code}</TableCell>
+                      <TableCell>{categorie.designationCategorie}</TableCell>
+                      <TableCell>
+                        <Stack direction="row" spacing={1}>
+                          <IconButton
+                            onClick={() => handleOpenModal(categorie)}
+                            sx={{ color: "#1976d2" }}
+                            size="small"
+                            title="Voir les détails"
+                          >
+                            <Visibility />
+                          </IconButton>
+                          <IconButton
+                            onClick={() => navigate(`/CategorieArticle/update/${categorie._id}`)}
+                            sx={{ color: "#ff9800" }}
+                            size="small"
+                            title="Modifier"
+                          >
+                            <Edit />
+                          </IconButton>
+                          <IconButton
+                            onClick={() => handleOpenDialog(categorie._id)}
+                            sx={{ color: "#d32f2f" }}
+                            size="small"
+                            title="Supprimer"
+                          >
+                            <Delete />
+                          </IconButton>
+                        </Stack>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Card>
         </Box>
       </Box>
 
       {/* Dialog de confirmation de suppression */}
-      <Dialog open={openDialog} onClose={handleCloseDialog}>
-        <DialogTitle>Supprimer la Categorie Article</DialogTitle>
-        <DialogContent>
-          <p>Êtes-vous sûr de vouloir supprimer cette Categorie d'Article ?</p>
+      <Dialog 
+        open={openDialog} 
+        onClose={handleCloseDialog}
+        PaperProps={{
+          sx: { borderRadius: 2 }
+        }}
+      >
+        <DialogTitle sx={{ backgroundColor: "#f8f9fa", pb: 2 }}>
+          Confirmation de suppression
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          Êtes-vous sûr de vouloir supprimer cette catégorie d'article ?
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog} color="primary">
-            Non
+        <DialogActions sx={{ p: 2 }}>
+          <Button 
+            onClick={handleCloseDialog} 
+            variant="outlined"
+            sx={{ borderRadius: "8px" }}
+          >
+            Annuler
           </Button>
           <Button
             onClick={() => {
-                deleteCategorieArticle(selectedCategorieArticleId);
-              handleCloseDialog(); // Close dialog after deletion
+              deleteCategorieArticle(selectedCategorieArticleId);
+              handleCloseDialog();
             }}
-            color="warning"
+            variant="contained"
+            color="error"
+            sx={{ borderRadius: "8px" }}
           >
-            Oui
+            Supprimer
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de détails de la catégorie */}
+      <Dialog
+        open={isModalOpen}
+        onClose={handleCloseModal}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 2 }
+        }}
+      >
+        <DialogTitle sx={{ 
+          backgroundColor: "#f8f9fa",
+          borderBottom: "1px solid #e0e0e0",
+          pb: 2
+        }}>
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Category sx={{ color: "#1976d2" }} />
+            <Typography variant="h6">
+              Détails de la Catégorie
+            </Typography>
+          </Stack>
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          {selectedCategorie && (
+            <Stack spacing={3}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Label sx={{ color: "#1976d2" }} />
+                <Typography>
+                  <strong>Code :</strong> {selectedCategorie.code}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Category sx={{ color: "#1976d2" }} />
+                <Typography>
+                  <strong>Désignation :</strong> {selectedCategorie.designationCategorie}
+                </Typography>
+              </Box>
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 3, borderTop: "1px solid #e0e0e0" }}>
+          <Button 
+            onClick={handleCloseModal}
+            variant="outlined"
+            sx={{ borderRadius: "8px" }}
+          >
+            Fermer
+          </Button>
+          <Button
+            onClick={() => navigate(`/CategorieArticle/update/${selectedCategorie._id}`)}
+            variant="contained"
+            startIcon={<Edit />}
+            sx={{ borderRadius: "8px" }}
+          >
+            Modifier
           </Button>
         </DialogActions>
       </Dialog>
