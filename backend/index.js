@@ -6,7 +6,7 @@ const AuthRouter = require('./Routes/AuthRouter');
 const ProductRouter = require('./Routes/ProductRouter');
 const userRouter =require ('./Routes/UserRouter');
 const FournisseurRouter =require ('./Routes/FournisseurRouter');
-const ClientRouter =require('./Routes/ClientRouter');
+const ClientRouter =require('./Routes/Client/ClientRouter');
 const ArticleRouter = require ('./Routes/article/ArticleRouter');
 const CategorieArticleRouter = require ('./Routes/article/CategorieArticleRouter');
 const FamilleArticleRouter=require ('./Routes/article/FamilleArticleRouter');
@@ -17,6 +17,8 @@ const factureFournisseurRouter = require ('./Routes/achat/FactureFournisseurRout
 const BanqueRouter = require ('./Routes/achat/banqueRouter');
 const CaisseRouter = require('./Routes/achat/CaisseRouter');
 const PaiementFournisseur = require ('./Routes/achat/PaiementFournisseurRouter');
+const EnteteVentesRouter =require ('./Routes/Ventes/EnteteVentesRouter');
+const SecteurRouter = require ('./Routes/Client/SecteurRouter');
 require('dotenv').config();
 require('./Models/db');
 const PORT = process.env.PORT || 5000;
@@ -26,7 +28,8 @@ app.get('/ping', (req, res) => {
 });
 
 app.use(cors());
-
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use(cors());
@@ -45,6 +48,9 @@ app.use('/depot', Depot);
 app.use('/banque', BanqueRouter);
 app.use('/caisse', CaisseRouter);
 app.use('/paiement', PaiementFournisseur);
+app.use('/ventes',EnteteVentesRouter);
+app.use('/secteur',SecteurRouter);
+
 
 
 

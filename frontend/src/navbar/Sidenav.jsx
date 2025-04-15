@@ -12,6 +12,7 @@ import ListItemText from "@mui/material/ListItemText";
 import ListItem from "@mui/material/ListItem";
 import ListIcon from '@mui/icons-material/List';
 import ListItemButton from "@mui/material/ListItemButton";
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import InboxIcon from "@mui/icons-material/MoveToInbox";
 import { useNavigate } from "react-router-dom";
 import { useAppStore } from "../appStore";
@@ -19,6 +20,7 @@ import Collapse from "@mui/material/Collapse";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import InventoryIcon from '@mui/icons-material/Inventory';
+import SellIcon from '@mui/icons-material/Sell';
 import {
   Home,
   People,
@@ -143,6 +145,10 @@ export default function Sidenav() {
   const open = useAppStore((state) => state.dopen);
   const [openSubMenu, setOpenSubMenu] = React.useState(false);
   const [openAchatSubMenu, setOpenAchatSubMenu] = React.useState(false);
+  const [openVentesSubMenu, setOpenVentesSubMenu] = React.useState(false);
+  const [openClientsSubMenu, setOpenClientsSubMenu] = React.useState(false);
+
+
   const [selectedItem, setSelectedItem] = React.useState("");
 
   const handleSubMenuClick = (event) => {
@@ -155,6 +161,16 @@ export default function Sidenav() {
     setOpenAchatSubMenu(!openAchatSubMenu);
   };
 
+  const handleVentestSubMenuClick = (event) => {
+    event.stopPropagation();
+    setOpenVentesSubMenu(!openVentesSubMenu);
+  };
+  const handleClientstSubMenuClick = (event) => {
+    event.stopPropagation();
+    setOpenClientsSubMenu(!openClientsSubMenu);
+  };
+
+
   const handleItemClick = (path, itemName) => {
     navigate(path);
     setSelectedItem(itemName);
@@ -163,7 +179,13 @@ export default function Sidenav() {
   const menuItems = [
     { text: "Dashboard", icon: <Dashboard />, path: "/Dashbord" },
     { text: "Fournisseurs", icon: <Business />, path: "/Fournisseur" },
-    { text: "Clients", icon: <People />, path: "/Client" },
+    { text: "Clients", 
+      icon: <People />, 
+      submenu: [
+        { text: "Liste des Clients", path: "/Client" },
+        { text: "Secteur", path: "/Secteur" },
+      ],
+    },
     {
       text: "Articles",
       icon: <Inventory />,
@@ -178,7 +200,7 @@ export default function Sidenav() {
       icon: <ShoppingCart />,
       submenu: [
         { text: "Saisie BCF", path: "/BonCommandeFournisseur" },
-        { text: "Liste des BCF", path: "/ListeBonCommandeFournisseur" },
+        { text: "Liste des BonCommandeF", path: "/ListeBonCommandeFournisseur" },
         { text: "Saisie BEF", path: "/BonReceptionFournisseur" },
         { text: "Liste des BEF", path: "/ListeBonReceptionFournisseur" },
         { text: "Liste des Factures", path: "/ListeFactures" },
@@ -188,6 +210,17 @@ export default function Sidenav() {
 
         { text: "Banque", path: "/Banque" },
         { text: "Caisse", path: "/Caisse" },
+      ],
+    },
+    {
+      text: "Ventes",
+      icon: <SellIcon/>,
+      submenu: [
+        { text: "Saisie Devis", path: "/SaisieDevis" },
+        { text: "Liste des Devis", path: "/ListeDevisClient" },
+        { text: "Liste des BonCMDClient", path: "/ListeBonCommandeClient" },
+        { text: "Liste des BonLivraison", path: "/ListeBonLivraisonClient" },
+        { text: "Saisie BonCMDClient", path: "/SaisieBonCommandeClient" },
       ],
     },
     { text: "Dépôt", icon: <Warehouse />, path: "/Depot" },
@@ -216,6 +249,10 @@ export default function Sidenav() {
                         ? handleSubMenuClick
                         : item.text === "Achats"
                         ? handleAchatSubMenuClick
+                        : item.text === "Ventes"
+                        ? handleVentestSubMenuClick
+                        : item.text === "Clients"
+                        ? handleClientstSubMenuClick
                         : undefined
                     }
                     sx={{
@@ -261,7 +298,22 @@ export default function Sidenav() {
                         ) : (
                           <ExpandMore sx={{ color: "#333" }} />
                         )
-                      ) : null)}
+                      ) 
+                      : item.text === "Ventes" ? (
+                        openVentesSubMenu ? (
+                          <ExpandLess sx={{ color: "#333" }} />
+                        ) : (
+                          <ExpandMore sx={{ color: "#333" }} />
+                        )
+                      ) 
+                      : item.text === "Clients" ? (
+                        openClientsSubMenu ? (
+                          <ExpandLess sx={{ color: "#333" }} />
+                        ) : (
+                          <ExpandMore sx={{ color: "#333" }} />
+                        )
+                      ) 
+                      : null)}
                   </ListItemButton>
                   <Collapse
                     in={
@@ -269,6 +321,10 @@ export default function Sidenav() {
                         ? openSubMenu
                         : item.text === "Achats"
                         ? openAchatSubMenu
+                        : item.text === "Ventes"
+                        ? openVentesSubMenu
+                        : item.text === "Clients"
+                        ? openClientsSubMenu
                         : false
                     }
                     timeout="auto"
@@ -301,7 +357,14 @@ export default function Sidenav() {
                               <ListIcon />
                             ) : subItem.text === "Famille Article" ? (
                               <Category />
-                            ) : (
+                            )
+                            : subItem.text === "Liste des Clients" ? (
+                              <ListIcon />
+                            )
+                            : subItem.text === "Secteur" ? (
+                              <LocationOnIcon />
+                            )
+                             : (
                               <Inventory />
                             )}
                           </ListItemIcon>

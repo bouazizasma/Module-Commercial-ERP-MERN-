@@ -7,11 +7,24 @@ import {
   Box,
   Card,
   CardContent,
+  MenuItem,
   Typography,
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  InputAdornment,
+
 } from "@mui/material";
+import {
+  Inventory,
+  AttachMoney,
+  LocalShipping,
+  Category,
+  Business,
+  Image,
+  Settings,
+  Straight,
+} from "@mui/icons-material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Navbar from "../../navbar/Navbar";
 import Sidenav from "../../navbar/Sidenav";
@@ -21,6 +34,7 @@ export default function UpdateClient() {
   const { id } = useParams(); // Get the ID from the URL
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
+    nom_prenom : "",
     raison_sociale: "",
     matricule_fiscale: "",
     adresse: "",
@@ -29,18 +43,53 @@ export default function UpdateClient() {
     solde_initial: "",
     montant_rapprochement: "",
     code_rapprochement: "",
+    codeSecteur : "",
+    libelleSecteur: "",
     rapBl: "",
+    register_commerce:"",
     solde_initial_bl: "",
     montant_reglement_bl: "",
     taux_retenu: "",
   });
 
+      const [secteurs, setSecteurs] = useState([]);
+  
   // Fetch client by ID to populate the form
+  /*useEffect(() => {
+    const fetchClient = async () => {
+      try {
+
+        const [ClientResponse, SecteursResponse] = await Promise.all([
+          axios.get(`http://localhost:5000/client/${id}`),
+          axios.get("http://localhost:5000/secteur/Secteurs"),
+
+        ]);
+
+        const clientData = ClientResponse.data;
+        setFormData(clientData.data);
+        setSecteurs(SecteursResponse.data);
+      } catch (error) {
+        console.error("Erreur lors de la récupération du client :", error);
+      }
+    };
+    fetchClient();
+  }, [id]);*/
+
   useEffect(() => {
     const fetchClient = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/client/${id}`);
-        setFormData(response.data);
+        const [ClientResponse, SecteursResponse] = await Promise.all([
+          axios.get(`http://localhost:5000/client/${id}`),
+          axios.get("http://localhost:5000/secteur/Secteurs"),
+        ]);
+  
+        // Vérifiez la structure de la réponse
+        console.log("Réponse client:", ClientResponse.data);
+        
+        // Si la réponse est directement les données du client
+        setFormData(ClientResponse.data.client || ClientResponse.data); // Adaptez selon la structure réelle
+        
+        setSecteurs(SecteursResponse.data);
       } catch (error) {
         console.error("Erreur lors de la récupération du client :", error);
       }
@@ -49,8 +98,12 @@ export default function UpdateClient() {
   }, [id]);
 
   // Update client
-  const updateClient = async () => {
+ /* const updateClient = async () => {
     try {
+      const formDataToSend = new FormData();
+      Object.keys(formData).forEach((key) => {
+        formDataToSend.append(key, formData[key]);
+      });
       await axios.put(`http://localhost:5000/client/${id}`, formData);
       alert("Client mis à jour avec succès !");
       navigate("/client"); // Redirect to the Client list after update
@@ -60,7 +113,56 @@ export default function UpdateClient() {
     }
   };
 
-  // Handle input change
+  */
+
+  /*const updateClient = async () => {
+    try {
+      // Préparez les données à envoyer
+      const dataToSend = {
+        ...formData,
+        telephone: formData.telephone.filter(tel => tel) // Filtre les téléphones vides
+      };
+  
+      const response = await axios.put(`http://localhost:5000/client/${id}`, dataToSend);
+      
+      if (response.data) {
+        alert("Client mis à jour avec succès !");
+        navigate("/client");
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 
+                          "Une erreur s'est produite lors de la mise à jour";
+      console.error("Erreur détaillée:", error.response?.data || error);
+      alert(errorMessage);
+    }
+  };
+*/
+ 
+const updateClient = async () => {
+  try {
+    // Préparez les données à envoyer
+    const dataToSend = {
+      ...formData,
+      telephone: formData.telephone.filter(tel => tel) // Filtre les téléphones vides
+    };
+
+    // Supprimez les champs inutiles avant l'envoi
+    delete dataToSend._id;
+    delete dataToSend.__v;
+
+    const response = await axios.put(`http://localhost:5000/client/${id}`, dataToSend);
+    
+    if (response.data) {
+      alert("Client mis à jour avec succès !");
+      navigate("/client");
+    }
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || "Une erreur s'est produite lors de la mise à jour";
+    console.error("Erreur détaillée:", error.response?.data || error);
+    alert(errorMessage);
+  }
+};
+// Handle input change
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === "telephone1" || name === "telephone2") {
@@ -73,7 +175,23 @@ export default function UpdateClient() {
         }
         return { ...prev, telephone: updatedTelephones };
       });
-    } else {
+    } 
+    else if (name === "codeSecteur" || name === "libelleSecteur") {
+      const selectedSecteur = secteurs.find(secteur => 
+        name === "codeSecteur" 
+          ? secteur.codeSecteur === value 
+          : secteur.libelle === value
+      );
+      
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        codeSecteur: selectedSecteur?.codeSecteur || (name === "codeSecteur" ? value : prev.codeSecteur),
+        libelleSecteur: selectedSecteur?.libelle || (name === "libelleSecteur" ? value : prev.libelleSecteur)
+      }));
+    } 
+    
+    else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
@@ -140,6 +258,57 @@ export default function UpdateClient() {
                       onChange={handleChange}
                     />
                   </Grid>
+                    {/* Pour le code Secteur */}
+              <Grid item xs={3}>
+       <TextField
+  fullWidth
+  select
+  label="Code Secteur"
+  name="codeSecteur"
+  value={formData.codeSecteur}
+  onChange={handleChange}
+  required
+  InputProps={{
+    startAdornment: (
+      <InputAdornment position="start">
+        <Category color="primary" />
+      </InputAdornment>
+    ),
+  }}
+>
+  {secteurs.map((secteur) => (
+    <MenuItem key={secteur._id} value={secteur.codeSecteur}>
+      {secteur.codeSecteur}
+    </MenuItem>
+  ))}
+        </TextField>
+          </Grid>
+
+      {/* Pour le libellé Secteur */}
+      <Grid item xs={3}>
+<TextField
+  fullWidth
+  select
+  label="Libelle Secteur"
+  name="libelleSecteur"
+  value={formData.libelleSecteur}
+  onChange={handleChange}
+  required
+  InputProps={{
+    startAdornment: (
+      <InputAdornment position="start">
+        <Category color="primary" />
+      </InputAdornment>
+    ),
+  }}
+>
+  {secteurs.map((secteur) => (
+    <MenuItem key={secteur._id} value={secteur.libelle}>
+      {secteur.libelle}
+    </MenuItem>
+  ))}
+</TextField>
+      </Grid>
                  
                 </Grid>
               </CardContent>

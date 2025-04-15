@@ -3,41 +3,47 @@ import axios from "axios";
 import Sidenav from "../../navbar/Sidenav";
 import Box from "@mui/material/Box";
 import Navbar from "../../navbar/Navbar";
-import { Visibility, Delete, Edit } from "@mui/icons-material";
+import { Visibility, Delete, Edit, Receipt, ShoppingCart } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { Chip } from "@mui/material";
 import {
-  Card, CardContent, Typography, Grid, Button, TextField, MenuItem, Select, FormControl, InputLabel, IconButton, Drawer, Modal, Backdrop, Fade, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
+  Card, CardContent, Alert, Typography, Grid, Button, TextField, MenuItem, Select, FormControl, InputLabel, IconButton, Drawer, Modal, Backdrop, Fade, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,   Snackbar,  Paper
 } from "@mui/material";
 import { Stack } from "@mui/material";
-import { FilterList, Search, Clear } from "@mui/icons-material";
+import {  Search, Clear , CheckCircle , Close  } from "@mui/icons-material";
 import { InputAdornment } from "@mui/material";
+import { FilterList } from "@mui/icons-material";
+
 import jsPDF from "jspdf";
 import 'jspdf-autotable';
 import autoTable from "jspdf-autotable";
-export default function ListeBonCommandeFournisseur() {
-  const [bonsCommande, setBonsCommande] = useState([]);
+export default function ListeDevisClient() {
+  const [listeDevis, setListeDevis] = useState([]);
   const [editLignes, setEditLignes] = useState([]); // État pour les lignes modifiables
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
-    fournisseur: "",
+    client: "",
     year: "",
     month: "",
     article: "",
     
-  }); 
+  });
   const [error, setError] = useState(null);
   const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
-  const [selectedBonCommande, setSelectedBonCommande] = useState(null);
+  const [selectedDevis, setSelectedDevis] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
   const [currentPage, setCurrentPage] = useState(1); // État pour la pagination
   const itemsPerPage = 5; // Nombre d'éléments par page
-  const [editBonCommande, setEditBonCommande] = useState(null); // État pour le bon de commande en cours de modification
+  const [editDevis, setEditDevis] = useState(null); // État pour le bon de commande en cours de modification
   const [isEditModalOpen, setIsEditModalOpen] = useState(false); // État pour contrôler l'affichage du formulaire de modification
-  const [fournisseurs, setFournisseurs] = useState([]);
+  const [clients, setClients] = useState([]);
   const [articles, setArticles] = useState([]);
   const [depots, setDepots] = useState([]);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  
   const navigate = useNavigate();
 
   // Récupération des données
@@ -45,12 +51,12 @@ export default function ListeBonCommandeFournisseur() {
     const fetchData = async () => {
       try {
         // Récupérer les bons de commande
-        const bonsCommandeResponse = await axios.get("http://localhost:5000/achat/BCF/all");
-        setBonsCommande(bonsCommandeResponse.data);
+        const listeDevisResponse = await axios.get("http://localhost:5000/ventes/devis/all");
+        setListeDevis(listeDevisResponse.data);
 
-        // Récupérer les fournisseurs
-        const fournisseursResponse = await axios.get("http://localhost:5000/fournisseur/fournisseurs");
-        setFournisseurs(fournisseursResponse.data);
+        // Récupérer les Clients
+        const ClientsResponse = await axios.get("http://localhost:5000/client/clients");
+        setClients(ClientsResponse.data);
 
         // Récupérer les articles
         const articlesResponse = await axios.get("http://localhost:5000/article/articles");
@@ -68,56 +74,28 @@ export default function ListeBonCommandeFournisseur() {
     fetchData();
   }, []);
 
-  //handleDOWNLOAD
-
-  {/*const handleDownload = (bonCommande) => {
+  const handleDownload = (devis) => {
     const doc = new jsPDF();
     doc.setFontSize(18);
-    doc.text("Bon de Commande", 10, 10);
+    doc.text("DEVIS", 10, 10);
     doc.setFontSize(12);
-    doc.text(`Commande N°: ${bonCommande.numero_commande}`, 10, 20);
-    doc.text(`Date Commande: ${new Date(bonCommande.dateCommande).toLocaleDateString()}`, 10, 30);
-    const fournisseur = fournisseurs.find(f => f._id === bonCommande.fournisseur._id);
-    doc.text(`À l'intention de: ${fournisseur.raison_sociale}`, 10, 40);
-    doc.text(`Adresse: ${fournisseur.adresse || 'N/A'}`, 10, 50);
-    doc.text(`Téléphone: ${fournisseur.telephone || 'N/A'}`, 10, 60);
-    doc.autoTable({
-      startY: 70,
-      head: [['Article', 'Quantité', 'Prix Unitaire', 'Total']],
-      body: bonCommande.lignes.map(ligne => [
-        ligne.article.libelle,
-        ligne.quantite,
-        `${ligne.prix_unitaire.toFixed(2)} TND`,
-        `${(ligne.quantite * ligne.prix_unitaire).toFixed(2)} TND`
-      ]),
-    });
-    doc.save(`bon_de_commande_${bonCommande.numero_commande}.pdf`);
-  }; 
-  */}
+    doc.text(`Devis N°: ${devis.numero}`, 10, 20);
+    doc.text(`Date devis: ${new Date(devis.dateDevis).toLocaleDateString()}`, 10, 30);
 
-  const handleDownload = (bonCommande) => {
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text("Bon de Commande", 10, 10);
-    doc.setFontSize(12);
-    doc.text(`Date: ${new Date(bonCommande.dateCommande).toLocaleDateString()}`, 10, 20);
-    doc.text(`Bon de Commande: ${bonCommande.numero_Bon}`, 10, 30);
-
-    const fournisseur = fournisseurs.find(f => f._id === bonCommande.fournisseur._id);
-    doc.text(`${fournisseur.raison_sociale}`, 10, 50);
-    doc.text(`${fournisseur.adresse || 'N/A'}`, 10, 60);
-    doc.text(`Tel: ${fournisseur.telephone || 'N/A'}`, 10, 70);
-    //doc.text(`Email: ${fournisseur.email || 'N/A'}`, 10, 80);
+    const client = clients.find(c => c._id === devis.client._id);
+    doc.text(`À l'intention de: ${client.nom_prenom}`, 10, 40);
+    doc.text(`Adresse: ${client.adresse || 'N/A'}`, 10, 50);
+    doc.text(`Matricule Fiscale: ${client.matricule_fiscale || 'N/A'}`, 10, 60);
+    doc.text(`Téléphone: ${client.telephone || 'N/A'}`, 10, 70);
   
-    doc.text(`Objet : Commande`  , 10, 90);
+    doc.text(`Objet : DEVIS`  , 10, 90);
   
     // Tableau des articles commandés
     doc.autoTable({
       startY: 100,
-      head: [['Description', 'Unité', 'Quantité', 'Prix Unitaire HT', 'Total Net']],
-      body: bonCommande.lignes.map(ligne => [
+      head: [['Article',  'Quantité', 'Prix Unitaire ', 'Total ']],
+      body: devis.lignes.map(ligne => [
         ligne.article.libelle,
-        'DT',
         ligne.quantite,
         `${ligne.prix_unitaire.toFixed(2)} DT`,
         `${(ligne.quantite * ligne.prix_unitaire).toFixed(2)} DT`
@@ -125,41 +103,42 @@ export default function ListeBonCommandeFournisseur() {
     });
   
     // Totaux
-    const totalHT = bonCommande.lignes.reduce((acc, ligne) => acc + (ligne.quantite * ligne.prix_unitaire), 0);
+    const totalHT = devis.lignes.reduce((acc, ligne) => acc + (ligne.quantite * ligne.prix_unitaire), 0);
     const totalTTC = totalHT * 1.2;
   
     doc.text(`Montant Total HT: ${totalHT.toFixed(2)} DT`, 10, doc.autoTable.previous.finalY + 10);
-    doc.text(`Total TTC (20%): ${totalTTC.toFixed(2)} DT`, 10, doc.autoTable.previous.finalY + 20);
+    doc.text(`Total TTC : ${totalTTC.toFixed(2)} DT`, 10, doc.autoTable.previous.finalY + 20);
     doc.text(`Montant Total TTC: ${totalTTC.toFixed(2)} DT`, 10, doc.autoTable.previous.finalY + 30);
   
-    doc.save(`bon_de_commande_${bonCommande.numero_Bon}.pdf`);
+    doc.save(`devis${devis.numero}.pdf`);
   };
-  // Filtrage des bons de commande
-  const filteredBonsCommande = useMemo(() => {
-    return bonsCommande.filter((bonCommande) => {
+  // Filtrage des DEvis
+  const filteredDevis = useMemo(() => {
+    return listeDevis.filter((devis) => {
       const matchesSearchTerm =
-        bonCommande.numero_Bon.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (bonCommande.fournisseur && bonCommande.fournisseur.raison_sociale.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (bonCommande.lignes && bonCommande.lignes.some((ligne) =>
+        devis.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (devis.client && devis.client.nom_prenom.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (devis.lignes && devis.lignes.some((ligne) =>
           ligne.article.libelle.toLowerCase().includes(searchTerm.toLowerCase())
         ));
 
       const matchesFilters =
-        (!filters.fournisseur || (bonCommande.fournisseur && bonCommande.fournisseur.raison_sociale === filters.fournisseur)) &&
-        (!filters.year || new Date(bonCommande.dateCommande).getFullYear().toString() === filters.year) &&
-        (!filters.month || (new Date(bonCommande.dateCommande).getMonth() + 1).toString() === filters.month) &&
-        (!filters.article || (bonCommande.lignes && bonCommande.lignes.some((ligne) => ligne.article.libelle === filters.article)));
+        (!filters.client || (devis.client && devis.client.nom_prenom === filters.client)) &&
+        (!filters.year || new Date(devis.dateDevis).getFullYear().toString() === filters.year) &&
+        (!filters.month || (new Date(devis.dateDevis).getMonth() + 1).toString() === filters.month) &&
+        (!filters.article || (devis.lignes && devis.lignes.some((ligne) => ligne.article.libelle === filters.article)));
 
       return matchesSearchTerm && matchesFilters;
     });
-  }, [bonsCommande, searchTerm, filters]);
+  }, [listeDevis, searchTerm, filters]);
+
 
   // Pagination
-  const paginatedBonsCommande = useMemo(() => {
+  const paginatedDevis = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    return filteredBonsCommande.slice(startIndex, endIndex);
-  }, [filteredBonsCommande, currentPage]);
+    return filteredDevis.slice(startIndex, endIndex);
+  }, [filteredDevis, currentPage]);
 
   // Gestion de la recherche
   const handleSearch = (term) => {
@@ -168,36 +147,23 @@ export default function ListeBonCommandeFournisseur() {
   };
 
   // Suppression d'un bon de commande
-  const handleDeleteBonCommande = async (id) => {
+  const handleDeleteDevis = async (id) => {
     try {
-      const confirmDelete = window.confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande ?");
+      const confirmDelete = window.confirm("Êtes-vous sûr de vouloir supprimer cet devis ?");
       if (!confirmDelete) return;
 
-      await axios.delete(`http://localhost:5000/achat/BCF${id}`);
-      setBonsCommande(bonsCommande.filter((bon) => bon._id !== id)); // Mettre à jour l'état local
-      alert("Bon de commande supprimé avec succès !");
+      await axios.delete(`http://localhost:5000/ventes/devis/${id}`);
+      setListeDevis(listeDevis.filter((numeroEntete) => numeroEntete._id !== id)); // Mettre à jour l'état local
+      alert("Devis supprimé avec succès !");
     } catch (error) {
-      console.error("Erreur lors de la suppression du bon de commande :", error);
-      alert("Erreur lors de la suppression du bon de commande.");
+      console.error("Erreur lors de la suppression du Devis :", error);
+      alert("Erreur lors de la suppression du Devis.");
     }
   };
 
-  // Ouverture du formulaire de modification
- {/*} const handleEditBonCommande = (bonCommande) => {
-    setEditBonCommande(bonCommande); // Stocker les données du bon de commande à modifier
-    setEditLignes(bonCommande.lignes); // Initialiser les lignes modifiables
-    setIsEditModalOpen(true); // Ouvrir le formulaire de modification
-  };
-*/}
-
-{/*const handleEditBonCommande = (bonCommande) => {
-  setEditBonCommande(bonCommande); // Stocker les données du bon de commande à modifier
-  setEditLignes(bonCommande.lignes); // Initialiser les lignes modifiables
-  setIsEditing(true); // Activer le mode édition
-}; */}
-const handleEditBonCommande = (bonCommande) => {
-  setEditBonCommande(bonCommande); // Stocker les données du bon de commande à modifier
-  setEditLignes(bonCommande.lignes); // Initialiser les lignes modifiables
+const handleEditDevis = (devis) => {
+  setEditDevis(devis); // Stocker les données du devis à modifier
+  setEditLignes(devis.lignes); // Initialiser les lignes modifiables
   setIsEditModalOpen(true); // Activer le mode édition
 };
 
@@ -223,33 +189,7 @@ const getStatusChip = (statut) => {
 
   return <Chip label={statut} color={color} sx={{ fontWeight: "bold", fontSize: "0.9rem" }} />;
 };
-  // Soumission du formulaire de modification
- {/*} const handleSubmitEdit = async (e, id) => {
-    e.preventDefault();
-    try {
-      const total_hors_Taxe = editLignes.reduce((acc, ligne) => acc + ligne.total_ht, 0);
-      const total_ttc = total_hors_Taxe * 1.2;
 
-      const updatedBonCommande = {
-        ...editBonCommande,
-        lignes: editLignes,
-        total_hors_Taxe,
-        total_ttc,
-        date_modification: new Date(), // Ajouter la date de modification
-      };
-
-      const response = await axios.put(`http://localhost:5000/boncommandeF/${id}`, updatedBonCommande);
-      setBonsCommande((prev) =>
-        prev.map((bon) => (bon._id === id ? response.data : bon))
-      );
-      setIsEditModalOpen(false);
-      alert("Bon de commande mis à jour avec succès !");
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour du bon de commande :", error);
-      alert("Erreur lors de la mise à jour du bon de commande.");
-    }
-  };
-*/}
   // Gestion des filtres
   const handleFilterChange = (filterName, value) => {
     setFilters((prevFilters) => ({ ...prevFilters, [filterName]: value }));
@@ -260,7 +200,7 @@ const getStatusChip = (statut) => {
   const resetFilters = () => {
     setSearchTerm("");
     setFilters({
-      fournisseur: "",
+      client: "",
       year: "",
       month: "",
       article: "",
@@ -269,19 +209,62 @@ const getStatusChip = (statut) => {
   };
 
   // Ouverture de la modal de détails
-  const handleOpenModal = (bonCommande) => {
-    setSelectedBonCommande(bonCommande);
+  const handleOpenModal = (devis) => {
+    setSelectedDevis(devis);
     setIsModalOpen(true);
   };
 
   // Fermeture de la modal de détails
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setSelectedBonCommande(null);
+    setSelectedDevis(null);
   };
 
   // Affichage des filtres actifs
   const activeFilters = Object.entries(filters).filter(([key, value]) => value !== "");
+
+  // Ajouter la fonction fetchDevis
+  const fetchDevis = async () => {
+    try {
+      const listeDevisResponse = await axios.get("http://localhost:5000/ventes/devis/all");
+      setListeDevis(listeDevisResponse.data);
+    } catch (error) {
+      console.error("Erreur lors de la récupération des devis:", error);
+      setError("Erreur lors de la récupération des devis");
+    }
+  };
+  // Ajouter la fonction pour générer un bon de commande client
+  const handleGenerateBonCommande = async (devisId) => {
+    try {  
+      await axios.post(`http://localhost:5000/ventes/${devisId}/generate-bon-commande`);
+      fetchDevis(); // Rafraîchir la liste des devis
+      setSnackbarMessage("Le bon de commande a été généré avec succès !");
+      setOpenSnackbar(true);
+      setTimeout(() => {
+        navigate("/ListeBonCommandeClient");
+      }, 2000);
+    } catch (error) {
+      console.error("Erreur lors de la génération du bon de commande:", error);
+    }
+  };  
+  
+  const handleGenerateBonLivraison = async (devisId) => {
+    try {  
+      await axios.post(`http://localhost:5000/ventes/${devisId}/generate-bon-livraison`);
+      fetchDevis(); // Rafraîchir la liste des devis
+      setSnackbarMessage("Le bon de livraison a été généré avec succès !");
+      setOpenSnackbar(true);
+      setTimeout(() => {
+        navigate("/ListeBonLivraisonClient");
+      }, 2000);
+    } catch (error) {
+      console.error("Erreur lors de la génération du bon de livraison:", error);
+    }
+  };
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false);
+  };
+
 
   if (error) {
     return <div>{error}</div>;
@@ -306,7 +289,7 @@ const getStatusChip = (statut) => {
         >
           <Box sx={{ flexGrow: 1, p: 3 }}>
             <Typography variant="h4" sx={{ mb: 3, color: '#1976d2', fontWeight: 'bold', textAlign: 'center' }}>
-              Liste des Bons de Commande
+              Liste des Devis
             </Typography>
             <Box height={50} />
 
@@ -339,130 +322,32 @@ const getStatusChip = (statut) => {
                       }}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
-                    <FormControl fullWidth>
-                      <InputLabel>Fournisseur</InputLabel>
-                      <Select
-                        value={filters.fournisseur}
-                        onChange={(e) => handleFilterChange("fournisseur", e.target.value)}
-                        sx={{ 
-                          backgroundColor: 'white',
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: '8px',
-                          }
-                        }}
-                      >
-                        <MenuItem value="">Tous</MenuItem>
-                        {[...new Set(bonsCommande.map((bon) => bon.fournisseur?.raison_sociale))].map((name, index) => (
-                          <MenuItem key={index} value={name}>
-                            {name}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
-                    <FormControl fullWidth>
-                      <InputLabel>Article</InputLabel>
-                      <Select
-                        value={filters.article}
-                        onChange={(e) => handleFilterChange("article", e.target.value)}
-                        sx={{ 
-                          backgroundColor: 'white',
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: '8px',
-                          }
-                        }}
-                      >
-                        <MenuItem value="">Tous</MenuItem>
-                        {[...new Set(bonsCommande.flatMap((bon) => bon.lignes.map((ligne) => ligne.article.libelle)))].map((article, index) => (
-                          <MenuItem key={index} value={article}>
-                            {article}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
-                    <FormControl fullWidth>
-                      <InputLabel>Année</InputLabel>
-                      <Select
-                        value={filters.year}
-                        onChange={(e) => handleFilterChange("year", e.target.value)}
-                        sx={{ 
-                          backgroundColor: 'white',
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: '8px',
-                          }
-                        }}
-                      >
-                        <MenuItem value="">Toutes</MenuItem>
-                        {[...new Set(bonsCommande.map((bon) => new Date(bon.dateCommande).getFullYear().toString()))].map((year, index) => (
-                          <MenuItem key={index} value={year}>
-                            {year}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
-                    <FormControl fullWidth>
-                      <InputLabel>Mois</InputLabel>
-                      <Select
-                        value={filters.month}
-                        onChange={(e) => handleFilterChange("month", e.target.value)}
-                        sx={{ 
-                          backgroundColor: 'white',
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: '8px',
-                          }
-                        }}
-                      >
-                        <MenuItem value="">Tous</MenuItem>
-                        {Array.from({ length: 12 }, (_, i) => (i + 1).toString()).map((month, index) => (
-                          <MenuItem key={index} value={month}>
-                            {month}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
                     <Button
-                      onClick={resetFilters}
-                      startIcon={<Clear />}
-                      fullWidth
-                      variant="outlined"
-                      sx={{ 
-                        borderRadius: '8px',
-                        borderColor: '#1976d2',
-                        color: '#1976d2',
-                        '&:hover': {
-                          borderColor: '#1565c0',
-                          backgroundColor: 'rgba(25, 118, 210, 0.04)',
-                        }
-                      }}
-                    >
-                      Réinitialiser les filtres
-                    </Button>
-                  </Grid>
+                                   variant="outlined"
+                                   onClick={() => setIsFilterSidebarOpen(true)}
+                                   startIcon={<FilterList />}
+                                   sx={{ borderRadius: 2, height: 56 }}
+                                 >
+                                   Filtres
+                                 </Button>
+                 
                 </Grid>
               </CardContent>
             </Card>
 
-            {/* Tableau des bons de commande */}
+            {/* Tableau des devis */}
             <Card sx={{ p: 3, mb: 3, boxShadow: 3, borderRadius: 2, backgroundColor: '#f8f9fa' }}>
               <CardContent>
                 <Typography variant="h6" sx={{ mb: 3, color: '#1976d2', fontWeight: 'bold' }}>
-                  Liste des Bons de Commande
+                  Liste des devis
                 </Typography>
                 <TableContainer component={Paper} sx={{ boxShadow: 2, borderRadius: 2 }}>
                   <Table>
                     <TableHead>
                       <TableRow sx={{ backgroundColor: '#e3f2fd' }}>
-                        <TableCell sx={{ fontWeight: 'bold', fontSize: '1rem' }}>Numéro de commande</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold', fontSize: '1rem' }}>Date de commande</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold', fontSize: '1rem' }}>Fournisseur</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold', fontSize: '1rem' }}>Numéro de devis</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold', fontSize: '1rem' }}>Date de devis</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold', fontSize: '1rem' }}>Client</TableCell>
                         <TableCell sx={{ fontWeight: 'bold', fontSize: '1rem' }}>Total HT</TableCell>
                         <TableCell sx={{ fontWeight: 'bold', fontSize: '1rem' }}>Total TTC</TableCell>
                         <TableCell sx={{ fontWeight: 'bold', fontSize: '1rem' }}>Status</TableCell>
@@ -470,7 +355,7 @@ const getStatusChip = (statut) => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {paginatedBonsCommande.map((bonCommande, index) => (
+                      {paginatedDevis.map((devis, index) => (
                         <TableRow 
                           key={index} 
                           sx={{ 
@@ -480,17 +365,28 @@ const getStatusChip = (statut) => {
                             }
                           }}
                         >
-                          <TableCell sx={{ fontWeight: 'medium' }}>{bonCommande.numero_Bon}</TableCell>
-                          <TableCell>{new Date(bonCommande.dateCommande).toLocaleDateString()}</TableCell>
-                          <TableCell>{bonCommande.fournisseur ? bonCommande.fournisseur.raison_sociale : "Non spécifié"}</TableCell>
-                          <TableCell>{bonCommande.total_hors_Taxe.toFixed(2)} TND</TableCell>
-                          <TableCell>{bonCommande.total_ttc.toFixed(2)} TND</TableCell>
+                          <TableCell sx={{ fontWeight: 'medium' }}>{devis.numero}</TableCell>
+                          <TableCell>{new Date(devis.dateDevis).toLocaleDateString()}</TableCell>
+                          <TableCell>{devis.client ? devis.client.nom_prenom : "Non spécifié"}</TableCell>
+                          <TableCell>
+    {(devis.total_hors_Taxe ?? 
+        devis.lignes?.reduce((acc, ligne) => acc + (ligne.quantite * ligne.prix_unitaire), 0) ?? 0)
+        .toFixed(2)} TND
+</TableCell>
+<TableCell>
+    {(devis.total_ttc ?? 
+        devis.lignes?.reduce((acc, ligne) => {
+            const ht = ligne.quantite * ligne.prix_unitaire;
+            return acc + (ht * (1 + (ligne.tva || 0) / 100));
+        }, 0) ?? 0)
+        .toFixed(2)} TND
+</TableCell>
                           <TableCell>
                             <Chip 
-                              label={bonCommande.statut} 
-                              color={bonCommande.statut === "Livrée" ? "success" : 
-                                     bonCommande.statut === "Annulée" ? "error" : 
-                                     bonCommande.statut === "En attente" ? "warning" : "info"}
+                              label={devis.statut} 
+                              color={devis.statut === "Livrée" ? "success" : 
+                                     devis.statut === "Annulée" ? "error" : 
+                                     devis.statut === "En attente" ? "warning" : "info"}
                               sx={{ 
                                 fontWeight: 'bold',
                                 fontSize: '0.9rem',
@@ -502,7 +398,7 @@ const getStatusChip = (statut) => {
                           <TableCell>
                             <Stack direction="row" spacing={1}>
                               <IconButton
-                                onClick={() => handleOpenModal(bonCommande)}
+                                onClick={() => handleOpenModal(devis)}
                                 sx={{ 
                                   color: '#1976d2',
                                   '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.04)' }
@@ -511,7 +407,7 @@ const getStatusChip = (statut) => {
                                 <Visibility />
                               </IconButton>
                               <IconButton
-                                onClick={() => handleDeleteBonCommande(bonCommande._id)}
+                                onClick={() => handleDeleteDevis(devis._id)}
                                 sx={{ 
                                   color: '#d32f2f',
                                   '&:hover': { backgroundColor: 'rgba(211, 47, 47, 0.04)' }
@@ -520,7 +416,7 @@ const getStatusChip = (statut) => {
                                 <Delete />
                               </IconButton>
                               <IconButton
-                                onClick={() => navigate(`/ListeBonCommandeFournisseur/update/${bonCommande._id}`)}
+                                onClick={() => navigate(`/ListeDevisClient/update/${devis._id}`)}
                                 sx={{ 
                                   color: '#2e7d32',
                                   '&:hover': { backgroundColor: 'rgba(46, 125, 50, 0.04)' }
@@ -529,14 +425,49 @@ const getStatusChip = (statut) => {
                                 <Edit />
                               </IconButton>
                               <IconButton
-                                onClick={() => handleDownload(bonCommande)}
+                                onClick={() => handleDownload(devis)}
                                 sx={{ 
                                   color: '#ed6c02',
                                   '&:hover': { backgroundColor: 'rgba(237, 108, 2, 0.04)' }
                                 }}
                               >
                                 <FileDownloadIcon />
-                              </IconButton>
+                              </IconButton>  
+                              {devis.statut === "En attente" && (
+                                <>
+                                  <IconButton
+                                    color="success"
+                                    onClick={() => handleGenerateBonCommande(devis._id)}
+                                    size="small"
+                                    title="Générer un bon de commande"
+                                  >
+                                    <Receipt />
+                                  </IconButton>
+                                  <IconButton
+                                    color="info"
+                                    onClick={() => handleGenerateBonLivraison(devis._id)}
+                                    size="small"
+                                    title="Générer un bon de livraison"
+                                  >
+                                    < ShoppingCart />
+                                  </IconButton>
+                                  
+                                </>
+                              )}
+                                 {devis.statut === "Confirmée" && (
+                                <>
+                                  <IconButton
+                                    color="info"
+                                    onClick={() => handleGenerateBonLivraison(devis._id)}
+                                    size="small"
+                                    title="Générer un bon de livraison"
+                                  >
+                                    <Receipt />
+                                  </IconButton>
+                                  
+                                </>
+                              )}
+
                             </Stack>
                           </TableCell>
                         </TableRow>
@@ -563,7 +494,7 @@ const getStatusChip = (statut) => {
               </Button>
               <Button
                 variant="contained"
-                disabled={currentPage * itemsPerPage >= filteredBonsCommande.length}
+                disabled={currentPage * itemsPerPage >= filteredDevis.length}
                 onClick={() => setCurrentPage(currentPage + 1)}
                 sx={{ 
                   borderRadius: '8px',
@@ -576,12 +507,78 @@ const getStatusChip = (statut) => {
             </Box>
             <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
               <Typography variant="body1" sx={{ color: '#666' }}>
-                Page {currentPage} sur {Math.ceil(filteredBonsCommande.length / itemsPerPage)}
+                Page {currentPage} sur {Math.ceil(filteredDevis.length / itemsPerPage)}
               </Typography>
             </Box>
           </Box>
         </Box>
       </Box>
+
+
+ {/* Drawer des filtres */}
+      <Drawer
+        anchor="right"
+        open={isFilterSidebarOpen}
+        onClose={() => setIsFilterSidebarOpen(false)}
+        PaperProps={{
+          sx: { width: 320, p: 3, borderTopLeftRadius: 8, borderBottomLeftRadius: 8 }
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h6">Filtres avancés</Typography>
+          <IconButton onClick={() => setIsFilterSidebarOpen(false)}>
+            <Close />
+          </IconButton>
+        </Box>
+
+        <Stack spacing={3}>
+          <FormControl fullWidth>
+            <InputLabel>Client</InputLabel>
+            <Select
+              value={filters.fournisseur}
+              onChange={(e) => handleFilterChange("Client", e.target.value)}
+              label="Client"
+            >
+              <MenuItem value="">Tous</MenuItem>
+              {[...new Set(listeDevis.map(bon => bon.client?.nom_prenom))]
+                .filter(Boolean)
+                .map((name, index) => (
+                  <MenuItem key={index} value={name}>{name}</MenuItem>
+                ))
+              }
+            </Select>
+          </FormControl>
+
+          <TextField
+            label="Date début"
+            type="date"
+            value={filters.startDate}
+            onChange={(e) => handleFilterChange("startDate", e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            fullWidth
+          />
+
+          <TextField
+            label="Date fin"
+            type="date"
+            value={filters.endDate}
+            onChange={(e) => handleFilterChange("endDate", e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            fullWidth
+          />
+
+
+          <Button
+            variant="outlined"
+            onClick={resetFilters}
+            startIcon={<Clear />}
+            fullWidth
+          >
+            Réinitialiser les filtres
+          </Button>
+        </Stack>
+      </Drawer>
+
 
       {/* Pop-up pour afficher les détails du bon de commande */}
       <Modal
@@ -610,11 +607,11 @@ const getStatusChip = (statut) => {
               overflowY: "auto",
             }}
           >
-            {selectedBonCommande && (
+            {selectedDevis && (
               <>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                   <Typography variant="h4" component="h2" sx={{ color: '#1976d2', fontWeight: 'bold' }}>
-                    Détails du Bon de Commande N° {selectedBonCommande.numero_Bon}
+                    Détails du Devis N° {selectedDevis.numero}
                   </Typography>
                   <IconButton onClick={handleCloseModal} sx={{ color: '#666' }}>
                     <Clear />
@@ -630,36 +627,36 @@ const getStatusChip = (statut) => {
                     <Grid container spacing={2}>
                       <Grid item xs={12} sm={6}>
                         <Typography variant="body1" sx={{ mb: 1 }}>
-                          <strong style={{ color: '#666' }}>Date de commande:</strong>{" "}
-                          {new Date(selectedBonCommande.dateCommande).toLocaleDateString()}
+                          <strong style={{ color: '#666' }}>Date de Devis:</strong>{" "}
+                          {new Date(selectedDevis.dateDevis).toLocaleDateString()}
                         </Typography>
                       </Grid>
                       <Grid item xs={12} sm={6}>
                         <Typography variant="body1" sx={{ mb: 1 }}>
-                          <strong style={{ color: '#666' }}>Fournisseur:</strong>{" "}
-                          {selectedBonCommande.fournisseur ? selectedBonCommande.fournisseur.raison_sociale : "Non spécifié"}
+                          <strong style={{ color: '#666' }}>Client:</strong>{" "}
+                          {selectedDevis.client ? selectedDevis.client.nom_prenom : "Non spécifié"}
                         </Typography>
                       </Grid>
                       <Grid item xs={12} sm={6}>
                         <Typography variant="body1" sx={{ mb: 1 }}>
                           <strong style={{ color: '#666' }}>Total HT:</strong>{" "}
-                          {selectedBonCommande.total_hors_Taxe.toFixed(2)} TND
+                          {selectedDevis.total_hors_Taxe.toFixed(2)} TND
                         </Typography>
                       </Grid>
                       <Grid item xs={12} sm={6}>
                         <Typography variant="body1" sx={{ mb: 1 }}>
                           <strong style={{ color: '#666' }}>Total TTC:</strong>{" "}
-                          {selectedBonCommande.total_ttc.toFixed(2)} TND
+                          {selectedDevis.total_ttc.toFixed(2)} TND
                         </Typography>
                       </Grid>
                       <Grid item xs={12}>
                         <Typography variant="body1" sx={{ mb: 1 }}>
                           <strong style={{ color: '#666' }}>Statut:</strong>{" "}
                           <Chip 
-                            label={selectedBonCommande.statut} 
-                            color={selectedBonCommande.statut === "Livrée" ? "success" : 
-                                   selectedBonCommande.statut === "Annulée" ? "error" : 
-                                   selectedBonCommande.statut === "En attente" ? "warning" : "info"}
+                            label={selectedDevis.statut} 
+                            color={selectedDevis.statut === "Livrée" ? "success" : 
+                                selectedDevis.statut === "Annulée" ? "error" : 
+                                selectedDevis.statut === "En attente" ? "warning" : "info"}
                             sx={{ 
                               fontWeight: 'bold',
                               fontSize: '0.9rem',
@@ -677,7 +674,7 @@ const getStatusChip = (statut) => {
                 <Card sx={{ mb: 3, backgroundColor: '#f8f9fa' }}>
                   <CardContent>
                     <Typography variant="h6" sx={{ mb: 2, color: '#1976d2', fontWeight: 'bold' }}>
-                      Articles Commandés
+                      Articles demandés
                     </Typography>
                     <TableContainer component={Paper} sx={{ boxShadow: 2, borderRadius: 2 }}>
                       <Table>
@@ -691,7 +688,7 @@ const getStatusChip = (statut) => {
                           </TableRow>
                         </TableHead>
                         <TableBody>
-                          {selectedBonCommande.lignes.map((ligne, index) => (
+                          {selectedDevis.lignes.map((ligne, index) => (
                             <TableRow 
                               key={index}
                               sx={{ 
@@ -719,7 +716,7 @@ const getStatusChip = (statut) => {
                   <Button
                     variant="outlined"
                     color="primary"
-                    onClick={() => handleEditBonCommande(selectedBonCommande)}
+                    onClick={() => handleEditDevis(selectedDevis)}
                     sx={{ 
                       borderRadius: '8px',
                       borderColor: '#1976d2',
@@ -751,44 +748,42 @@ const getStatusChip = (statut) => {
         </Fade>
       </Modal>
 
-      {/* Formulaire de modification */}
-      <Modal
-        open={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        closeAfterTransition
-        BackdropComponent={Backdrop}
-        BackdropProps={{
-          timeout: 500,
-        }}
-      >
-        <Fade in={isEditModalOpen}>
-          <Box
-            sx={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              width: "90%",
-              maxWidth: "1000px",
-              bgcolor: "#FFFFFF",
-              boxShadow: 24,
-              p: 4,
-              borderRadius: 2,
-              maxHeight: "90vh",
-              overflowY: "auto",
-            }}
-          >
-            {editBonCommande && (
-              <Box>
-                <Typography variant="h4" component="h2" sx={{ mb: 3, color: '#1976d2', fontWeight: 'bold' }}>
-                  Modifier le Bon de Commande N° {editBonCommande.numero_Bon}
-                </Typography>
-                {/* Contenu du formulaire de modification */}
-              </Box>
-            )}
-          </Box>
-        </Fade>
-      </Modal>
+
+{/*Snackbar*/}
+<Snackbar
+  open={openSnackbar}
+  autoHideDuration={2000}
+  onClose={handleCloseSnackbar}
+  TransitionComponent={Fade}
+  anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+>
+  <Alert 
+    onClose={handleCloseSnackbar} 
+    severity="success" 
+    sx={{ 
+      width: '100%',
+      backgroundColor: '#4caf50',
+      color: 'white',
+      '& .MuiAlert-icon': {
+        color: 'white',
+      },
+      '& .MuiAlert-action': {
+        color: 'white',
+      },
+      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+      borderRadius: '8px',
+      padding: '16px 24px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+    }}
+  >
+    <CheckCircle sx={{ fontSize: 28 }} />
+    <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+      {snackbarMessage}
+    </Typography>
+  </Alert>
+</Snackbar>
     </>
   );
 }

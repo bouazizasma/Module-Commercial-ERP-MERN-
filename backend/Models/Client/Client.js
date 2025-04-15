@@ -1,4 +1,6 @@
 const mongoose = require('mongoose');
+const { required, ref } = require('joi');
+
 const Schema = mongoose.Schema;
 //schema Client 
 const ClientSchema = new Schema({
@@ -11,6 +13,15 @@ const ClientSchema = new Schema({
         type: String,
         required: true,
         //unique: true
+    },
+    codeSecteur :{
+        type: String, 
+        ref: 'secteur',       
+    },
+    libelleSecteur :{
+         type: String, 
+        ref: 'secteur',       
+
     },
     matricule_fiscale: {
         type: String,

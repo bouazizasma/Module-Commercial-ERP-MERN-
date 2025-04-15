@@ -650,24 +650,6 @@ export default function ListeBonReceptionFournisseur() {
             fullWidth
           />
 
-          <TextField
-            label="Numéro de facture"
-            value={filters.numeroFacture}
-            onChange={(e) => handleFilterChange("numeroFacture", e.target.value)}
-            fullWidth
-          />
-
-          <FormControl fullWidth>
-            <InputLabel>Timbre</InputLabel>
-            <Select
-              value={filters.timbre}
-              onChange={(e) => handleFilterChange("timbre", e.target.value)}
-              label="Timbre"
-            >
-              <MenuItem value="1.000">1.000 TND</MenuItem>
-              <MenuItem value="-1.000">-1.000 TND</MenuItem>
-            </Select>
-          </FormControl>
 
           <Button
             variant="outlined"

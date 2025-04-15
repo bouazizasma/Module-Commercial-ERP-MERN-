@@ -76,11 +76,11 @@ const createBonCommande = async (req, res) => {
         // Calcul du total HT et TTC
         const total_hors_Taxe = lignes.reduce((acc, ligne) => acc + (ligne.quantite * ligne.prix_unitaire), 0);
        // Calcul du total TTC en tenant compte de la TVA pour chaque ligne
-const total_ttc = lignes.reduce((acc, ligne) => {
-    const totalLigneHT = ligne.quantite * ligne.prix_unitaire;
-    const totalLigneTTC = totalLigneHT * (1 + ligne.tva / 100); // Supposons que la TVA est en pourcentage
-    return acc + totalLigneTTC;
-}, 0);
+        const total_ttc = lignes.reduce((acc, ligne) => {
+        const totalLigneHT = ligne.quantite * ligne.prix_unitaire;
+        const totalLigneTTC = totalLigneHT * (1 + ligne.tva / 100); // Supposons que la TVA est en pourcentage
+        return acc + totalLigneTTC;
+        }, 0);
 
         // Création du bon de commande
         const bonCommande = new BonFournisseur({

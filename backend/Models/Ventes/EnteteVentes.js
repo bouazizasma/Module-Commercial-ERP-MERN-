@@ -7,22 +7,22 @@ const EnteteVentesSchema = new Schema({
     devisReference: { type: String }, 
     bonCommandeClientReference: { type: String }, 
     dateDevis:{type :Date},
+    bonLivraisonClientReference: { type: String }, 
     dateLivraison: { type: Date }, 
     dateCommande: { type: Date },
-    anneeReference: { type: Number, required: true },
-    Client: { type: Schema.Types.ObjectId, ref: 'client', required: true },
+    anneeReference: { type: Number },
+    client: { type: Schema.Types.ObjectId, ref: 'client', required: true },
     adresse_Client: { type: String },
+    nomPrenom_Client: { type: String },
     matriculeFiscale_Client: { type: String },
     telephone_client: { type: [String] },
-    statut: { 
-        type: String, 
-        enum: ['En attente', 'Confirmée', 'Livrée', 'Facturé', 'Annulée'], 
-        default: 'En attente' 
-    },
-    depot: { type: Schema.Types.ObjectId, ref: 'depot', required: true }, 
-    lignes: [{ type: Schema.Types.ObjectId, ref: "LigneVentes" }], // Référence aux lignes de vente
+    total_hors_Taxe:{type: Number,},
+    total_ttc:{type: Number,},
+    statut: {type: String,enum: ['En attente', 'Confirmée', 'Livrée','Annulée'],default: 'En attente'},
+    depot: { type: Schema.Types.ObjectId, ref: 'depot' }, 
+    lignes: [{ type: Schema.Types.ObjectId, ref: "LigneVentes" }], 
 }, {
-    timestamps: true, // Ajoute automatiquement `createdAt` et `updatedAt`
+    timestamps: true, 
 });
 
 const EnteteVentesModel = mongoose.model('EnteteVentes', EnteteVentesSchema);

@@ -46,9 +46,8 @@ const ArticleSchema = new Schema({
     },
     //fodec
     fodec:{
-        type:Number,
-    },
-    
+        type:Number,},
+        
     prix_net: {    
         type: Number,
     },

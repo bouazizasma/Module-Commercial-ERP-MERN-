@@ -1,6 +1,6 @@
 const express =require ("express");
 const router = express.Router();
-const { getClients, getClientByID, createClient, updateClient, deleteClient} = require('../Controllers/ClientController');
+const { getClients, getClientByID, createClient, updateClient, deleteClient} = require('../../Controllers/ClientController');
 
 /**
  * @route   
