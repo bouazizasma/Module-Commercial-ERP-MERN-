@@ -427,7 +427,7 @@ const getTousLesPaiements = async (req, res) => {
 };
 
 // Récupérer tous les paiements d'un fournisseur
-const getAllPaiements = async (req, res) => {
+/*const getAllPaiements = async (req, res) => {
   try {
     const { fournisseurId } = req.params; // Récupérer l'ID du fournisseur depuis les paramètres de la route
 
@@ -451,7 +451,33 @@ const getAllPaiements = async (req, res) => {
       error: error.message,
     });
   }
+};*/
+
+const getAllPaiements = async (req, res) => {
+  try {
+    const { clientId } = req.params;
+
+    // Validation de l'ID
+    if (!mongoose.Types.ObjectId.isValid(clientId)) {
+      return res.status(400).json({ message: "ID client invalide" });
+    }
+
+    const paiements = await ReglementC.find({ clientId })
+      .populate("clientId", "nom_prenom")
+      .populate("facturesIds", "numero_facture montantTTC")
+      .populate("blNonFactureesIds", "numero_bon_livraison montantTTC")
+      .populate("caisseId", "libelle")
+      .sort({ dateCreation: -1 });
+
+    res.json(paiements);
+  } catch (error) {
+    res.status(500).json({
+      message: "Erreur lors de la récupération des paiements",
+      error: error.message,
+    });
+  }
 };
+
 // Récupérer un paiement par son ID
 const getPaiementById = async (req, res) => {
   try {

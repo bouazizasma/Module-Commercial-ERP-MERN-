@@ -11,13 +11,11 @@ const SecteurSchema = new Schema({
         type: String,
         required: true,
         unique: true
-    
     },
     libelle : {
         type: String,
         required: [true,],
         unique: true
-
     },
     });
     const SecteurModel = mongoose.model('secteur', SecteurSchema);

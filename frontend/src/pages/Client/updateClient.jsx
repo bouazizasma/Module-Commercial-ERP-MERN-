@@ -5,6 +5,7 @@ import {
   Button,
   Grid,
   Box,
+  Checkbox,
   Card,
   CardContent,
   MenuItem,
@@ -22,6 +23,7 @@ import {
   Category,
   Business,
   Image,
+  Add,
   Settings,
   Straight,
 } from "@mui/icons-material";
@@ -52,7 +54,9 @@ export default function UpdateClient() {
     taux_retenu: "",
   });
 
-      const [secteurs, setSecteurs] = useState([]);
+  const [secteurs, setSecteurs] = useState([]);
+  const [bankAccounts, setBankAccounts] = useState([]);
+const [banques, setBanques] = useState([]);
   
   // Fetch client by ID to populate the form
   /*useEffect(() => {
@@ -78,9 +82,10 @@ export default function UpdateClient() {
   useEffect(() => {
     const fetchClient = async () => {
       try {
-        const [ClientResponse, SecteursResponse] = await Promise.all([
+        const [ClientResponse, SecteursResponse,BanquesResponse] = await Promise.all([
           axios.get(`http://localhost:5000/client/${id}`),
           axios.get("http://localhost:5000/secteur/Secteurs"),
+          axios.get("http://localhost:5000/banqueClient/AllBanques")
         ]);
   
         // Vérifiez la structure de la réponse
@@ -88,14 +93,47 @@ export default function UpdateClient() {
         
         // Si la réponse est directement les données du client
         setFormData(ClientResponse.data.client || ClientResponse.data); // Adaptez selon la structure réelle
-        
+        setBankAccounts(ClientResponse.data.client?.bankAccounts || ClientResponse.data?.bankAccounts || []);
         setSecteurs(SecteursResponse.data);
+        setBanques(BanquesResponse.data);
       } catch (error) {
         console.error("Erreur lors de la récupération du client :", error);
       }
     };
     fetchClient();
   }, [id]);
+
+
+  const handleBankAccountChange = (index, field, value) => {
+    const updatedAccounts = [...bankAccounts];
+    updatedAccounts[index][field] = value;
+    
+    // Si on définit comme compte principal, on désactive les autres
+    if (field === 'isPrimary' && value) {
+      updatedAccounts.forEach((acc, i) => {
+        if (i !== index) acc.isPrimary = false;
+      });
+    }
+    
+    setBankAccounts(updatedAccounts);
+  };
+  
+  const addBankAccount = () => {
+    setBankAccounts([...bankAccounts, {
+      banque: '',
+      RIB: '',
+      adresseBanque: '',
+      isPrimary: bankAccounts.length === 0 // Premier compte par défaut principal
+    }]);
+  };
+  
+  const removeBankAccount = (index) => {
+    const updatedAccounts = [...bankAccounts];
+    updatedAccounts.splice(index, 1);
+    setBankAccounts(updatedAccounts);
+  };
+
+
 
   // Update client
  /* const updateClient = async () => {
@@ -138,7 +176,7 @@ export default function UpdateClient() {
   };
 */
  
-const updateClient = async () => {
+/*const updateClient = async () => {
   try {
     // Préparez les données à envoyer
     const dataToSend = {
@@ -162,6 +200,27 @@ const updateClient = async () => {
     alert(errorMessage);
   }
 };
+*/
+const updateClient = async () => {
+  try {
+    const dataToSend = {
+      ...formData,
+      bankAccounts: bankAccounts.filter(acc => acc.banque && acc.RIB),
+      telephone: formData.telephone.filter(tel => tel)
+    };
+
+    delete dataToSend._id;
+    delete dataToSend.__v;
+
+    await axios.put(`http://localhost:5000/client/${id}`, dataToSend);
+    alert("Client mis à jour !");
+    navigate("/client");
+  } catch (error) {
+    console.error("Erreur:", error);
+    alert("Erreur lors de la mise à jour");
+  }
+};
+
 // Handle input change
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -400,6 +459,86 @@ const updateClient = async () => {
                 </Accordion>
               </CardContent>
             </Card>
+
+            {/* Section Comptes Bancaires */}
+<Card sx={{ mb: 3 }}>
+  <CardContent>
+    <Typography variant="h6" sx={{ mb: 2 }}>Comptes Bancaires</Typography>
+    
+    {bankAccounts.map((account, index) => (
+      <Box key={index} sx={{ 
+        mb: 3, 
+        p: 2, 
+        border: '1px solid #e0e0e0', 
+        borderRadius: 1 
+      }}>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={4}>
+            <TextField
+              select
+              fullWidth
+              label="Banque"
+              value={account.banque}
+              onChange={(e) => handleBankAccountChange(index, 'banque', e.target.value)}
+            >
+              {banques.map((banque) => (
+                <MenuItem key={banque._id} value={banque._id}>
+                  {banque.libelle} ({banque.code_banque})
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+          <Grid item xs={12} sm={3}>
+            <TextField
+              fullWidth
+              label="RIB"
+              value={account.RIB}
+              onChange={(e) => handleBankAccountChange(index, 'RIB', e.target.value)}
+              required
+            />
+          </Grid>
+          <Grid item xs={12} sm={3}>
+            <TextField
+              fullWidth
+              label="Adresse Banque"
+              value={account.adresseBanque}
+              onChange={(e) => handleBankAccountChange(index, 'adresseBanque', e.target.value)}
+            />
+          </Grid>
+          <Grid item xs={12} sm={2} sx={{ display: 'flex', alignItems: 'center' }}>
+            <Checkbox
+              checked={account.isPrimary}
+              onChange={(e) => handleBankAccountChange(index, 'isPrimary', e.target.checked)}
+              color="primary"
+            />
+            <Typography variant="body2">Principal</Typography>
+          </Grid>
+        </Grid>
+        
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+          <Button 
+            variant="outlined" 
+            color="error"
+            size="small"
+            onClick={() => removeBankAccount(index)}
+            sx={{ mr: 1 }}
+          >
+            Supprimer
+          </Button>
+        </Box>
+      </Box>
+    ))}
+    
+    <Button 
+      variant="outlined" 
+      startIcon={<Add />}
+      onClick={addBankAccount}
+      fullWidth
+    >
+      Ajouter un compte bancaire
+    </Button>
+  </CardContent>
+</Card>
 
             {/* Bouton de mise à jour */}
             <Button

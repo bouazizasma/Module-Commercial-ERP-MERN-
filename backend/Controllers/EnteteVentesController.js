@@ -4,7 +4,7 @@ const Depot = require('../Models/depot');
 const CounterModel=require ("../Models/counters");
 const mongoose = require('mongoose');
 
-//Zone Devis
+/////////////////////////zone Devis /////////////////////////////////
 //createDevis
 const createDevis = async (req, res) => {
     try {
@@ -110,7 +110,7 @@ const createDevis = async (req, res) => {
             tva: ligne.tva,
             prix_uTTC: ligne.prix_uTTC,
             total_ht: ligne.quantite * ligne.prix_unitaire,
-            total_ttc: ligne.quantite * ligne.prix_unitaire * 1.2,
+            total_ttc: total_ht * (1 + tva),
         }));
 
        // await LigneVentes.insertMany(lignesDevis);
@@ -556,6 +556,7 @@ const getDevis = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };*/
+
 //Get by ID devis
 const getDevisByID = async (req, res) => {
     try {
@@ -675,6 +676,7 @@ const deleteDevis = async (req, res) => {
 };
 
 
+////////////////////////////zone Bon commande /////////////////////////////////
 // Générer un bon de commande client à partir d'un devis
 /*const generateBonCommandeClient = async (req, res) => {
     try {
@@ -734,7 +736,9 @@ const deleteDevis = async (req, res) => {
       });
     }
   };*/
+ 
   
+
 const generateBonCommandeClient = async (req, res) => {
     try {
         const { devisId } = req.params;
@@ -860,6 +864,197 @@ const getAllBonCommandes = async (req, res) => {
     }
 };
 
+
+// creation bon commande client 
+
+const createBCC = async (req, res) => {
+    try {
+        console.log("Données reçues:", req.body); 
+        const { client, depot, lignes, dateCommande } = req.body;
+        // Vérification des champs obligatoires
+        if (!client || !depot || !lignes || lignes.length === 0 || !dateCommande) {
+            return res.status(400).json({ message: "Client, dépôt, lignes de Bon Commande  et date de bon Commande sont requis." });
+        }
+
+        // Convertir la date de devis en objet Date
+        const dateBCCObj = new Date(dateCommande);
+
+        // Vérifier si la date est valide
+        if (isNaN(dateBCCObj.getTime())) {
+            return res.status(400).json({ message: "Date de BonCommande invalide." });
+        }
+
+        // Extraire l'année de référence à partir de la date
+        const year = dateBCCObj.getFullYear();
+
+        // Vérifier que l'année de référence est valide
+        if (!year || year < 2000 || year > 2100) {
+            return res.status(400).json({ message: "L'année de référence est invalide." });
+        }
+
+        // Récupérer le code du dépôt
+        const foundDepot = await Depot.findById(depot);
+        if (!foundDepot) {
+            return res.status(404).json({ message: "Dépôt non trouvé" });
+        }
+        const codeDepot = foundDepot.codeDepot;
+
+        // Extraire les deux derniers chiffres de l'année de référence
+        const yearShort = year.toString().slice(-2);
+
+        // Trouver ou créer un compteur pour l'année de référence
+        let counter;
+        try {
+            counter = await CounterModel.findOneAndUpdate(
+                { model: 'bonCommandeClient', year: year },
+                { $inc: { seq: 1 } },
+                { new: true, upsert: true }
+            );
+        } catch (error) {
+            console.error("Erreur lors de la création ou de la mise à jour du compteur:", error);
+            if (error.code === 11000) {
+                // Si l'erreur est une duplication de clé, récupérez le compteur existant
+                counter = await CounterModel.findOne({ model: 'bonCommandeClient', year: year });
+                if (!counter) {
+                    // Si aucun compteur existant n'est trouvé, créez-en un nouveau
+                    counter = new CounterModel({ model: 'bonCommandeClient', year: year, seq: 1 });
+                    await counter.save();
+                }
+            } else {
+                return res.status(500).json({ message: "Erreur lors de la création du compteur." });
+            }
+        }
+
+        if (!counter) {
+            return res.status(500).json({ message: "Erreur lors de la création du compteur." });
+        }
+
+        // Formater la séquence sur 5 chiffres
+        const sequence = String(counter.seq).padStart(5, '0');
+
+        // Générer le numéro de devis
+        const numero = `BCC ${codeDepot} ${yearShort} ${sequence}`;
+
+        // Calcul du total HT et TTC
+        const total_hors_Taxe = lignes.reduce((acc, ligne) => acc + (ligne.quantite * ligne.prix_unitaire), 0);
+       // Calcul du total TTC en tenant compte de la TVA pour chaque ligne
+        const total_ttc = lignes.reduce((acc, ligne) => {
+        const totalLigneHT = ligne.quantite * ligne.prix_unitaire;
+        const totalLigneTTC = totalLigneHT * (1 + ligne.tva / 100); // Supposons que la TVA est en pourcentage
+        return acc + totalLigneTTC;
+        }, 0);
+        // Création du devis
+        const bonCommande = new EnteteVentes({
+            numero,
+            client,
+            type: "BonCommandeClient",
+            dateCommande: dateBCCObj,
+            depot,
+            anneeReference: year, 
+            total_hors_Taxe ,
+            total_ttc ,
+            lignes: [],
+        });
+
+        // Sauvegarder le devis 
+        const savedBBC = await bonCommande.save();
+
+        // Enregistrement des lignes de devis
+        const lignesBonCommande = lignes.map(ligne => ({
+            numeroEntete: savedBBC._id,
+            article: ligne.article,
+            quantite: ligne.quantite,
+            prix_unitaire: ligne.prix_unitaire,
+            remise: ligne.remise,
+            dc: ligne.dc,
+            fodec: ligne.fodec,
+            tva: ligne.tva,
+            prix_uTTC: ligne.prix_uTTC,
+            total_ht: ligne.quantite * ligne.prix_unitaire,
+            total_ttc: total_ht * (1 + tva),
+        }));
+
+       // await LigneVentes.insertMany(lignesDevis);
+       const insertedLignes = await LigneVentes.insertMany(lignesBonCommande);
+
+       // Mettre à jour l'entête avec les IDs des lignes
+       await EnteteVentes.findByIdAndUpdate(savedBBC._id, {
+         $set: { lignes: insertedLignes.map(l => l._id) }
+       });
+       
+
+        // Populate the Client field after saving
+        const populatedBCC = await EnteteVentes.findById(savedBBC._id).populate('client').populate({
+            path: 'lignes',
+            populate: { path: 'article' , model : 'article' } // Peupler les articles dans les lignes
+        });
+
+        res.status(201).json({ bonCommande: populatedBCC, lignes: lignesBonCommande });
+        console.log("Populated bon commande:", populatedBCC);
+    } catch (error) {
+        console.error("Erreur lors de la création du Bon commande:", error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+/*const getBCCByID = async (req, res) => {
+    try {
+        const bonCommande = await EnteteVentes.findById(req.params.id).populate('client' , 'nom_prenom matricule_fiscale adresse telephone');
+        const lignes = await LigneVentes.find({ numeroEntete: req.params.id }).populate('article');
+        console.log("Lignes de bon commande:", lignes); // Ajoutez ce log pour vérifier les données
+        res.status(200).json({ bonCommande, lignes });
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};*/
+
+//get Bon commande by id 
+const getBCCByID = async (req, res) => {
+    try {
+        const bonCommande = await EnteteVentes.findById(req.params.id)
+            .populate('client', 'nom_prenom matricule_fiscale adresse telephone email')
+            .populate('depot', 'libelle');
+        
+        const lignes = await LigneVentes.find({ numeroEntete: req.params.id })
+            .populate('article' , 'libelle , prix_unitaire , prix_uTTC , quantite ');
+        
+        // Renvoyer un objet unifié avec toutes les données
+        res.status(200).json({
+            ...bonCommande._doc, // Spread de toutes les propriétés du bon de commande
+            lignes: lignes // Ajout des lignes directement dans l'objet principal
+        });
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+//Delete Bon commande 
+
+const deleteBCC = async (req, res) => {
+    try {
+        const { id } = req.params;
+        // Vérification de l'existence du BCC
+        const bcc = await EnteteVentes.findById(id);
+        if (!bcc) {
+            return res.status(404).json({ message: "Bon Commande non trouvé" });
+        }
+
+        // Supprimer le bcc
+        await EnteteVentes.findByIdAndDelete(id);
+
+        // Supprimer les lignes associées
+        await LigneVentes.deleteMany({ bon: id });
+
+        res.status(200).json({ message: "Bon commande supprimé avec succès" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+
+///////////////zone Bon Livraison /////////////////////////
+
+///Génération de bon de livraison 
 /*const generateBonLivraisonClient = async (req, res) => {
     try {
         const { docId } = req.params;
@@ -1243,7 +1438,7 @@ const generateBonLivraisonClient = async (req, res) => {
 
         // Création du bon de livraison
         const bonLivraison = new EnteteVentes({
-            type: "BonLivraison",
+            type: "bonLivraisonClient",
             numero: bonLivraisonNumber,
             dateLivraison: new Date(),
             client: sourceDoc.client,
@@ -1310,10 +1505,151 @@ const generateBonLivraisonClient = async (req, res) => {
     }
 };
 
+//creation de bon livraison 
+
+const createBL = async (req, res) => {
+    try {
+        console.log("Données reçues:", req.body); 
+        const { client, depot, lignes, dateLivraison , vehicule,secteur,modePaiement, notation ,chauffeur ,timbre} = req.body;
+        // Vérification des champs obligatoires
+        if (!client || !depot || !lignes || lignes.length === 0 || !dateLivraison || !modePaiement ) {
+            return res.status(400).json({ message: "Client, dépôt, lignes de Bon Livraison , date de bon livraison et mode de paiement   sont requis." });
+        }
+
+        // Convertir la date de devis en objet Date
+        const dateBLObj = new Date(dateLivraison);
+
+        // Vérifier si la date est valide
+        if (isNaN(dateBLObj.getTime())) {
+            return res.status(400).json({ message: "Date de BonLivraison invalide." });
+        }
+
+        // Extraire l'année de référence à partir de la date
+        const year = dateBLObj.getFullYear();
+
+        // Vérifier que l'année de référence est valide
+        if (!year || year < 2000 || year > 2100) {
+            return res.status(400).json({ message: "L'année de référence est invalide." });
+        }
+
+        // Récupérer le code du dépôt
+        const foundDepot = await Depot.findById(depot);
+        if (!foundDepot) {
+            return res.status(404).json({ message: "Dépôt non trouvé" });
+        }
+        const codeDepot = foundDepot.codeDepot;
+
+        // Extraire les deux derniers chiffres de l'année de référence
+        const yearShort = year.toString().slice(-2);
+
+        // Trouver ou créer un compteur pour l'année de référence
+        let counter;
+        try {
+            counter = await CounterModel.findOneAndUpdate(
+                { model: 'bonLivraisonClient', year: year },
+                { $inc: { seq: 1 } },
+                { new: true, upsert: true }
+            );
+        } catch (error) {
+            console.error("Erreur lors de la création ou de la mise à jour du compteur:", error);
+            if (error.code === 11000) {
+                // Si l'erreur est une duplication de clé, récupérez le compteur existant
+                counter = await CounterModel.findOne({ model: 'bonLivraisonClient', year: year });
+                if (!counter) {
+                    // Si aucun compteur existant n'est trouvé, créez-en un nouveau
+                    counter = new CounterModel({ model: 'bonLivraisonClient', year: year, seq: 1 });
+                    await counter.save();
+                }
+            } else {
+                return res.status(500).json({ message: "Erreur lors de la création du compteur." });
+            }
+        }
+
+        if (!counter) {
+            return res.status(500).json({ message: "Erreur lors de la création du compteur." });
+        }
+
+        // Formater la séquence sur 5 chiffres
+        const sequence = String(counter.seq).padStart(5, '0');
+
+        // Générer le numéro de devis
+        const numero = `BL ${codeDepot} ${yearShort} ${sequence}`;
+
+        // Calcul du total HT et TTC
+        const total_hors_Taxe = lignes.reduce((acc, ligne) => acc + (ligne.quantite * ligne.prix_unitaire), 0);
+       // Calcul du total TTC en tenant compte de la TVA pour chaque ligne
+        const total_ttc = lignes.reduce((acc, ligne) => {
+        const totalLigneHT = ligne.quantite * ligne.prix_unitaire;
+        const totalLigneTTC = totalLigneHT * (1 + ligne.tva / 100); // Supposons que la TVA est en pourcentage
+        return acc + totalLigneTTC;
+        }, 0);
+        const netapayer = total_ttc + (timbre || 0); // Ajout d'une valeur par défaut pour timbre
+        // Création du bonLivraison
+        const bonLivraison = new EnteteVentes({
+            numero,
+            client,
+            type: "bonLivraisonClient",
+            dateLivraison: dateBLObj,
+            depot,
+            modePaiement,
+            vehicule,
+            secteur,
+            chauffeur,
+            notation,
+            statut :"Livrée",
+            anneeReference: year, 
+            total_hors_Taxe ,
+            total_ttc ,
+            netapayer,
+            lignes: [],
+        });
+
+        // Sauvegarder le BL 
+        const savedBL = await bonLivraison.save();
+
+        // Enregistrement des lignes de devis
+        const lignesBonLivraison = lignes.map(ligne => ({
+            numeroEntete: savedBL._id,
+            article: ligne.article,
+            quantite: ligne.quantite,
+            prix_unitaire: ligne.prix_unitaire,
+            remise: ligne.remise,
+            dc: ligne.dc,
+            fodec: ligne.fodec,
+            tva: ligne.tva,
+            prix_uTTC: ligne.prix_uTTC,
+            total_ht: ligne.quantite * ligne.prix_unitaire,
+            total_ttc:  (ligne.quantite * ligne.prix_unitaire) * (1 + (ligne.tva || 0) / 100) 
+        }));
+
+       // await LigneVentes.insertMany(lignesDevis);
+       const insertedLignes = await LigneVentes.insertMany(lignesBonLivraison);
+
+       // Mettre à jour l'entête avec les IDs des lignes
+       await EnteteVentes.findByIdAndUpdate(savedBL._id, {
+         $set: { lignes: insertedLignes.map(l => l._id) }
+       });
+       
+
+        // Populate the Client field after saving
+        const populatedBL = await EnteteVentes.findById(savedBL._id).populate('client').populate({
+            path: 'lignes',
+            populate: { path: 'article' , model : 'article' } // Peupler les articles dans les lignes
+        });
+
+        res.status(201).json({ bonLivraison: populatedBL, lignes: lignesBonLivraison });
+        console.log("Populated bon Livraison:", populatedBL);
+    } catch (error) {
+        console.error("Erreur lors de la création du Bon Livraison:", error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+//get all bon Livraison 
 const getAllBonLivraisons = async (req, res) => {
     try {
         // 1. Récupérer les entêtes de BonLivraison
-        const entetes = await EnteteVentes.find({ type: "BonLivraison" })
+        const entetes = await EnteteVentes.find({ type: "bonLivraisonClient" })
             .populate('client')
             .lean();
         
@@ -1351,192 +1687,457 @@ const getAllBonLivraisons = async (req, res) => {
 };
 
 
+//Génération de FActure  d'apres les BL
 
-// creation bon commande client 
-
-const createBCC = async (req, res) => {
+const generateFactureClient = async (req, res) => {
     try {
-        console.log("Données reçues:", req.body); 
-        const { client, depot, lignes, dateCommande } = req.body;
-        // Vérification des champs obligatoires
-        if (!client || !depot || !lignes || lignes.length === 0 || !dateCommande) {
-            return res.status(400).json({ message: "Client, dépôt, lignes de Bon Commande  et date de bon Commande sont requis." });
+        const { bonLivraisonID } = req.params;
+        // Récupérer le bl
+        const bl = await EnteteVentes.findById(bonLivraisonID).populate('depot').populate('client')
+        .populate('lignes.article');
+        if (!bl) {
+            return res.status(404).json({ message: "BL non trouvé" });
         }
 
-        // Convertir la date de devis en objet Date
-        const dateBCCObj = new Date(dateCommande);
-
-        // Vérifier si la date est valide
-        if (isNaN(dateBCCObj.getTime())) {
-            return res.status(400).json({ message: "Date de BonCommande invalide." });
-        }
-
-        // Extraire l'année de référence à partir de la date
-        const year = dateBCCObj.getFullYear();
-
-        // Vérifier que l'année de référence est valide
-        if (!year || year < 2000 || year > 2100) {
-            return res.status(400).json({ message: "L'année de référence est invalide." });
+        if (bl.type !== "bonLivraisonClient") {
+            return res.status(400).json({ message: "Le document doit être un BL" });
         }
 
         // Récupérer le code du dépôt
-        const foundDepot = await Depot.findById(depot);
-        if (!foundDepot) {
-            return res.status(404).json({ message: "Dépôt non trouvé" });
-        }
-        const codeDepot = foundDepot.codeDepot;
+        const codeDepot = bl.depot?.codeDepot || "DPT"; // Valeur par défaut si pas de dépôt
 
-        // Extraire les deux derniers chiffres de l'année de référence
+       // Extraire l'année de la date actuelle
+        const year = new Date().getFullYear();
+
         const yearShort = year.toString().slice(-2);
 
-        // Trouver ou créer un compteur pour l'année de référence
+        // Trouver ou créer un compteur pour les Factures de cette année
         let counter;
         try {
             counter = await CounterModel.findOneAndUpdate(
-                { model: 'bonCommandeClient', year: year },
+                { model: 'FactureClient', year: year },
                 { $inc: { seq: 1 } },
                 { new: true, upsert: true }
             );
         } catch (error) {
             console.error("Erreur lors de la création ou de la mise à jour du compteur:", error);
             if (error.code === 11000) {
-                // Si l'erreur est une duplication de clé, récupérez le compteur existant
-                counter = await CounterModel.findOne({ model: 'bonCommandeClient', year: year });
+                // Si erreur de duplication de clé, récupérer le compteur existant
+                counter = await CounterModel.findOne({ model: 'FactureClient', year: year });
                 if (!counter) {
-                    // Si aucun compteur existant n'est trouvé, créez-en un nouveau
-                    counter = new CounterModel({ model: 'bonCommandeClient', year: year, seq: 1 });
+                    counter = new CounterModel({ model: 'FactureClient', year: year, seq: 1 });
                     await counter.save();
                 }
             } else {
-                return res.status(500).json({ message: "Erreur lors de la création du compteur." });
+                throw error;
             }
-        }
-
-        if (!counter) {
-            return res.status(500).json({ message: "Erreur lors de la création du compteur." });
         }
 
         // Formater la séquence sur 5 chiffres
         const sequence = String(counter.seq).padStart(5, '0');
 
-        // Générer le numéro de devis
-        const numero = `BCC ${codeDepot} ${yearShort} ${sequence}`;
+        // Générer le numéro du facture
+        const factureClientNumber = `FC ${codeDepot} ${yearShort} ${sequence}`;
 
-        // Calcul du total HT et TTC
-        const total_hors_Taxe = lignes.reduce((acc, ligne) => acc + (ligne.quantite * ligne.prix_unitaire), 0);
-       // Calcul du total TTC en tenant compte de la TVA pour chaque ligne
-        const total_ttc = lignes.reduce((acc, ligne) => {
-        const totalLigneHT = ligne.quantite * ligne.prix_unitaire;
-        const totalLigneTTC = totalLigneHT * (1 + ligne.tva / 100); // Supposons que la TVA est en pourcentage
-        return acc + totalLigneTTC;
-        }, 0);
-        // Création du devis
-        const bonCommande = new EnteteVentes({
-            numero,
-            client,
-            type: "BonCommandeClient",
-            dateCommande: dateBCCObj,
-            depot,
-            anneeReference: year, 
-            total_hors_Taxe ,
-            total_ttc ,
-            lignes: [],
+        // Créer le bon de Facture client
+        const factureClient = new EnteteVentes({
+            type: "FactureClient",
+            numero: factureClientNumber,
+            dateFacture: new Date(),
+            client: new mongoose.Types.ObjectId(bl.client._id),
+            depot: bl.depot,
+            total_hors_Taxe: bl.total_hors_Taxe,
+            total_ttc: bl.total_ttc,
+            bonLivraisonClientReference: bl.numero,
+            details: bl.details,
+            anneeReference: year,
+            lignes: bl.lignes
         });
 
-        // Sauvegarder le devis 
-        const savedBBC = await bonCommande.save();
+        await factureClient.save();
 
-        // Enregistrement des lignes de devis
-        const lignesBonCommande = lignes.map(ligne => ({
-            numeroEntete: savedBBC._id,
-            article: ligne.article,
-            quantite: ligne.quantite,
-            prix_unitaire: ligne.prix_unitaire,
-            remise: ligne.remise,
-            dc: ligne.dc,
-            fodec: ligne.fodec,
-            tva: ligne.tva,
-            prix_uTTC: ligne.prix_uTTC,
-            total_ht: ligne.quantite * ligne.prix_unitaire,
-            total_ttc: ligne.quantite * ligne.prix_unitaire * 1.2,
-        }));
+        // Mettre à jour le statut du Bl
+        bl.statut = "Facturée";
+        bl.bonLivraisonClientReference = factureClientNumber;
+        await bl.save();
 
-       // await LigneVentes.insertMany(lignesDevis);
-       const insertedLignes = await LigneVentes.insertMany(lignesBonCommande);
-
-       // Mettre à jour l'entête avec les IDs des lignes
-       await EnteteVentes.findByIdAndUpdate(savedBBC._id, {
-         $set: { lignes: insertedLignes.map(l => l._id) }
-       });
-       
-
-        // Populate the Client field after saving
-        const populatedBCC = await EnteteVentes.findById(savedBBC._id).populate('client').populate({
-            path: 'lignes',
-            populate: { path: 'article' , model : 'article' } // Peupler les articles dans les lignes
+        res.status(201).json({
+            message: "LA facture client créé avec succès",
+            factureClient
         });
-
-        res.status(201).json({ bonCommande: populatedBCC, lignes: lignesBonCommande });
-        console.log("Populated bon commande:", populatedBCC);
     } catch (error) {
-        console.error("Erreur lors de la création du Bon commande:", error);
+        console.error("Erreur lors de la création du facture client:", error);
+        res.status(500).json({
+            message: "Erreur lors de la création du facture client",
+            error: error.message
+        });
+    }
+};
+
+//get all Factures 
+const getAllFacture = async (req, res) => {
+    try {
+        // 1. Récupérer les entêtes de Facture
+        const entetes = await EnteteVentes.find({ type: "FactureClient" })
+            .populate('client')
+            .lean();
+        
+        // 2. Récupérer toutes les lignes associées
+        const ligneIds = entetes.flatMap(e => e.lignes);
+        const lignes = await LigneVentes.find({ _id: { $in: ligneIds } })
+            .populate('article')
+            .lean();
+        
+        // 3. Reconstituer les Factures avec leurs lignes
+        const factureComplets = entetes.map(entete => {
+            const lignesFacture = lignes.filter(l => 
+                entete.lignes.some(id => id.equals(l._id))
+            );
+            
+            // Calcul des totaux
+            const totals = lignesFacture.reduce((acc, ligne) => ({
+                totalHT: acc.totalHT + (ligne.total_ht || 0),
+                totalTTC: acc.totalTTC + (ligne.total_ttc || 0)
+            }), { totalHT: 0, totalTTC: 0 });
+            
+            return {
+                ...entete,
+                lignes: lignesFacture,
+                total_hors_Taxe: totals.totalHT,
+                total_ttc: totals.totalTTC
+            };
+        });
+        
+        res.status(200).json(factureComplets);
+    } catch (error) {
+        console.error(error);
         res.status(500).json({ message: error.message });
     }
 };
 
-/*const getBCCByID = async (req, res) => {
-    try {
-        const bonCommande = await EnteteVentes.findById(req.params.id).populate('client' , 'nom_prenom matricule_fiscale adresse telephone');
-        const lignes = await LigneVentes.find({ numeroEntete: req.params.id }).populate('article');
-        console.log("Lignes de bon commande:", lignes); // Ajoutez ce log pour vérifier les données
-        res.status(200).json({ bonCommande, lignes });
-    } catch (error) {
-        res.status(400).json({ message: error.message });
-    }
-};*/
+//Delete Facture 
 
-
-const getBCCByID = async (req, res) => {
-    try {
-        const bonCommande = await EnteteVentes.findById(req.params.id)
-            .populate('client', 'nom_prenom matricule_fiscale adresse telephone email')
-            .populate('depot', 'libelle');
-        
-        const lignes = await LigneVentes.find({ numeroEntete: req.params.id })
-            .populate('article' , 'libelle , prix_unitaire , prix_uTTC , quantite ');
-        
-        // Renvoyer un objet unifié avec toutes les données
-        res.status(200).json({
-            ...bonCommande._doc, // Spread de toutes les propriétés du bon de commande
-            lignes: lignes // Ajout des lignes directement dans l'objet principal
-        });
-    } catch (error) {
-        res.status(400).json({ message: error.message });
-    }
-};
-
-
-
-const deleteBCC = async (req, res) => {
+const deleteFacture = async (req, res) => {
     try {
         const { id } = req.params;
-        // Vérification de l'existence du BCC
-        const bcc = await EnteteVentes.findById(id);
-        if (!bcc) {
-            return res.status(404).json({ message: "Bon Commande non trouvé" });
+        // Vérification de l'existence du facture
+        const facture = await EnteteVentes.findById(id);
+        if (!facture) {
+            return res.status(404).json({ message: "facture non trouvé" });
         }
 
-        // Supprimer le bcc
+        // Supprimer le facture
         await EnteteVentes.findByIdAndDelete(id);
 
         // Supprimer les lignes associées
         await LigneVentes.deleteMany({ bon: id });
 
-        res.status(200).json({ message: "Bon commande supprimé avec succès" });
+        res.status(200).json({ message: "facture supprimé avec succès" });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
+//Facture groupées pour +iers BL
 
-module.exports={createDevis,getDevis,getDevisByID,deleteDevis,updateDevis, generateBonCommandeClient, getAllBonCommandes, generateBonLivraisonClient, getAllBonLivraisons, createBCC, getBCCByID, deleteBCC};
+const generateFacturesClientsGroupes = async (req, res) => {
+    try {
+        const { bonLivraisonIDs } = req.body; // Tableau d'IDs de BLs
+        
+        // Vérifier si des IDs ont été fournis
+        if (!bonLivraisonIDs || !Array.isArray(bonLivraisonIDs) || bonLivraisonIDs.length === 0) {
+            return res.status(400).json({ message: "Veuillez fournir un tableau d'IDs de bons de livraison" });
+        }
+
+        // Récupérer tous les BLs
+        const bls = await EnteteVentes.find({
+            _id: { $in: bonLivraisonIDs },
+            type: "bonLivraisonClient",
+            statut: { $ne: "Facturée" } // Ne prendre que les BLs non encore facturés
+        })
+        .populate('depot')
+        .populate('client')
+        .populate('lignes.article');
+
+        // Vérifications
+        if (bls.length === 0) {
+            return res.status(404).json({ message: "Aucun bon de livraison valide trouvé" });
+        }
+
+        // Vérifier que tous les BLs concernent le même client et le même dépôt
+        const clientId = bls[0].client._id;
+        const depotId = bls[0].depot._id;
+        
+        const hasDifferentClientOrDepot = bls.some(bl => 
+            !bl.client._id.equals(clientId) || !bl.depot._id.equals(depotId)
+        );
+        
+        if (hasDifferentClientOrDepot) {
+            return res.status(400).json({ 
+                message: "Tous les bons de livraison doivent concerner le même client et le même dépôt" 
+            });
+        }
+
+        // Récupérer le code du dépôt
+        const codeDepot = bls[0].depot?.codeDepot || "DPT";
+
+        // Extraire l'année de la date actuelle
+        const year = new Date().getFullYear();
+        const yearShort = year.toString().slice(-2);
+
+        // Trouver ou créer un compteur pour les Factures de cette année
+        let counter;
+        try {
+            counter = await CounterModel.findOneAndUpdate(
+                { model: 'FactureClient', year: year },
+                { $inc: { seq: 1 } },
+                { new: true, upsert: true }
+            );
+        } catch (error) {
+            console.error("Erreur lors de la création ou de la mise à jour du compteur:", error);
+            if (error.code === 11000) {
+                counter = await CounterModel.findOne({ model: 'FactureClient', year: year });
+                if (!counter) {
+                    counter = new CounterModel({ model: 'FactureClient', year: year, seq: 1 });
+                    await counter.save();
+                }
+            } else {
+                throw error;
+            }
+        }
+
+        // Formater la séquence sur 5 chiffres
+        const sequence = String(counter.seq).padStart(5, '0');
+
+        // Générer le numéro de la facture
+        const factureClientNumber = `FC ${codeDepot} ${yearShort} ${sequence}`;
+
+        // Calculer les totaux groupés
+        const total_hors_Taxe = bls.reduce((sum, bl) => sum + (bl.total_hors_Taxe || 0), 0);
+        const total_ttc = bls.reduce((sum, bl) => sum + (bl.total_ttc || 0), 0);
+
+        // Fusionner toutes les lignes des BLs
+        const allLignes = bls.flatMap(bl => bl.lignes);
+
+        // Créer la facture client groupée
+        const factureClient = new EnteteVentes({
+            type: "FactureClient",
+            numero: factureClientNumber,
+            dateFacture: new Date(),
+            client: new mongoose.Types.ObjectId(clientId),
+            depot: bls[0].depot,
+            total_hors_Taxe,
+            total_ttc,
+            details: `Facture groupée pour ${bls.length} bon(s) de livraison`,
+            anneeReference: year,
+            lignes: allLignes,
+            bonLivraisonReferences: bls.map(bl => bl.numero) // Stocker les références des BLs
+        });
+
+        await factureClient.save();
+
+        // Mettre à jour le statut de tous les BLs
+        await EnteteVentes.updateMany(
+            { _id: { $in: bls.map(bl => bl._id) } },
+            { 
+                statut: "Facturée",
+                factureClientReference: factureClientNumber 
+            }
+        );
+
+        res.status(201).json({
+            message: `Facture client groupée créée avec succès pour ${bls.length} bon(s) de livraison`,
+            factureClient,
+            nombreBLsFactures: bls.length
+        });
+    } catch (error) {
+        console.error("Erreur lors de la création de la facture client groupée:", error);
+        res.status(500).json({
+            message: "Erreur lors de la création de la facture client groupée",
+            error: error.message
+        });
+    }
+};
+
+
+/*const getFacturesParClient = async (req, res) => {
+  const { clientID } = req.params;
+
+  if (!clientID) {
+    return res.status(400).json({ message: "L'ID du client est requis." });
+  }
+
+  try {
+    console.log("Recherche des factures pour le client:", clientID);
+
+    const factures = await EnteteVentes.find({
+        $or: [{ type: "FactureClient" }, { type: "Facture" }],
+        client: clientID
+      }).populate("client");
+
+    if (!factures || factures.length === 0) {
+      return res.status(404).json({ message: "Aucune facture trouvée pour cet client." });
+    }
+
+    res.status(200).json(factures);
+  } catch (error) {
+    console.error("Erreur lors de la récupération des factures par client :", error);
+    res.status(500).json({ message: "Erreur lors de la récupération des factures par client" });
+  }
+};*/
+const getFacturesParClient = async (req, res) => {
+    const { clientID } = req.params;
+  
+    if (!clientID) {
+      return res.status(400).json({ message: "L'ID du client est requis." });
+    }
+  
+    try {
+      const factures = await EnteteVentes.find({ 
+        type: "FactureClient",
+        client: clientID 
+      }).populate("client");
+  
+      // Return empty array instead of 404
+      res.status(200).json(factures || []);
+      
+    } catch (error) {
+      console.error("Erreur lors de la récupération des factures par client :", error);
+      res.status(500).json({ message: "Erreur lors de la récupération des factures par client" });
+    }
+  };
+
+ /* const getFacturesParClient = async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      if (!mongoose.Types.ObjectId.isValid(clientId)) {
+        return res.status(400).json({ message: "ID de client invalide" });
+      }
+      const factures = await FactureC.find({ clientId }).lean();
+      res.json(factures);
+    } catch (error) {
+      console.error("Erreur lors de la récupération des factures:", error);
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  };*/
+  
+  //get bon de livraison non facturée 
+  const getBonLivraisonNonFactures = async (req, res) => {
+    const { clientID } = req.params;
+
+    if (!clientID) {
+        return res.status(400).json({ message: "L'ID du client est requis." });
+    }
+
+    try {
+        // Récupérer tous les BL du client
+        const bonsLivraison = await EnteteVentes.find({
+            type: "bonLivraisonClient",
+            client: clientID,
+            statut: "Livrée" 
+        }).populate("client depot");
+
+        // Filtrer ceux qui n'ont pas de référence de facture
+        const bonsNonFactures = bonsLivraison.filter(bl => 
+            !bl.bonLivraisonClientReference && bl.statut !== "Facturée"
+        );
+
+        // Alternative: vérifier s'il existe une facture liée à ce BL
+        // Cette méthode est plus fiable si vous voulez être absolument sûr
+        const result = [];
+        for (const bl of bonsLivraison) {
+            const factureLiee = await EnteteVentes.findOne({
+                type: "FactureClient",
+                bonLivraisonClientReference: bl.numero
+            });
+            
+            if (!factureLiee) {
+                result.push(bl);
+            }
+        }
+
+        res.status(200).json(result);
+        
+    } catch (error) {
+        console.error("Erreur lors de la récupération des BL non facturés:", error);
+        res.status(500).json({ 
+            message: "Erreur lors de la récupération des BL non facturés",
+            error: error.message 
+        });
+    }
+};
+
+/*const getBonLivraisonNonFacturesAll = async (req, res) => {
+
+   
+    try {
+        // Récupérer tous les BL du client
+        const bonsLivraison = await EnteteVentes.find({
+            type: "bonLivraisonClient",
+            statut: "Livrée" 
+        }).populate("client depot");
+
+        // Filtrer ceux qui n'ont pas de référence de facture
+        const bonsNonFactures = bonsLivraison.filter(bl => 
+            !bl.bonLivraisonClientReference && bl.statut !== "Facturée"
+        );
+
+        // Alternative: vérifier s'il existe une facture liée à ce BL
+        // Cette méthode est plus fiable si vous voulez être absolument sûr
+        const result = [];
+        for (const bl of bonsLivraison) {
+            const factureLiee = await EnteteVentes.findOne({
+                type: "FactureClient",
+                bonLivraisonClientReference: bl.numero
+            });
+            
+            if (!factureLiee) {
+                result.push(bl);
+            }
+        }
+
+        res.status(200).json(result);
+        
+    } catch (error) {
+        console.error("Erreur lors de la récupération des BL non facturés:", error);
+        res.status(500).json({ 
+            message: "Erreur lors de la récupération des BL non facturés",
+            error: error.message 
+        });
+    }
+};
+*/
+
+const getBonLivraisonNonFacturesAll = async (req, res) => {
+    try {
+        // Récupérer tous les BL du client avec statut "Livrée"
+        const bonsLivraison = await EnteteVentes.find({
+            type: "bonLivraisonClient",
+            statut: "Livrée" 
+        }).populate("client depot");
+
+        // Vérifier pour chaque BL s'il existe une facture liée
+        const result = [];
+        for (const bl of bonsLivraison) {
+            const factureLiee = await EnteteVentes.findOne({
+                type: "FactureClient",
+                bonLivraisonClientReference: bl.numero
+            });
+            
+            if (!factureLiee) {
+                result.push(bl);
+            }
+        }
+
+        res.status(200).json(result);
+        
+    } catch (error) {
+        console.error("Erreur lors de la récupération des BL non facturés:", error);
+        res.status(500).json({ 
+            message: "Erreur lors de la récupération des BL non facturés",
+            error: error.message 
+        });
+    }
+};
+
+module.exports={createDevis,getDevis,getDevisByID,deleteDevis,updateDevis, generateBonCommandeClient, getAllBonCommandes, generateBonLivraisonClient, getAllBonLivraisons, createBCC, getBCCByID, deleteBCC , createBL,generateFactureClient,getAllFacture,deleteFacture,getFacturesParClient,getBonLivraisonNonFactures,getBonLivraisonNonFacturesAll,generateFacturesClientsGroupes};
 

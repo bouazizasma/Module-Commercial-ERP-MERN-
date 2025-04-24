@@ -7,9 +7,9 @@ const LigneVentesSchema = new Schema({
     prix_unitaire: {type: Number,required: true},
     prix_uTTC: {type: Number,required: true},
     tva: {type: Number,required: true},
-    remise: {type: Number,required: true},
-    dc: {type: Number,required: true},
-    fodec: {type: Number,required: true},
+    remise: {type: Number},
+    dc: {type: Number},
+    fodec: {type: Number},
     total_ht: { type: Number, required: true },
     total_ttc: { type: Number, required: true },
 });

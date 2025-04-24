@@ -20,6 +20,7 @@ import Collapse from "@mui/material/Collapse";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import InventoryIcon from '@mui/icons-material/Inventory';
+import DriveEtaIcon from '@mui/icons-material/DriveEta';
 import SellIcon from '@mui/icons-material/Sell';
 import {
   Home,
@@ -184,6 +185,8 @@ export default function Sidenav() {
       submenu: [
         { text: "Liste des Clients", path: "/Client" },
         { text: "Secteur", path: "/Secteur" },
+        { text: "BanqueClient", path: "/BanqueClient" },
+        { text: "Region", path: "/Region" },
       ],
     },
     {
@@ -209,7 +212,6 @@ export default function Sidenav() {
         { text: "Liste des Paiements", path: "/ListePaiements" },
 
         { text: "Banque", path: "/Banque" },
-        { text: "Caisse", path: "/Caisse" },
       ],
     },
     {
@@ -218,12 +220,24 @@ export default function Sidenav() {
       submenu: [
         { text: "Saisie Devis", path: "/SaisieDevis" },
         { text: "Liste des Devis", path: "/ListeDevisClient" },
-        { text: "Liste des BonCMDClient", path: "/ListeBonCommandeClient" },
-        { text: "Liste des BonLivraison", path: "/ListeBonLivraisonClient" },
         { text: "Saisie BonCMDClient", path: "/SaisieBonCommandeClient" },
+        { text: "Liste des BonCMDClient", path: "/ListeBonCommandeClient" },
+        { text: "Saisie BL Client", path: "/SaisieBonLivraisonClient" },
+        { text: "Liste des BonLivraison", path: "/ListeBonLivraisonClient" },
+        { text: "ListeFacturesClient",  icon : <DriveEtaIcon/>,path: "/ListeFacturesClient" },
+        { text: "FactureParClient",  icon : <DriveEtaIcon/>,path: "/FactureParClient" },
+        { text: "ReglementClient",  icon : <DriveEtaIcon/>,path: "/ReglementClient" },
+        { text: "ListeDesReglements",  icon : <DriveEtaIcon/>,path: "/ListeRegelement" },
+
+        { text: "Vehicule",  icon : <DriveEtaIcon/>,path: "/Vehicule" },
+
+
+
       ],
     },
     { text: "Dépôt", icon: <Warehouse />, path: "/Depot" },
+    { text: "Caisse", path: "/Caisse" },
+
   ];
 
   return (
@@ -362,6 +376,9 @@ export default function Sidenav() {
                               <ListIcon />
                             )
                             : subItem.text === "Secteur" ? (
+                              <LocationOnIcon />
+                            )
+                            : subItem.text === "Region" ? (
                               <LocationOnIcon />
                             )
                              : (

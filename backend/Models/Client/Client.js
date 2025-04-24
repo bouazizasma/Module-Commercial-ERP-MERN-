@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const { required, ref } = require('joi');
-
 const Schema = mongoose.Schema;
 //schema Client 
 const ClientSchema = new Schema({
@@ -25,20 +24,39 @@ const ClientSchema = new Schema({
     },
     matricule_fiscale: {
         type: String,
-      //  required: [true, 'Le champ matricule_fiscale est obligatoire.'],
         unique: true
     },
     adresse: {
         type: String,
-      //  required: [true, 'Le champ matricule_fiscale est obligatoire.'],
-       // unique: true
-       required: true,
+       //required: true,
     },
+    bankAccounts: [{
+        banque: {
+            type: Schema.Types.ObjectId,
+            ref: 'BanqueClient',
+            required: true
+        },
+        numeroCompte: {  
+            type: String,
+            required: true
+        },
+        RIB: {
+            type: String,
+            required: true,
+            unique: true
+        },
+        adresseBanque: {
+            type: String
+        },
+        isPrimary: {
+            type: Boolean,
+            default: false
+        }
+    }],
+    
     telephone: {
         type: [String], // Tableau de chaînes de caractères
         
-    
-       // required: [true, 'Le champ téléphone est obligatoire.'],
     },
     register_commerce: {
         type: String,

@@ -7,7 +7,7 @@ import {
   Box,
   Card,
   MenuItem,
-
+  Checkbox,
   CardContent,
   Typography,
   Accordion,
@@ -25,6 +25,7 @@ import {
   LocalShipping,
   Category,
   Business,
+  Add,
   Image,
   Settings,
   Straight,
@@ -48,17 +49,26 @@ export default function CreateClient() {
     montant_reglement_bl: "",
     taux_retenu: "",
   });
-    const [secteurs, setSecteurs] = useState([]);
+  const [secteurs, setSecteurs] = useState([]);
+  const [bankAccounts, setBankAccounts] = useState([{
+    banque: '',
+    RIB: '',
+    adresseBanque: '',
+    isPrimary: false
+  }]);
+  
+  const [banques, setBanques] = useState([]);
   
 
     useEffect(() => {
       const fetchData = async () => {
         try {
-          const [SecteursResponse] = await Promise.all([
+          const [SecteursResponse,BanquesResponse] = await Promise.all([
             axios.get("http://localhost:5000/secteur/Secteurs"),
-           
+            axios.get("http://localhost:5000/banqueClient/AllBanques")
           ]);
           setSecteurs(SecteursResponse.data);
+          setBanques(BanquesResponse.data);
          
         } catch (error) {
           console.error("Erreur lors du chargement des données :", error);
@@ -67,7 +77,41 @@ export default function CreateClient() {
       fetchData();
     }, []);
 
-  const createClient = async () => {
+
+//handle change bannkAccounts 
+
+const handleBankAccountChange = (index, field, value) => {
+  const updatedAccounts = [...bankAccounts];
+  updatedAccounts[index][field] = value;
+  
+  // Si on définit comme compte principal, on désactive les autres
+  if (field === 'isPrimary' && value) {
+    updatedAccounts.forEach((acc, i) => {
+      if (i !== index) acc.isPrimary = false;
+    });
+  }
+  
+  setBankAccounts(updatedAccounts);
+};
+//add banque 
+const addBankAccount = () => {
+  setBankAccounts([...bankAccounts, {
+    banque: '',
+    RIB: '',
+    adresseBanque: '',
+    isPrimary: false
+  }]);
+};
+//remove banque 
+
+const removeBankAccount = (index) => {
+  const updatedAccounts = [...bankAccounts];
+  updatedAccounts.splice(index, 1);
+  setBankAccounts(updatedAccounts);
+};
+
+//avant l ajout de banques et comptes 
+  /*const createClient = async () => {
     try {
       const formDataToSend = new FormData();
       Object.keys(formData).forEach((key) => {
@@ -97,8 +141,24 @@ export default function CreateClient() {
       console.error("Erreur lors de la création du Client :", error.response ? error.response.data : error);
       alert("Une erreur s'est produite lors de la création du Client. Voir la console pour plus de détails.");
     }
-  };
+  };*/
 
+
+  const createClient = async () => {
+    try {
+      const clientData = {
+        ...formData,
+        bankAccounts: bankAccounts.filter(acc => acc.banque && acc.RIB)
+      };
+      
+      await axios.post("http://localhost:5000/client/newC", clientData);
+      alert("Client créé avec succès !");
+      navigate("/Client");
+    } catch (error) {
+      console.error("Erreur:", error);
+      alert("Erreur lors de la création");
+    }
+  };
   /*const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === "telephone1" || name === "telephone2") {
@@ -160,6 +220,7 @@ export default function CreateClient() {
           <h2>Créer un Client</h2>
 
           <form>
+            {/* INFORMATIONS GENERALES */}
             <Card sx={{ mb: 3 }}>
               <CardContent>
                 <Typography variant="h6" sx={{ textAlign: 'left' }}>Informations Générales</Typography>
@@ -273,7 +334,7 @@ export default function CreateClient() {
                 </Grid>
               </CardContent>
             </Card>
-
+            {/* INFORMATIONS COMPLEMENTAIRES  */}
             <Card sx={{ mb: 3 }}>
               <CardContent>
                 <Accordion>
@@ -359,6 +420,84 @@ export default function CreateClient() {
                 </Accordion>
               </CardContent>
             </Card>
+{/* Banquesss  */}
+
+<Card sx={{ mb: 3 }}>
+  <CardContent>
+    <Typography variant="h6" sx={{ mb: 2 }}>Comptes Bancaires</Typography>
+    
+    {bankAccounts.map((account, index) => (
+      <Box key={index} sx={{ 
+        mb: 3, 
+        p: 2, 
+        border: '1px solid #e0e0e0', 
+        borderRadius: 1 
+      }}>
+        <Grid container spacing={2}>
+          <Grid item xs={3}>
+            <TextField
+              select
+              fullWidth
+              label="Banque"
+              value={account.banque}
+              onChange={(e) => handleBankAccountChange(index, 'banque', e.target.value)}
+            >
+              {banques.map((banque) => (
+                <MenuItem key={banque._id} value={banque._id}>
+                  {banque.libelle} ({banque.code_banque})
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+          <Grid item xs={3}>
+            <TextField
+              fullWidth
+              label="RIB"
+              value={account.RIB}
+              onChange={(e) => handleBankAccountChange(index, 'RIB', e.target.value)}
+            />
+          </Grid>
+          <Grid item xs={3}>
+            <TextField
+              fullWidth
+              label="Adresse Banque"
+              value={account.adresseBanque}
+              onChange={(e) => handleBankAccountChange(index, 'adresseBanque', e.target.value)}
+            />
+          </Grid>
+          <Grid item xs={1} sx={{ display: 'flex', alignItems: 'center' }}>
+            <Checkbox
+              checked={account.isPrimary}
+              onChange={(e) => handleBankAccountChange(index, 'isPrimary', e.target.checked)}
+              color="primary"
+            />
+            <Typography variant="caption"> Compte Principal</Typography>
+          </Grid>
+        </Grid>
+        
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+          <Button 
+            variant="outlined" 
+            color="error"
+            size="small"
+            onClick={() => removeBankAccount(index)}
+            sx={{ mr: 1 }}
+          >
+            Supprimer
+          </Button>
+        </Box>
+      </Box>
+    ))}
+    
+    <Button 
+      variant="outlined" 
+      startIcon={<Add />}
+      onClick={addBankAccount}
+    >
+      Ajouter un compte bancaire
+    </Button>
+  </CardContent>
+</Card>
 
             <Button
               onClick={createClient}

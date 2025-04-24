@@ -88,7 +88,7 @@ export default function Secteur() {
 
   const filteredSecteurs = secteurs.filter((secteur) =>
     secteur.libelle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    secteur.code.toLowerCase().includes(searchTerm.toLowerCase())
+    secteur.codeSecteur.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (

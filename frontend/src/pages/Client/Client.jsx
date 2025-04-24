@@ -52,6 +52,7 @@ export default function Client() {
   const fetchClients = async () => {
     try {
       const response = await axios.get("http://localhost:5000/client/clients");
+      
       setClients(response.data);
     } catch (error) {
       console.error("Error fetching clients:", error);
@@ -392,6 +393,42 @@ export default function Client() {
                   </Typography>
                 </Box>
               )}
+
+<Box>
+        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+          Comptes Bancaires:
+        </Typography>
+        {selectedClient.bankAccounts?.length > 0 ? (
+          <Box sx={{ 
+            border: '1px solid #e0e0e0', 
+            borderRadius: 1,
+            p: 2 
+          }}>
+            {selectedClient.bankAccounts.map((account, index) => (
+              <Box key={index} sx={{ mb: 2, pb: 2, borderBottom: index < selectedClient.bankAccounts.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Business sx={{ color: "#1976d2" }} />
+                  <Box>
+                    <Typography><strong>Banque:</strong> {account.banque?.libelle || 'Non spécifié'}</Typography>
+                    <Typography><strong>RIB:</strong> {account.RIB}</Typography>
+                    <Typography><strong>Adresse:</strong> {account.adresseBanque || 'Non spécifié'}</Typography>
+                    {account.isPrimary && (
+                      <Chip 
+                        label="Compte principal" 
+                        size="small" 
+                        color="primary" 
+                        sx={{ mt: 1 }}
+                      />
+                    )}
+                  </Box>
+                </Stack>
+              </Box>
+            ))}
+          </Box>
+        ) : (
+          <Typography>Aucun compte bancaire enregistré</Typography>
+        )}
+      </Box>
             </Stack>
           )}
         </DialogContent>
