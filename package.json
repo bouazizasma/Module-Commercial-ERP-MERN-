@@ -1,7 +1,15 @@
 {
   "dependencies": {
+    "@emotion/react": "^11.11.3",
+    "@emotion/styled": "^11.11.0",
+    "@mui/material": "^5.15.7",
+    "@mui/x-date-pickers": "^6.18.7",
     "@react-pdf/renderer": "^4.3.0",
+    "date-fns": "^2.30.0",
     "html2canvas": "^1.4.1",
-    "jspdf": "^3.0.1"
+    "jspdf": "^3.0.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "recharts": "^2.10.3"
   }
 }

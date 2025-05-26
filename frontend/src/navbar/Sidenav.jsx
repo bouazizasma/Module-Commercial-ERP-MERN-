@@ -1,7 +1,6 @@
 import * as React from "react";
 import { styled, useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Paper, Grid, TextField, IconButton, ListItemIcon, Typography } from "@mui/material";
 import MuiDrawer from "@mui/material/Drawer";
 import List from "@mui/material/List";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -12,6 +11,7 @@ import ListItemText from "@mui/material/ListItemText";
 import ListItem from "@mui/material/ListItem";
 import ListIcon from '@mui/icons-material/List';
 import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import InboxIcon from "@mui/icons-material/MoveToInbox";
 import { useNavigate } from "react-router-dom";
@@ -19,9 +19,14 @@ import { useAppStore } from "../appStore";
 import Collapse from "@mui/material/Collapse";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
+import AutoGraphIcon from '@mui/icons-material/AutoGraph';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import DriveEtaIcon from '@mui/icons-material/DriveEta';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
 import SellIcon from '@mui/icons-material/Sell';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import AirplayIcon from '@mui/icons-material/Airplay';
+import RoofingIcon from '@mui/icons-material/Roofing';
 import {
   Home,
   People,
@@ -35,32 +40,35 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "@mui/icons-material";
+import Typography from "@mui/material/Typography";
 
 const drawerWidth = 280;
 
 const openedMixin = (theme) => ({
   width: drawerWidth,
   transition: theme.transitions.create("width", {
-    easing: theme.transitions.easing.sharp,
+    easing: theme.transitions.easing.easeOut,
     duration: theme.transitions.duration.enteringScreen,
   }),
   overflowX: "hidden",
-  backgroundColor: "#f5f5f5",
-  borderRight: "1px solid #e0e0e0",
+  backgroundColor: "#1a237e",
+  background: "linear-gradient(180deg, #1a237e 0%,rgb(117, 120, 141) 100%)",
+  boxShadow: "4px 0 20px rgba(0, 0, 0, 0.1)",
 });
 
 const closedMixin = (theme) => ({
   transition: theme.transitions.create("width", {
-    easing: theme.transitions.easing.sharp,
+    easing: theme.transitions.easing.easeOut,
     duration: theme.transitions.duration.leavingScreen,
   }),
   overflowX: "hidden",
-  width: `calc(${theme.spacing(7)} + 1px)`,
+  width: `calc(${theme.spacing(8)} + 1px)`,
   [theme.breakpoints.up("sm")]: {
-    width: `calc(${theme.spacing(8)} + 1px)`,
+    width: `calc(${theme.spacing(9)} + 1px)`,
   },
-  backgroundColor: "#f5f5f5",
-  borderRight: "1px solid #e0e0e0",
+  backgroundColor: "#1a237e",
+  background: "linear-gradient(180deg, #1a237e 0%,rgb(117, 120, 141) 100%)",
+  boxShadow: "4px 0 20px rgba(0, 0, 0, 0.1)",
 });
 
 const Drawer = styled(MuiDrawer)(({ theme, open }) => ({
@@ -68,76 +76,130 @@ const Drawer = styled(MuiDrawer)(({ theme, open }) => ({
   flexShrink: 0,
   whiteSpace: "nowrap",
   boxSizing: "border-box",
-  ...(open && {
-    ...openedMixin(theme),
-    '& .MuiDrawer-paper': openedMixin(theme),
-  }),
-  ...(!open && {
-    ...closedMixin(theme),
-    '& .MuiDrawer-paper': closedMixin(theme),
-  }),
+  '& .MuiDrawer-paper': {
+    width: drawerWidth,
+    flexShrink: 0,
+    whiteSpace: "nowrap",
+    boxSizing: "border-box",
+    ...(open && openedMixin(theme)),
+    ...(!open && closedMixin(theme)),
+    // Styles globaux pour la scrollbar
+    '&::-webkit-scrollbar': {
+      width: '8px',
+    },
+    '&::-webkit-scrollbar-track': {
+      background: 'transparent',
+    },
+    '&::-webkit-scrollbar-thumb': {
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      borderRadius: '4px',
+      '&:hover': {
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+      },
+    },
+    // Pour Firefox
+    scrollbarWidth: 'thin',
+    scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent',
+
+  },
 }));
 
 const DrawerHeader = styled('div')(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  padding: theme.spacing(0, 1),
+  padding: theme.spacing(0, 2),
   ...theme.mixins.toolbar,
-  justifyContent: 'flex-end',
-  backgroundColor: '#f5f5f5',
-  borderBottom: '1px solid #e0e0e0',
+  justifyContent: 'space-between',
+  background: 'rgba(255, 255, 255, 0.05)',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
 }));
 
 const MenuItem = styled(ListItemButton)(({ theme }) => ({
+  margin: '4px 8px',
+  borderRadius: '8px',
+  padding: '8px 12px',
+  transition: 'all 0.2s ease',
   '&:hover': {
-    backgroundColor: '#e0e0e0',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    transform: 'translateX(4px)',
   },
   '&.Mui-selected': {
-    backgroundColor: '#e0e0e0',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    color: '#b0b0b0',
     '&:hover': {
-      backgroundColor: '#e0e0e0',
+      backgroundColor: 'rgba(0, 0, 0, 0.4)',
     },
     '& .MuiListItemIcon-root': {
-      color: '#333',
-    },
-    '& .MuiListItemText-primary': {
-      color: '#333',
+      color: '#b0b0b0',
     },
   },
 }));
 
 const MenuItemText = styled(ListItemText)(({ theme }) => ({
   '& .MuiTypography-root': {
-    color: '#333',
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontWeight: 500,
+    fontSize: '0.9rem',
+  },
+  '&.Mui-selected .MuiTypography-root': {
+    color: '#b0b0b0',
   },
 }));
 
 const MenuItemIcon = styled(ListItemIcon)(({ theme }) => ({
-  color: '#333',
+  color: 'rgba(255, 255, 255, 0.9)',
+  minWidth: '40px !important',
+  '&.Mui-selected': {
+    color: '#b0b0b0',
+  },
 }));
 
-const StyledListItemButton = styled(ListItemButton)(({ theme }) => ({
-  margin: "4px 8px",
-  borderRadius: "8px",
-  "&:hover": {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+const SubMenuItem = styled(ListItemButton)(({ theme }) => ({
+  padding: '6px 12px 6px 36px',
+  margin: '2px 8px',
+  borderRadius: '6px',
+  transition: 'all 0.2s ease',
+  '&:hover': {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    transform: 'translateX(4px)',
   },
-  "&.Mui-selected": {
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    "&:hover": {
-      backgroundColor: "rgba(255, 255, 255, 0.25)",
+  '&.Mui-selected': {
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    color: '#b0b0b0',
+    '&:hover': {
+      backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    },
+    '& .MuiListItemIcon-root': {
+      color: '#b0b0b0',
     },
   },
 }));
 
-const StyledListItemText = styled(ListItemText)(({ theme }) => ({
-  "& .MuiListItemText-primary": {
-    color: "white",
-    fontWeight: 500,
+const SubMenuIcon = styled(ListItemIcon)(({ theme }) => ({
+  color: 'rgba(255, 255, 255, 0.7)',
+  minWidth: '36px !important',
+  '&.Mui-selected': {
+    color: '#b0b0b0',
   },
-  "& .MuiListItemText-secondary": {
-    color: "rgba(255, 255, 255, 0.7)",
+}));
+
+const SubMenuText = styled(ListItemText)(({ theme }) => ({
+  '& .MuiTypography-root': {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: '0.85rem',
   },
+  '&.Mui-selected .MuiTypography-root': {
+    color: '#b0b0b0',
+  },
+}));
+
+const LogoText = styled(Typography)(({ theme }) => ({
+  fontWeight: 700,
+  fontSize: '1.2rem',
+  background: 'linear-gradient(90deg, #ffffff 0%, #e0e0e0 100%)',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  letterSpacing: '0.5px',
 }));
 
 export default function Sidenav() {
@@ -148,8 +210,6 @@ export default function Sidenav() {
   const [openAchatSubMenu, setOpenAchatSubMenu] = React.useState(false);
   const [openVentesSubMenu, setOpenVentesSubMenu] = React.useState(false);
   const [openClientsSubMenu, setOpenClientsSubMenu] = React.useState(false);
-
-
   const [selectedItem, setSelectedItem] = React.useState("");
 
   const handleSubMenuClick = (event) => {
@@ -166,11 +226,11 @@ export default function Sidenav() {
     event.stopPropagation();
     setOpenVentesSubMenu(!openVentesSubMenu);
   };
+
   const handleClientstSubMenuClick = (event) => {
     event.stopPropagation();
     setOpenClientsSubMenu(!openClientsSubMenu);
   };
-
 
   const handleItemClick = (path, itemName) => {
     navigate(path);
@@ -178,10 +238,11 @@ export default function Sidenav() {
   };
 
   const menuItems = [
-    { text: "Dashboard", icon: <Dashboard />, path: "/Dashbord" },
+    { text: "Dashboard", icon: <AutoGraphIcon />, path: "/Dashbord" },
     { text: "Fournisseurs", icon: <Business />, path: "/Fournisseur" },
-    { text: "Clients", 
-      icon: <People />, 
+    {
+      text: "Clients",
+      icon: <People />,
       submenu: [
         { text: "Liste des Clients", path: "/Client" },
         { text: "Secteur", path: "/Secteur" },
@@ -210,7 +271,6 @@ export default function Sidenav() {
         { text: "Facture par Fournisseur", path: "/FactureParFournisseur" },
         { text: "Paiement Fournisseur", path: "/PaiementFournisseur" },
         { text: "Liste des Paiements", path: "/ListePaiements" },
-
         { text: "Banque", path: "/Banque" },
       ],
     },
@@ -224,20 +284,16 @@ export default function Sidenav() {
         { text: "Liste des BonCMDClient", path: "/ListeBonCommandeClient" },
         { text: "Saisie BL Client", path: "/SaisieBonLivraisonClient" },
         { text: "Liste des BonLivraison", path: "/ListeBonLivraisonClient" },
-        { text: "ListeFacturesClient",  icon : <DriveEtaIcon/>,path: "/ListeFacturesClient" },
-        { text: "FactureParClient",  icon : <DriveEtaIcon/>,path: "/FactureParClient" },
-        { text: "ReglementClient",  icon : <DriveEtaIcon/>,path: "/ReglementClient" },
-        { text: "ListeDesReglements",  icon : <DriveEtaIcon/>,path: "/ListeRegelement" },
-
-        { text: "Vehicule",  icon : <DriveEtaIcon/>,path: "/Vehicule" },
-
-
-
+        { text: "ListeFacturesClient", icon: <DriveEtaIcon/>, path: "/ListeFacturesClient" },
+        { text: "FactureParClient", icon: <DriveEtaIcon/>, path: "/FactureParClient" },
+        { text: "ReglementClient", icon: <DriveEtaIcon/>, path: "/ReglementClient" },
+        { text: "ListeDesReglements", icon: <DriveEtaIcon/>, path: "/ListeRegelement" },
+        { text: "Vehicule", icon: <DriveEtaIcon/>, path: "/Vehicule" },
       ],
     },
     { text: "Dépôt", icon: <Warehouse />, path: "/Depot" },
-    { text: "Caisse", path: "/Caisse" },
-
+    { text: "Caisse", icon: <AirplayIcon/>, path: "/Caisse" },
+    { text: "STOCK", icon: <ShowChartIcon/>, path: "/ConsulterStock" },
   ];
 
   return (
@@ -245,19 +301,27 @@ export default function Sidenav() {
       <CssBaseline />
       <Drawer variant="permanent" open={open}>
         <DrawerHeader>
-          <Box sx={{ display: "flex", alignItems: "center", width: "100%", px: 2 }}>
-            <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: "bold", color: "#333" }}>
-              {open ? "Gestion Stock" : "GS"}
-            </Typography>
-          </Box>
+          {open ? (
+            <LogoText variant="h6">Gestion Stock</LogoText>
+          ) : (
+            <LogoText variant="h6">GS</LogoText>
+          )}
         </DrawerHeader>
-        <Divider sx={{ backgroundColor: "#e0e0e0" }} />
-        <List>
-          {menuItems.map((item, index) => (
+        <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.1)' }} />
+        <List sx={{
+          padding: '8px',
+          overflowY: 'auto',
+          height: 'calc(100vh - 64px)',
+          '& .MuiListItemButton-root': {
+            paddingLeft: '16px',
+
+          }
+        }}>
+          {menuItems.map((item) => (
             <React.Fragment key={item.text}>
               {item.submenu ? (
                 <>
-                  <ListItemButton
+                  <MenuItem
                     onClick={
                       item.text === "Articles"
                         ? handleSubMenuClick
@@ -269,66 +333,24 @@ export default function Sidenav() {
                         ? handleClientstSubMenuClick
                         : undefined
                     }
-                    sx={{
-                      minHeight: 48,
-                      justifyContent: open ? "initial" : "center",
-                      px: 2.5,
-                      "&:hover": {
-                        backgroundColor: "#e0e0e0",
-                      },
-                      backgroundColor:
-                        selectedItem === item.text
-                          ? "#e0e0e0"
-                          : "transparent",
-                    }}
+                    selected={selectedItem === item.text}
                   >
-                    <ListItemIcon
-                      sx={{
-                        minWidth: 0,
-                        mr: open ? 3 : "auto",
-                        justifyContent: "center",
-                        color: "#333",
-                      }}
-                    >
+                    <MenuItemIcon>
                       {item.icon}
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={item.text}
-                      sx={{ 
-                        opacity: open ? 1 : 0,
-                        color: "#333"
-                      }}
-                    />
-                    {open &&
-                      (item.text === "Articles" ? (
-                        openSubMenu ? (
-                          <ExpandLess sx={{ color: "#333" }} />
-                        ) : (
-                          <ExpandMore sx={{ color: "#333" }} />
-                        )
-                      ) : item.text === "Achats" ? (
-                        openAchatSubMenu ? (
-                          <ExpandLess sx={{ color: "#333" }} />
-                        ) : (
-                          <ExpandMore sx={{ color: "#333" }} />
-                        )
-                      ) 
-                      : item.text === "Ventes" ? (
-                        openVentesSubMenu ? (
-                          <ExpandLess sx={{ color: "#333" }} />
-                        ) : (
-                          <ExpandMore sx={{ color: "#333" }} />
-                        )
-                      ) 
-                      : item.text === "Clients" ? (
-                        openClientsSubMenu ? (
-                          <ExpandLess sx={{ color: "#333" }} />
-                        ) : (
-                          <ExpandMore sx={{ color: "#333" }} />
-                        )
-                      ) 
-                      : null)}
-                  </ListItemButton>
+                    </MenuItemIcon>
+                    <MenuItemText primary={item.text} sx={{ opacity: open ? 1 : 0 }} />
+                    {open && (
+                      item.text === "Articles" ?
+                      (openSubMenu ? <ExpandLess sx={{ color: 'rgba(255, 255, 255, 0.9)' }} /> : <ExpandMore sx={{ color: 'rgba(255, 255, 255, 0.9)' }} />) :
+                      item.text === "Achats" ?
+                      (openAchatSubMenu ? <ExpandLess sx={{ color: 'rgba(255, 255, 255, 0.9)' }} /> : <ExpandMore sx={{ color: 'rgba(255, 255, 255, 0.9)' }} />) :
+                      item.text === "Ventes" ?
+                      (openVentesSubMenu ? <ExpandLess sx={{ color: 'rgba(255, 255, 255, 0.9)' }} /> : <ExpandMore sx={{ color: 'rgba(255, 255, 255, 0.9)' }} />) :
+                      item.text === "Clients" ?
+                      (openClientsSubMenu ? <ExpandLess sx={{ color: 'rgba(255, 255, 255, 0.9)' }} /> : <ExpandMore sx={{ color: 'rgba(255, 255, 255, 0.9)' }} />) :
+                      null
+                    )}
+                  </MenuItem>
                   <Collapse
                     in={
                       item.text === "Articles"
@@ -346,91 +368,44 @@ export default function Sidenav() {
                   >
                     <List component="div" disablePadding>
                       {item.submenu.map((subItem) => (
-                        <ListItemButton
+                        <SubMenuItem
                           key={subItem.text}
                           onClick={() => handleItemClick(subItem.path, item.text)}
-                          sx={{
-                            minHeight: 48,
-                            justifyContent: open ? "initial" : "center",
-                            px: 2.5,
-                            pl: open ? 4 : 2.5,
-                            "&:hover": {
-                              backgroundColor: "#e0e0e0",
-                            },
-                          }}
+                          selected={selectedItem === item.text}
                         >
-                          <ListItemIcon
-                            sx={{
-                              minWidth: 0,
-                              mr: open ? 3 : "auto",
-                              justifyContent: "center",
-                              color: "#333",
-                            }}
-                          >
+                          <SubMenuIcon>
                             {subItem.text === "Liste des Articles" ? (
                               <ListIcon />
                             ) : subItem.text === "Famille Article" ? (
                               <Category />
-                            )
-                            : subItem.text === "Liste des Clients" ? (
+                            ) : subItem.text === "Liste des Clients" ? (
                               <ListIcon />
-                            )
-                            : subItem.text === "Secteur" ? (
+                            ) : subItem.text === "Secteur" ? (
                               <LocationOnIcon />
-                            )
-                            : subItem.text === "Region" ? (
-                              <LocationOnIcon />
-                            )
-                             : (
+                            ) : subItem.text === "Region" ? (
+                              <RoofingIcon />
+                            ) : subItem.text === "BanqueClient" ? (
+                              <AccountBalanceIcon />
+                            ) : (
                               <Inventory />
                             )}
-                          </ListItemIcon>
-                          <ListItemText
-                            primary={subItem.text}
-                            sx={{ 
-                              opacity: open ? 1 : 0,
-                              color: "#333"
-                            }}
-                          />
-                        </ListItemButton>
+                          </SubMenuIcon>
+                          <SubMenuText primary={subItem.text} sx={{ opacity: open ? 1 : 0 }} />
+                        </SubMenuItem>
                       ))}
                     </List>
                   </Collapse>
                 </>
               ) : (
-                <ListItemButton
+                <MenuItem
                   onClick={() => handleItemClick(item.path, item.text)}
-                  sx={{
-                    minHeight: 48,
-                    justifyContent: open ? "initial" : "center",
-                    px: 2.5,
-                    "&:hover": {
-                      backgroundColor: "#e0e0e0",
-                    },
-                    backgroundColor:
-                      selectedItem === item.text
-                        ? "#e0e0e0"
-                        : "transparent",
-                  }}
+                  selected={selectedItem === item.text}
                 >
-                  <ListItemIcon
-                    sx={{
-                      minWidth: 0,
-                      mr: open ? 3 : "auto",
-                      justifyContent: "center",
-                      color: "#333",
-                    }}
-                  >
+                  <MenuItemIcon>
                     {item.icon}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={item.text}
-                    sx={{ 
-                      opacity: open ? 1 : 0,
-                      color: "#333"
-                    }}
-                  />
-                </ListItemButton>
+                  </MenuItemIcon>
+                  <MenuItemText primary={item.text} sx={{ opacity: open ? 1 : 0 }} />
+                </MenuItem>
               )}
             </React.Fragment>
           ))}

@@ -125,7 +125,7 @@ export default function Client() {
   return (
     <>
       <Navbar />
-      <Box height={150} />
+      <Box height={100} />
       <Box sx={{ overflow: "auto", flexGrow: 1, p: 3, display: "flex", backgroundColor: "#f5f5f5" }}>
         <Sidenav />
         <Box

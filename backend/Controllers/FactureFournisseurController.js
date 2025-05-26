@@ -108,6 +108,7 @@ const genererFacture = async (req, res) => {
           contentType: "application/pdf",
           montantTTC: totalTTC, // Ajoutez le montant TTC ici
           statut: "non payé",
+          paiementEffectuee : 0 ,
 
       });
 
@@ -397,6 +398,7 @@ const genererFactureGroupée = async (req, res) => {
       contentType: "application/pdf",
       montantTTC: totalTTC, // Ajoutez le montant TTC ici
       statut: "non payé", // Statut initial de la facture
+      paiementEffectuee :0 ,
     });
 
     // Enregistrer la facture dans la base de données

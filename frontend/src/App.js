@@ -62,10 +62,13 @@ import ReglementClient from './pages/Ventes/ReglementClient';
 import FactureParClient from './pages/Ventes/FacturerParClient';
 import ListeDesReglements from './pages/Ventes/ListeReglementancien';
 import ListeRegelement from './pages/Ventes/ListeRegelement';
+/////////////////STOCK///////////////////////
 
-
+import ConsulterStock from './pages/Stock/ConsulterStock';
 /////////LKOL//////////////
 import Depot from './pages/Depot/Depot';
+import ProfilePage from './pages/ProfilePage';
+import SettingsPage from './pages/SettingsPage';
 import { useState } from 'react';
 import RefrshHandler from './RefrshHandler';
 function App() {
@@ -133,8 +136,12 @@ function App() {
         <Route path='/ReglementClient' element={<PrivateRoute element={<ReglementClient/>} />} /> 
         <Route path='/FactureParClient' element={<PrivateRoute element={<FactureParClient/>} />} />   
         <Route path='/ListeRegelement' element={<PrivateRoute element={<ListeRegelement/>} />} />   
+        {/* Stock */}
+        <Route path='/ConsulterStock' element={<PrivateRoute element={<ConsulterStock/>} />} /> 
 
+        <Route path="/profile" element={<ProfilePage />} />  
 
+<Route path="/settings" element={<SettingsPage />} />
 
 
 

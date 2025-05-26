@@ -9,8 +9,5 @@ const banqueClientSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true
-    },
-    
-});
-
+    },});
 module.exports = mongoose.model('BanqueClient', banqueClientSchema); 

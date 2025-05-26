@@ -11,7 +11,6 @@ const FamilleArticleSchema = new Schema({
         type: String,
         required: [true,],
         unique: true
-
     },
     });
     const FamilleArticleModel = mongoose.model('familleArticle', FamilleArticleSchema);

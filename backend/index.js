@@ -23,6 +23,7 @@ const VehiculeRouter = require ('./Routes/Ventes/VehiculeRouter');
 const BanqueClient =require('./Routes/Client/BanqueClientRouter');
 const RegionRouter=require('./Routes/Client/RegionRouter');
 const ReglementClient =require('./Routes/Ventes/reglementCRouter');
+const stockRouter = require('./Routes/stock/stockRoutes');
 require('dotenv').config();
 require('./Models/db');
 const PORT = process.env.PORT || 5000;
@@ -58,6 +59,8 @@ app.use('/vehicule', VehiculeRouter);
 app.use('/banqueClient', BanqueClient);
 app.use('/region', RegionRouter);
 app.use('/ReglementClient', ReglementClient);
+app.use('/stockRouter', stockRouter);
+
 
 
 

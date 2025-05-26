@@ -1,6 +1,6 @@
 const BonFournisseur = require('../Models/Achat/EnteteAchat');
 const LigneAchat = require('../Models/Achat/LignesAchat');
-
+const ArticleModel =require('../Models/Article/article');
 const Depot = require('../Models/depot');
 const CounterModel=require ("../Models/counters");
 //Zone BCF
@@ -118,11 +118,20 @@ const createBonCommande = async (req, res) => {
      savedBonCommande.lignes = savedLignes.map(ligne => ligne._id);
      await savedBonCommande.save();
 
+     for (const ligne of lignes) {
+        await ArticleModel.findByIdAndUpdate(
+            ligne.article,
+            { $inc: { Nombre_unite: ligne.quantite } },
+            { new: true }
+        );
+    }
         // Populate the fournisseur field after saving
         const populatedBonCommande = await BonFournisseur.findById(savedBonCommande._id).populate('fournisseur').populate({
             path: 'lignes',
             populate: { path: 'article' , model : 'article' } // Peupler les articles dans les lignes
         });
+
+
 
         res.status(201).json({ bonCommande: populatedBonCommande, lignes: lignesCommande });
         console.log("Populated BonCommande:", populatedBonCommande);

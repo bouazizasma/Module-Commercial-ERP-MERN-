@@ -32,7 +32,6 @@ import {
   CardContent
 } from "@mui/material";
 import { Visibility, Delete, Edit, Search, Add, Business, Phone, Email, LocationOn, CheckCircle } from "@mui/icons-material";
-
 export default function Fournisseur() {
   const [fournisseurs, setFournisseurs] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
@@ -43,7 +42,6 @@ export default function Fournisseur() {
   const [selectedFournisseur, setSelectedFournisseur] = useState(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const navigate = useNavigate();
-
   const fetchFournisseurs = async () => {
     try {
       const response = await axios.get("http://localhost:5000/fournisseur/fournisseurs");

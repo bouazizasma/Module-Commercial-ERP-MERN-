@@ -62,6 +62,8 @@ export default function CreateArticle() {
     dc :"",
     fodec :"",
     movement_article: "",
+    quantiteMin : "",
+    quantiteMax:"" ,
   });
 
   const [familles, setFamilles] = useState([]);
@@ -160,6 +162,7 @@ export default function CreateArticle() {
                       Informations Générales
                     </Typography>
                     <Grid container spacing={3}>
+                      {/* Libellé*/}
                       <Grid item xs={12} md={4}>
                         <TextField
                           fullWidth
@@ -183,6 +186,8 @@ export default function CreateArticle() {
                           }}
                         />
                       </Grid>
+                      {/* Nature*/}
+
                       <Grid item xs={12} md={4}>
                         <TextField
                           fullWidth
@@ -206,6 +211,8 @@ export default function CreateArticle() {
                           }}
                         />
                       </Grid>
+                      {/* type*/}
+
                       <Grid item xs={12} md={4}>
                         <TextField
                           fullWidth
@@ -229,6 +236,8 @@ export default function CreateArticle() {
                           }}
                         />
                       </Grid>
+                      {/* libelleFamille*/}
+
                       <Grid item xs={12} md={4}>
                         <TextField
                           fullWidth
@@ -259,6 +268,7 @@ export default function CreateArticle() {
                           ))}
                         </TextField>
                       </Grid>
+                      {/* libeleCategorie*/}
                       <Grid item xs={12} md={4}>
                         <TextField
                           fullWidth
@@ -289,6 +299,7 @@ export default function CreateArticle() {
                           ))}
                         </TextField>
                       </Grid>
+                      {/* fournisseur*/}
                       <Grid item xs={12} md={4}>
                         <TextField
                           fullWidth
@@ -319,13 +330,64 @@ export default function CreateArticle() {
                           ))}
                         </TextField>
                       </Grid>
+                      {/* qte*/}
                       <Grid item xs={12} md={4}>
                         <TextField
                           fullWidth
-                          label="Nombre d'unités"
+                          label="Quantitée"
                           name="Nombre_unite"
                           type="number"
                           value={formData.Nombre_unite}
+                          onChange={handleChange}
+                          required
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <LocalShipping color="primary" />
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{ 
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: '8px',
+                              backgroundColor: '#fff',
+                            }
+                          }}
+                        />
+                      </Grid>
+                      {/* qte min*/}
+                      <Grid item xs={12} md={4}>
+                        <TextField
+                          fullWidth
+                          label="Quantitée minimum "
+                          name=" quantiteMin"
+                          type="number"
+                          value={formData.quantiteMin}
+                          onChange={handleChange}
+                          required
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <LocalShipping color="primary" />
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{ 
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: '8px',
+                              backgroundColor: '#fff',
+                            }
+                          }}
+                        />
+                      </Grid>
+                      {/* qte max */}
+                      <Grid item xs={12} md={4}>
+                        <TextField
+                          fullWidth
+                          label="Quantitée Maximum "
+                          name="quantiteMax"
+                          type="number"
+                          value={formData.quantiteMax}
                           onChange={handleChange}
                           required
                           InputProps={{

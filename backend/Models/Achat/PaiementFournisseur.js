@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-
 const paiementFSchema = new mongoose.Schema(
   {
     fournisseurId: {
@@ -16,7 +15,11 @@ const paiementFSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    montantPaye: {
+    montantPaye: { //tt details
+      type: Number,
+      required: true,
+    },
+    montantRestantDePaiement: { //tt details
       type: Number,
       required: true,
     },
@@ -80,8 +83,8 @@ const paiementFSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    
   },
   { timestamps: true }
 );
-
 module.exports = mongoose.model("PaiementFournisseur", paiementFSchema);

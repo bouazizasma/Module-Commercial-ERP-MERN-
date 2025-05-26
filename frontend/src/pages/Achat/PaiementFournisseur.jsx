@@ -107,6 +107,7 @@ export default function PaiementFournisseur() {
 
             // Calculer le montant restant et déterminer le statut
             const montantRestant = facture.montantTTC - montantPaye;
+
             let statut = "non_paye";
             
             if (montantPaye >= facture.montantTTC) {
@@ -161,7 +162,7 @@ export default function PaiementFournisseur() {
   }, [selectedFactures, factures, paiementsEnAttente]);
 
   */
- 
+ /*
   useEffect(() => {
     // Calculer le montant total TTC des factures sélectionnées
     const total = selectedFactures.reduce((sum, factureId) => {
@@ -187,7 +188,36 @@ export default function PaiementFournisseur() {
     );
     
     setMontantRestant(montantRestantTotal - montantPaiementsEnAttente);
-  }, [selectedFactures, factures, paiementsEnAttente]);
+  }, [selectedFactures, factures, paiementsEnAttente]);*/
+  useEffect(() => {
+  if (selectedFactures.length === 0) {
+    setTotalMontant(0);
+    setMontantRestant(0);
+    return;
+  }
+
+  // Calculer le montant total TTC des factures sélectionnées
+  const total = selectedFactures.reduce((sum, factureId) => {
+    const facture = factures.find(f => f._id === factureId);
+    return sum + (facture ? facture.montantTTC : 0);
+  }, 0);
+  setTotalMontant(total);
+
+  // Calculer le montant restant en tenant compte des paiements déjà effectués
+  const montantRestantTotal = selectedFactures.reduce((sum, factureId) => {
+    const facture = factures.find(f => f._id === factureId);
+    if (facture) {
+       const montantPayeFac = facture.paiementEffectuee || 0;
+      const montantRestantFacture = (facture.montantTTC - montantPayeFac|| 0);
+      return sum + Math.max(montantRestantFacture, 0); 
+    }
+    return sum;
+  }, 0);
+
+  setMontantRestant(montantRestantTotal);
+  console.log("HEdha houwa le montant ressstant",montantRestantTotal , montantRestant );
+
+}, [selectedFactures, factures]);
   //récupérer les banques 
   useEffect(() => {
     const fetchBanques = async () => {
@@ -284,6 +314,7 @@ export default function PaiementFournisseur() {
     setPaiementDetails({ date: paiementDetails.date });
   };
 */
+/*
 const handleAjoutPaiement = () => {
   if (!paiementDetails.montantChiffres) {
     alert("Veuillez saisir un montant");
@@ -353,9 +384,38 @@ const handleAjoutPaiement = () => {
 
   // Réinitialiser les détails du paiement
   setPaiementDetails({ date: paiementDetails.date });
-};  
+};  */
+//handle Ajout Paiement :
+const handleAjoutPaiement = () => {
+  if (!paiementDetails.montantChiffres) {
+    alert("Veuillez saisir un montant");
+    return;
+  }
+
+  const montantPaiement = parseFloat(paiementDetails.montantChiffres);
+  
+  // Calculer le nouveau montant restant après paiement
+  const nouveauMontantRestant = montantRestant - montantPaiement;
+  
+  if (nouveauMontantRestant < 0) {
+    alert("Le montant du paiement ne peut pas être supérieur au montant restant");
+    return;
+  }
+
+  // Ajouter le paiement à la liste d'attente
+  const nouveauPaiement = {
+    id: Date.now(),
+    ...paiementDetails,
+    modePaiement,
+    dateCreation: new Date(paiementDetails.date),
+  };
+
+  setPaiementsEnAttente([...paiementsEnAttente, nouveauPaiement]);
+  setMontantRestant(nouveauMontantRestant);
+  setPaiementDetails({}); // Réinitialiser les détails
+};
 // Suppression d'un paiement en attente
-  const handleSupprimerPaiement = (paiementId) => {
+  /*const handleSupprimerPaiement = (paiementId) => {
     const paiementASupprimer = paiementsEnAttente.find(p => p.id === paiementId);
     if (paiementASupprimer) {
       // Remettre le montant dans le montant restant
@@ -363,8 +423,17 @@ const handleAjoutPaiement = () => {
       // Supprimer le paiement de la liste d'attente
       setPaiementsEnAttente(paiementsEnAttente.filter(p => p.id !== paiementId));
     }
-  };
-//chnage Fournisseur 
+  };*/
+
+const handleSupprimerPaiement = (paiementId) => {
+  const paiementASupprimer = paiementsEnAttente.find(p => p.id === paiementId);
+  if (paiementASupprimer) {
+    const montantARestaurer = parseFloat(paiementASupprimer.montantChiffres);
+    setMontantRestant(prev => prev + montantARestaurer);
+    setPaiementsEnAttente(paiementsEnAttente.filter(p => p.id !== paiementId));
+  }
+};
+  //chnage Fournisseur 
 const handleFournisseurChange = (event) => {
   const fournisseurId = event.target.value;
   setSelectedFournisseur(fournisseurId);
@@ -423,7 +492,7 @@ const handleFournisseurChange = (event) => {
   };
 */
 
-const handleValiderPaiement = async () => {
+/*const handleValiderPaiement = async () => {
   try {
     const paiement = {
       fournisseurId: selectedFournisseur,
@@ -485,8 +554,75 @@ const handleValiderPaiement = async () => {
       severity: "error"
     });
   }
-};
+};*/
 
+const handleValiderPaiement = async () => {
+  try {
+    // Calculer le montant total payé
+    const montantTotalPaye = paiementsEnAttente.reduce(
+      (sum, p) => sum + parseFloat(p.montantChiffres || 0), 
+      0
+    );
+
+    const paiement = {
+      fournisseurId: selectedFournisseur,
+      caisseId: selectedCaisse,
+      facturesIds: selectedFactures,
+      montantTotal: totalMontant,
+      montantPaye: montantTotalPaye,
+      modePaiement: "MULTIPLE",
+      details: {
+        cheques: paiementsEnAttente
+          .filter(p => p.modePaiement === "CHEQUE")
+          .map(cheque => ({
+            numeroChèque: cheque.numeroChèque,
+            montant: parseFloat(cheque.montantChiffres),
+            dateEcheance: cheque.dateEcheance,
+            banque: selectedBanque
+          })),
+        effets: paiementsEnAttente
+          .filter(p => p.modePaiement === "EFFET")
+          .map(effet => ({
+            titreDocument: effet.titreDocument,
+            montant: parseFloat(effet.montantChiffres),
+            dateEcheance: effet.echeance,
+            banque: selectedBanque
+          })),
+        especes: paiementsEnAttente
+          .filter(p => p.modePaiement === "ESPECE")
+          .map(espece => ({
+            montant: parseFloat(espece.montantChiffres)
+          }))
+      },
+      dateCreation: new Date().toISOString(),
+    };
+
+    await axios.post("http://localhost:5000/paiement/create", paiement);
+
+    // Réinitialiser les états après validation
+    setSelectedFactures([]);
+    setPaiementDetails({});
+    setPaiementsEnAttente([]);
+    setMontantRestant(0);
+    setTotalMontant(0);
+
+
+    
+    setSnackbar({
+      open: true,
+      message: "Paiements effectués avec succès",
+      severity: "success"
+    });
+
+  } catch (error) {
+    console.error("Erreur lors de la validation des paiements :", error);
+    setSnackbar({
+      open: true,
+      message: "Erreur lors des paiements",
+      severity: "error"
+    });
+  }
+};
   //les radiosBox
   const renderPaiementFields = () => {
     switch (modePaiement) {
@@ -714,29 +850,6 @@ const handleValiderPaiement = async () => {
     fetchHistorique();
   }, [selectedFournisseur]); // Déclencher quand le fournisseur change
 
-  useEffect(() => {
-    // Calculer le montant total TTC des factures sélectionnées
-    const total = selectedFactures.reduce((sum, factureId) => {
-      const facture = factures.find(f => f._id === factureId);
-      return sum + (facture ? facture.montantTTC : 0);
-    }, 0);
-    setTotalMontant(total);
-  
-    // Calculer le montant restant en tenant compte des paiements déjà effectués
-    const montantRestantTotal = selectedFactures.reduce((sum, factureId) => {
-      const facture = factures.find(f => f._id === factureId);
-      if (facture) {
-        const montantRestantFacture = facture.montantTTC - (facture.montantPaye || 0);
-        // Ignorer les factures dont le montant restant est 0 ou négatif
-        return montantRestantFacture > 0 ? sum + montantRestantFacture : sum;
-      }
-      return sum;
-    }, 0);
-  
-    // Ne pas soustraire les paiements en attente ici, car ils sont déjà inclus dans le montant payé
-    setMontantRestant(montantRestantTotal);
-  }, [selectedFactures, factures]);
-
 
   // Modification de handleModePaiementChange
   const handleModePaiementChange = (event) => {
@@ -865,13 +978,6 @@ const handleValiderPaiement = async () => {
 
       const response = await axios.post("http://localhost:5000/paiement/ajouter", paiementData);
 
-      // Mettre à jour le solde de la caisse
-      if (selectedCaisse) {
-        await axios.put(`http://localhost:5000/caisse/${selectedCaisse}/solde`, {
-          montant: totalMontant,
-          type: "retrait"
-        });
-      }
 
       // Réinitialiser le formulaire
       setSelectedFournisseur("");
@@ -1024,7 +1130,7 @@ const handleValiderPaiement = async () => {
         </TableHead>
         <TableBody>
           {factures.map((facture) => {
-            const montantPaye = facture.montantPaye || 0;
+            const montantPaye = facture.paiementEffectuee || 0;
             const montantRestantFacture = Math.max(facture.montantTTC - montantPaye, 0); // Assure que le montant restant n'est pas négatif
             return (
               <TableRow key={facture._id}>
@@ -1062,7 +1168,7 @@ const handleValiderPaiement = async () => {
             </Grid>
 
             {/* Section Total */}
-            <Grid item xs={12} md={4}>
+          {/*  <Grid item xs={12} md={4}>
               <Card sx={{ p: 2, borderRadius: 2 }}>
                 <Typography variant="h6" gutterBottom>
                   Récapitulatif
@@ -1074,7 +1180,7 @@ const handleValiderPaiement = async () => {
                   Montant Restant: {montantRestant.toFixed(2)} DT
                 </Typography>
               </Card>
-            </Grid>
+            </Grid> */}
 
             {/* Section Paiement */}
             <Grid item xs={12}>

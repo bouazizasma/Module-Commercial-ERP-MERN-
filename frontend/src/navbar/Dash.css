@@ -1,3 +1,83 @@
+/* Pour le responsive */
+@media (max-width: 900px) {
+  .MuiGrid-item {
+    width: 100%;
+  }
+}
+
+/* Pour l'animation du contenu principal */
+.main-content {
+  transition: margin 0.3s ease;
+}
+
+/* Pour les cartes */
+.gradientlight {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.iconstyle {
+  margin: auto 0;
+  padding: 1rem;
+  color: white;
+  background-color: #4e73df;
+  border-radius: 50%;
+}
+
+.iconstyleblack {
+  margin: auto 0;
+  padding: 1rem;
+  color: white;
+  background-color: #000000;
+  border-radius: 50%;
+}
+
+.paddingall {
+  padding: 1rem;
+}
+
+.pricetitle {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.pricesubtitle {
+  font-size: 1rem;
+  color: #6c757d;
+}
+
+/* Styles spécifiques pour la carte Orders */
+.orders-card {
+  background-color: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 20px 0 rgba(0,0,0,0.12);
+}
+
+.orders-value {
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 10px 0;
+}
+
+.orders-label {
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.progress-container {
+  width: 100%;
+  height: 8px;
+  background-color: #e9ecef;
+  border-radius: 4px;
+  margin: 10px 0;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #4e73df;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
 .paddingall {
   padding: 10px 10px 10px 10px;
 }

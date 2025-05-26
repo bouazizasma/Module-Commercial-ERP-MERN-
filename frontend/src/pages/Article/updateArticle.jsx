@@ -51,7 +51,7 @@ export default function UpdateArticle() {
     longueur: "",
     largeur: "",
     hauteur: "",
-    image_article: "",
+    image_article: null,
     libelleFamille: "",
     libeleCategorie: "",
     lib_fournisseur: "",
@@ -63,6 +63,8 @@ export default function UpdateArticle() {
     dc: "",
     fodec: "",
     movement_article: "",
+    quantiteMax : "",
+    quantiteMin: "" ,
   });
 
   const [familles, setFamilles] = useState([]);
@@ -82,7 +84,7 @@ export default function UpdateArticle() {
         const articleData = articleResponse.data;
         setFormData({
           ...articleData,
-          image_article: articleData.image_article || "",
+          image_article: articleData.image_article || null,
         });
         setFamilles(famillesResponse.data);
         setCategories(categoriesResponse.data);
@@ -103,10 +105,11 @@ export default function UpdateArticle() {
   };
 
   const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
     setFormData((prev) => ({
       ...prev,
       image_article: e.target.files[0],
-    }));
+    }));}
   };
 
   const updateArticle = async () => {
@@ -243,7 +246,7 @@ export default function UpdateArticle() {
                           select
                           label="Famille de l'article"
                           name="libelleFamille"
-                          value={formData.libelleFamille}
+                          value={formData.libelleFamille || ''}
                           onChange={handleChange}
                           required
                           InputProps={{
@@ -273,7 +276,7 @@ export default function UpdateArticle() {
                           select
                           label="Catégorie de l'article"
                           name="libeleCategorie"
-                          value={formData.libeleCategorie}
+                          value={formData.libeleCategorie || ''}
                           onChange={handleChange}
                           required
                           InputProps={{
@@ -330,10 +333,58 @@ export default function UpdateArticle() {
                       <Grid item xs={12} md={4}>
                         <TextField
                           fullWidth
-                          label="Nombre d'unités"
+                          label="Quantitée"
                           name="Nombre_unite"
                           type="number"
                           value={formData.Nombre_unite}
+                          onChange={handleChange}
+                          required
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <LocalShipping color="primary" />
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{ 
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: '8px',
+                              backgroundColor: '#fff',
+                            }
+                          }}
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={4}>
+                        <TextField
+                          fullWidth
+                          label="Quantitée Minimale"
+                          name="quantiteMin"
+                          type="number"
+                          value={formData.quantiteMin}
+                          onChange={handleChange}
+                          required
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <LocalShipping color="primary" />
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{ 
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: '8px',
+                              backgroundColor: '#fff',
+                            }
+                          }}
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={4}>
+                        <TextField
+                          fullWidth
+                          label="Quantitée Maximale"
+                          name="quantiteMax"
+                          type="number"
+                          value={formData.quantiteMax}
                           onChange={handleChange}
                           required
                           InputProps={{
@@ -807,23 +858,33 @@ export default function UpdateArticle() {
                         onChange={handleFileChange}
                       />
                     </Button>
-                    {formData.image_article && (
-                      <Box mt={2}>
-                        <img
-                          src={typeof formData.image_article === 'string' 
-                            ? `data:image/jpeg;base64,${formData.image_article}`
-                            : URL.createObjectURL(formData.image_article)}
-                          alt="Aperçu"
-                          style={{
-                            width: "100px",
-                            height: "100px",
-                            objectFit: "cover",
-                            borderRadius: "8px",
-                            boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-                          }}
-                        />
-                      </Box>
-                    )}
+                   {formData.image_article && (
+  <Box mt={2}>
+    <img
+      src={
+        typeof formData.image_article === 'string' 
+          ? `data:image/jpeg;base64,${formData.image_article}`
+          : formData.image_article instanceof Blob
+            ? URL.createObjectURL(formData.image_article)
+            : ''
+      }
+      alt="Aperçu"
+      style={{
+        width: "100px",
+        height: "100px",
+        objectFit: "cover",
+        borderRadius: "8px",
+        boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+      }}
+      onLoad={() => {
+        // Revoke the object URL to avoid memory leaks
+        if (formData.image_article instanceof Blob) {
+          URL.revokeObjectURL(formData.image_article);
+        }
+      }}
+    />
+  </Box>
+)}
                   </CardContent>
                 </Card>
 

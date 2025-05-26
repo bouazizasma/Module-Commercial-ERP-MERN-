@@ -49,6 +49,8 @@ const createArticle = async (req, res) => {
         largeur,
         hauteur,
         movement_article,
+        quantiteMin,
+        quantiteMax,
     } = req.body;
 
     try {
@@ -105,7 +107,7 @@ const createArticle = async (req, res) => {
             prix_totale_concre,
             gestion_configuration,
             configuration,
-            serie: parsedSerie, // <- Correction ici
+            serie: parsedSerie, 
             libeleCategorie,
             lib_fournisseur,
             Nature,
@@ -118,11 +120,13 @@ const createArticle = async (req, res) => {
             time_modif,
             prix_achat_initiale,
             tva_achat,
-            dimension_article: parsedDimension, // <- Correction ici
+            dimension_article: parsedDimension, 
             longueur,
             largeur,
             hauteur,
             movement_article,
+            quantiteMin,
+            quantiteMax,
         });
 
         console.log("Article créé avec succès :", newArticle);
@@ -224,7 +228,7 @@ const getArticleByID = async (req, res) => {
 
 const updateArticle = async (req, res) => {
     const { id } = req.params;
-    const { libelle, libelleFamille, libeleCategorie, lib_fournisseur, Nombre_unite, tva,dc,fodec,type, prix_brut, remise, prix_net, marge, prixht, gestion_configuration, configuration, serie, Nature, prixmin, prixmax, prix_achat_initiale, tva_achat, dimension_article, longueur, largeur, hauteur, movement_article } = req.body;
+    const { libelle, libelleFamille, libeleCategorie, lib_fournisseur, Nombre_unite, tva,dc,fodec,type, prix_brut, remise, prix_net, marge, prixht, gestion_configuration, configuration, serie, Nature, prixmin, prixmax, prix_achat_initiale, tva_achat, dimension_article, longueur, largeur, hauteur, movement_article , quantiteMin, quantiteMax } = req.body;
   
     // Log incoming data for debugging
     console.log("Incoming data:", req.body);
@@ -273,7 +277,7 @@ const updateArticle = async (req, res) => {
     const image_article = req.file ? req.file.buffer : null;
 
   // Recalcul du prix total concret
-  const prix_totale_concre = prixht * (1 - remise / 100) * (1 + (dc + fodec) / 100) * (1 + tva / 100);
+  const prix_totale_concre = prixht * (1 - remise / 100) * (1 + (dc + fodec) / 100) * (1 + tva / 100) || 0;
 
     // Update the article
     const updatedArticle = await Article.findByIdAndUpdate(
@@ -283,31 +287,33 @@ const updateArticle = async (req, res) => {
         libelleFamille, 
         libeleCategorie, 
         lib_fournisseur, 
-        image_article: image_article || undefined, // Conserve l'image existante si aucune nouvelle image n'est fournie
+        image_article: image_article || undefined, 
         Nombre_unite, 
-        dc,
-        fodec,
-        tva, 
-        type, 
-        prix_brut, 
-        remise, 
-        prix_net, 
-        marge, 
-        prixht, 
-        prix_totale_concre , 
-        gestion_configuration, 
-        configuration, 
-        serie, 
-        Nature, 
-        prixmin, 
-        prixmax, 
-        prix_achat_initiale, 
-        tva_achat, 
-        dimension_article, 
-        longueur, 
-        largeur, 
-        hauteur, 
-        movement_article 
+        Nombre_unite: Number(Nombre_unite), 
+    dc: Number(dc),
+    fodec: Number(fodec),
+    tva: tva === 'null' ? 0 :Number(tva), 
+    type, 
+    prix_brut: Number(prix_brut), 
+    remise: Number(remise), 
+    prix_net: Number(prix_net), 
+    marge: Number(marge), 
+    prixht: Number(prixht), 
+    prix_totale_concre: Number(prix_totale_concre), 
+    gestion_configuration, 
+    configuration, 
+    serie: Number(serie), 
+    Nature, 
+    prixmin: Number(prixmin), 
+    prixmax: Number(prixmax), 
+    tva_achat: tva_achat === 'null' ? 0 :Number(tva_achat), 
+    dimension_article: Number(dimension_article), 
+    longueur: longueur === 'null' ? 0 : Number(longueur), 
+    largeur: largeur === 'null' ? 0 : Number(largeur), 
+    hauteur: hauteur === 'null' ? 0 : Number(hauteur), 
+    movement_article,
+    quantiteMin: Number(quantiteMin),
+    quantiteMax: Number(quantiteMax)
       },
       { new: true }
     );

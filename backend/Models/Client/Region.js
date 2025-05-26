@@ -16,7 +16,6 @@ const RegionSchema = new Schema({
         type: String,
         required: [true,],
         unique: true
-
     },
     });
     const RegionModel = mongoose.model('region', RegionSchema);

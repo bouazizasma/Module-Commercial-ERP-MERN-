@@ -69,7 +69,7 @@ export default function CreateFournisseur() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post("http://localhost:5000/fournisseur", formData);
+      await axios.post("http://localhost:5000/fournisseur/newF", formData);
       setOpenSnackbar(true);
       setTimeout(() => {
         navigate("/fournisseur");

@@ -25,10 +25,7 @@ import {
   TablePagination,
   Divider,
 } from "@mui/material";
-import { 
-  AccountBalance, 
-  Payment, 
-  KeyboardArrowDown, 
+import {  AccountBalance,  Payment,   KeyboardArrowDown, 
   KeyboardArrowUp,
   Receipt,
   MonetizationOn,
@@ -36,20 +33,27 @@ import {
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 
+
 // Composant pour la ligne détaillée
 const Row = ({ paiement }) => {
   const [open, setOpen] = useState(false);
 
   // Montant Total = Montant Restant du paiement précédent (déjà calculé côté backend)
-  const montantTotal = paiement.montantTotal || 0;
+  const montantTotal = paiement.montantRestantDePaiement || 0;
+
 
   // Montant Payé = Montant payé pour ce paiement
   const montantPaye = paiement.montantPaye || 0;
+  console.log("hedha houwa l montant paye des payement" ,montantPaye);
 
   // Montant Restant = Montant Total - Montant Payé
   const montantRestant = montantTotal - montantPaye;
+  console.log("Verification avt aff " ,montantTotal,montantPaye,montantRestant);
+
+  
 
   return (
+
     <>
       <TableRow sx={{ '& > *': { borderBottom: 'unset' } }}>
         <TableCell>

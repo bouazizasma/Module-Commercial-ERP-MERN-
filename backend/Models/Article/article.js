@@ -74,7 +74,6 @@ const ArticleSchema = new Schema({
                         // liste déroulante qui affiche les raison_sociale dans la table fournisseur
         type: Schema.Types.ObjectId,
         ref: 'fournisseur',
-        required: true 
  
     },
     Nature: {   //Matiere 1ere - divers - 
@@ -122,6 +121,14 @@ const ArticleSchema = new Schema({
     },
     movement_article: {   //bon sortie ( depot --->depot maghir facture o bon de livraison )
         type: String,
+      
+    },
+    quantiteMin : { 
+        type: Number,
+      
+    },
+    quantiteMax: {   
+        type: Number,
       
     },
     
