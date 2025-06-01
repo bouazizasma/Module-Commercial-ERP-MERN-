@@ -2,15 +2,15 @@ import React, { useEffect, useState } from 'react';
 import Box from "@mui/material/Box";
 import InputAdornment from '@mui/material/InputAdornment';
 import {
-  Stack,
   FormControl,
   InputLabel,
   Select,
   Paper,
   IconButton,
-  Collapse,
-  Divider,
+ 
 } from '@mui/material';
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
@@ -26,7 +26,8 @@ import Navbar from "../navbar/Navbar";
 import { Bar, Line } from 'react-chartjs-2';
 import Tabs from '@mui/material/Tabs';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-
+import PrintIcon from '@mui/icons-material/Print';
+import Button from '@mui/material/Button';
 import Tab from '@mui/material/Tab';
 import {
   Chart as ChartJS,
@@ -174,7 +175,71 @@ const [activeTab, setActiveTab] = useState(0); // 0: Espèces, 1: Chèques, 2: E
     if (!p.dateCreation) return false;
     return format(parseISO(p.dateCreation), 'yyyy-MM') === paiementTableMonth;
   });
-
+const generatePDF = () => {
+  const doc = new jsPDF();
+  const now = new Date();
+  const dateStr = format(now, 'dd/MM/yyyy HH:mm');
+  
+  // Titre du document
+  doc.setFontSize(18);
+  doc.text('Détails des paiements', 14, 20);
+  doc.setFontSize(10);
+  doc.text(`Généré le: ${dateStr}`, 14, 28);
+  
+  // Données groupées par type
+  const especes = getEspeces(filteredPaiementTable);
+  const cheques = getCheques(filteredPaiementTable);
+  const effets = getEffets(filteredPaiementTable);
+  
+  let startY = 40;
+  
+  // Fonction pour ajouter une section
+  const addSection = (title, data, columns) => {
+    if (data.length > 0) {
+      doc.setFontSize(12);
+      doc.setTextColor(40);
+      doc.text(title, 14, startY);
+      startY += 8;
+      
+      doc.autoTable({
+        startY,
+        head: [columns.map(col => col.header)],
+        body: data.map(item => columns.map(col => col.accessor(item))),
+        margin: { left: 14 },
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [112, 106, 136] }
+      });
+      
+      startY = doc.lastAutoTable.finalY + 10;
+    }
+  };
+  
+  // Section Espèces
+  addSection('Paiements en espèces', especes, [
+    { header: 'N° Paiement', accessor: (e) => e.numero || '-' },
+    { header: 'Date', accessor: (e) => e.creationDate ? format(parseISO(e.creationDate), 'dd/MM/yyyy') : '-' },
+    { header: 'Montant (DT)', accessor: (e) => e.montant.toLocaleString('fr-FR') }
+  ]);
+  
+  // Section Chèques
+  addSection('Paiements par chèque', cheques, [
+    { header: 'N° Paiement', accessor: (c) => c.numero || '-' },
+    { header: 'Date', accessor: (c) => c.creationDate ? format(parseISO(c.creationDate), 'dd/MM/yyyy') : '-' },
+    { header: 'Montant (DT)', accessor: (c) => c.montant.toLocaleString('fr-FR') },
+    { header: 'Banque', accessor: (c) => c.banque?.libelle || '-' }
+  ]);
+  
+  // Section Effets
+  addSection('Paiements par effet', effets, [
+    { header: 'N° Paiement', accessor: (ef) => ef.numero || '-' },
+    { header: 'Date', accessor: (ef) => ef.creationDate ? format(parseISO(ef.creationDate), 'dd/MM/yyyy') : '-' },
+    { header: 'Date échéance', accessor: (ef) => ef.dateEcheance ? format(parseISO(ef.dateEcheance), 'dd/MM/yyyy') : '-' },
+    { header: 'Montant (DT)', accessor: (ef) => ef.montant.toLocaleString('fr-FR') }
+  ]);
+  
+  // Enregistrer le PDF
+  doc.save(`details_paiements_${format(now, 'yyyyMMdd_HHmm')}.pdf`);
+};
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -927,8 +992,7 @@ const [activeTab, setActiveTab] = useState(0); // 0: Espèces, 1: Chèques, 2: E
              </MainContent>
         </DashboardContainer>
       </Box>
-
-        <Box 
+     <Box 
         sx={{ 
           position: 'fixed',
           bottom: 0,
@@ -943,35 +1007,57 @@ const [activeTab, setActiveTab] = useState(0); // 0: Espèces, 1: Chèques, 2: E
           display: 'flex',
           flexDirection: 'column'
         }}
-      >
-        <Box 
-          sx={{ 
-            backgroundColor:  'rgba(112, 106, 136, 0.73)',
-            color: theme.palette.primary.contrastText,
-            p: 1,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            cursor: 'pointer'
-          }}
-          onClick={() => setShowPaiementDetails(!showPaiementDetails)}
-        >
-          <Typography variant="h6" sx={{ ml: 2 }}>
-            Détails des paiements
-          </Typography>
-          <IconButton color="inherit">
-            {showPaiementDetails ? <ExpandMoreIcon /> : <ExpandLessIcon />}
-          </IconButton>
-        </Box>
+      ><Box 
+  sx={{ 
+    backgroundColor: 'rgba(112, 106, 136, 0.73)',
+    color: theme.palette.primary.contrastText,
+    p: 1,
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    cursor: 'pointer'
+  }}
+  onClick={() => setShowPaiementDetails(!showPaiementDetails)}
+>
+  <Typography variant="h6" sx={{ ml: 2 }}>
+    Détails des paiements
+  </Typography>
+  <Box>
+    <Button 
+      variant="contained" 
+      color="secondary"
+      onClick={(e) => {
+        e.stopPropagation();
+        generatePDF();
+      }}
+      sx={{ 
+        mr: 2,
+        textTransform: 'none',
+        borderRadius: '8px',
+        boxShadow: 'none',
+        '&:hover': {
+          boxShadow: 'none',
+          backgroundColor: theme.palette.secondary.dark
+        }
+      }}
+      startIcon={<PrintIcon />}
+    >
+      Imprimer
+    </Button>
+    <IconButton color="inherit">
+      {showPaiementDetails ? <ExpandMoreIcon /> : <ExpandLessIcon />}
+    </IconButton>
+  </Box>
+</Box>
 
         <Box sx={{ flex: 1, overflow: 'auto', backgroundColor: 'background.paper' }}>
           <Box sx={{ p: 2 }}>
             <FormControl size="small" sx={{ 
-  minWidth: 200, 
-  mb: 2,
-  '& .MuiOutlinedInput-root': {
-    borderRadius: '12px',
-    backgroundColor: theme.palette.background.paper,
+              minWidth: 200, 
+              mb: 2,
+             '& .MuiOutlinedInput-root': {
+               borderRadius: '12px',
+           backgroundColor: theme.palette.background.paper,
     boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
     transition: 'all 0.3s ease',
     '&:hover': {

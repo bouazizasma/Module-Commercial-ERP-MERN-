@@ -438,4 +438,17 @@ const deleteArticle = async (req, res) => {
     res.json(updatedArticle);
 }; 
 */}
-module.exports={getArticles, getArticleByID, createArticle, updateArticle, deleteArticle};
+
+
+const getLowStockArticles = async (req, res) => {
+    try {
+        const lowStockArticles = await Article.find({
+            $expr: { $lte: ["$Nombre_unite", "$quantiteMin"] }
+        }).select('code libelle Nombre_unite quantiteMin');
+
+        res.status(200).json(lowStockArticles);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+module.exports={getArticles, getArticleByID, createArticle, updateArticle, deleteArticle,getLowStockArticles};

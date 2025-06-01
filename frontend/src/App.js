@@ -71,12 +71,17 @@ import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import { useState } from 'react';
 import RefrshHandler from './RefrshHandler';
+import { lightTheme, darkTheme } from './theme';
+import { useAppStore } from './appStore';
 function App() {
+  const { mode } = useAppStore();
+  
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const PrivateRoute = ({ element }) => {
     return isAuthenticated ? element : <Navigate to="/login" />
   }
   return (
+     <ThemeProvider theme={mode === 'dark' ? darkTheme : lightTheme}>
     <div className="App">
       <RefrshHandler setIsAuthenticated={setIsAuthenticated} />
       <Routes>
@@ -147,6 +152,7 @@ function App() {
 
       </Routes>
     </div>
+    </ThemeProvider>
   );
 }
 export default App;

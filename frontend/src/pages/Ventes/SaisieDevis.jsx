@@ -174,11 +174,17 @@ export default function SaisieDevis() {
   };
 
   const handleSubmit = async () => {
+    if (!selectedClient || !selectedDepot || lignes.length === 0) {
+      setSnackbarSeverity("error");
+      setSnackbarMessage("Client, dépôt et au moins une ligne sont requis");
+      setOpenSnackbar(true);
+      return;
+    }
     try {
       const devis = {
-        clientId: selectedClient._id,
-        depotId: selectedDepot._id,
-        dateDevis,
+        client: selectedClient,
+        depot: selectedDepot,
+        dateDevis:dateDevis.toISOString(),
         lignes: lignes.map(ligne => ({
           articleId: ligne.article._id,
           quantite: ligne.quantite,
@@ -193,6 +199,8 @@ export default function SaisieDevis() {
         totalHT,
         totalTTC,
       };
+          console.log("Sending devis data:", devis); // For debugging
+
 
       await axios.post("http://localhost:5000/ventes/devis/create", devis);
       setSnackbarSeverity("success");

@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { styled } from '@mui/material/styles';
 import {
   Box,
   Typography,
@@ -33,7 +32,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Sidenav from "../navbar/Sidenav";
 import Navbar from "../navbar/Navbar";
 import { toast } from 'react-toastify';
-
+import { styled, useTheme } from '@mui/material/styles'; 
 const SettingsContainer = styled(Container)(({ theme }) => ({
   paddingTop: theme.spacing(4),
   paddingBottom: theme.spacing(4),
@@ -43,7 +42,7 @@ const SettingsPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(4),
   borderRadius: '12px',
   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-  background: 'rgba(255, 255, 255, 0.95)',
+ background: theme.palette.background.paper
 }));
 
 const SectionTitle = styled(Typography)(({ theme }) => ({
@@ -71,12 +70,11 @@ const ThemeButton = styled(Button)(({ theme, active }) => ({
 
 export default function SettingsPage() {
   const navigate = useNavigate();
+  const theme = useTheme();
   const {
     dopen,
     mode,
     toggleMode,
-    primaryColor,
-    setPrimaryColor,
     notificationsEnabled,
     toggleNotifications
   } = useAppStore();
@@ -90,27 +88,11 @@ export default function SettingsPage() {
     navigate('/login');
   };
 
-  const handleResetPassword = () => {
-    setIsLoading(true);
-    // Simuler une requête API
-    setTimeout(() => {
-      toast.success('Lien de réinitialisation envoyé par email');
-      setIsLoading(false);
-    }, 1500);
-  };
-
-  const themes = [
-    { name: 'Bleu', value: '#283593' },
-    { name: 'Vert', value: '#2E7D32' },
-    { name: 'Rouge', value: '#C62828' },
-    { name: 'Violet', value: '#6A1B9A' },
-  ];
-
   return (
     <>
      <Navbar />
-          <Box height={764} />
-                  <Sidenav />
+          <Box height={364} />
+          <Sidenav />
           
     <Box
       component="main"
@@ -119,6 +101,7 @@ export default function SettingsPage() {
         p: 3,
         marginLeft: dopen ? '240px' : '0',
         transition: 'margin-left 0.3s ease',
+        backgroundColor: theme.palette.background.default,
       }}
     >
       <SettingsContainer maxWidth="md">
@@ -151,35 +134,6 @@ export default function SettingsPage() {
                   onChange={toggleMode}
                   color="primary"
                 />
-              </StyledListItem>
-
-              <StyledListItem>
-                <ListItemIcon>
-                  <PaletteIcon color="primary" />
-                </ListItemIcon>
-                <ListItemText 
-                  primary="Couleur principale" 
-                  secondary="Choisissez la couleur de votre thème" 
-                />
-                <Box sx={{ display: 'flex' }}>
-                  {themes.map((theme) => (
-                    <ThemeButton
-                      key={theme.value}
-                      active={primaryColor === theme.value}
-                      onClick={() => setPrimaryColor(theme.value)}
-                      sx={{ 
-                        backgroundColor: theme.value,
-                        color: '#fff',
-                        '&:hover': {
-                          backgroundColor: theme.value,
-                          opacity: 0.9
-                        }
-                      }}
-                    >
-                      {theme.name}
-                    </ThemeButton>
-                  ))}
-                </Box>
               </StyledListItem>
             </List>
           </Box>
@@ -241,33 +195,7 @@ export default function SettingsPage() {
             </List>
           </Box>
 
-          {/* Section Sécurité */}
-          <Box mb={4}>
-            <SectionTitle variant="h6">
-              <LockIcon /> Sécurité
-            </SectionTitle>
-            <Divider sx={{ mb: 2 }} />
-
-            <List>
-              <StyledListItem>
-                <ListItemIcon>
-                  <LockIcon color="primary" />
-                </ListItemIcon>
-                <ListItemText 
-                  primary="Réinitialiser le mot de passe" 
-                  secondary="Envoyer un lien de réinitialisation par email" 
-                />
-                <Button
-                  variant="contained"
-                  onClick={handleResetPassword}
-                  disabled={isLoading}
-                  startIcon={isLoading ? <CircularProgress size={20} /> : null}
-                >
-                  {isLoading ? 'Envoi...' : 'Réinitialiser'}
-                </Button>
-              </StyledListItem>
-            </List>
-          </Box>
+        
 
           {/* Section Compte */}
           <Box mb={4}>

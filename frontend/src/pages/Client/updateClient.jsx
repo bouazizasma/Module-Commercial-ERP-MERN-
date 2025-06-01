@@ -5,50 +5,56 @@ import {
   Button,
   Grid,
   Box,
-  Checkbox,
   Card,
-  CardContent,
   MenuItem,
+  Checkbox,
+  CardContent,
   Typography,
   Accordion,
   AccordionSummary,
   AccordionDetails,
   InputAdornment,
-
+  useMediaQuery,
+  useTheme,
+  Divider,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import {
-  Inventory,
-  AttachMoney,
-  LocalShipping,
-  Category,
-  Business,
-  Image,
-  Add,
-  Settings,
-  Straight,
+  ExpandMore as ExpandMoreIcon,
+  Person as PersonIcon,
+  Category as CategoryIcon,
+  Phone as PhoneIcon,
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  Check as CheckIcon,
+  LocationOn as LocationOnIcon,
+  Business as BusinessIcon,
+  AccountBalance as AccountBalanceIcon,
+  Edit as EditIcon
 } from "@mui/icons-material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Navbar from "../../navbar/Navbar";
 import Sidenav from "../../navbar/Sidenav";
 import { useParams, useNavigate } from "react-router-dom";
 
 export default function UpdateClient() {
-  const { id } = useParams(); // Get the ID from the URL
+  const { id } = useParams();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const [formData, setFormData] = useState({
-    nom_prenom : "",
-    raison_sociale: "",
+    nom_prenom: "",
     matricule_fiscale: "",
     adresse: "",
-    telephone: [],
+    telephone: ["", ""],
     register_commerce: "",
     solde_initial: "",
     montant_rapprochement: "",
     code_rapprochement: "",
-    codeSecteur : "",
-    libelleSecteur: "",
     rapBl: "",
-    register_commerce:"",
+    codeSecteur: "",
+    libelleSecteur: "",
     solde_initial_bl: "",
     montant_reglement_bl: "",
     taux_retenu: "",
@@ -56,44 +62,23 @@ export default function UpdateClient() {
 
   const [secteurs, setSecteurs] = useState([]);
   const [bankAccounts, setBankAccounts] = useState([]);
-const [banques, setBanques] = useState([]);
-  
-  // Fetch client by ID to populate the form
-  /*useEffect(() => {
-    const fetchClient = async () => {
-      try {
-
-        const [ClientResponse, SecteursResponse] = await Promise.all([
-          axios.get(`http://localhost:5000/client/${id}`),
-          axios.get("http://localhost:5000/secteur/Secteurs"),
-
-        ]);
-
-        const clientData = ClientResponse.data;
-        setFormData(clientData.data);
-        setSecteurs(SecteursResponse.data);
-      } catch (error) {
-        console.error("Erreur lors de la récupération du client :", error);
-      }
-    };
-    fetchClient();
-  }, [id]);*/
+  const [banques, setBanques] = useState([]);
 
   useEffect(() => {
     const fetchClient = async () => {
       try {
-        const [ClientResponse, SecteursResponse,BanquesResponse] = await Promise.all([
+        const [ClientResponse, SecteursResponse, BanquesResponse] = await Promise.all([
           axios.get(`http://localhost:5000/client/${id}`),
           axios.get("http://localhost:5000/secteur/Secteurs"),
           axios.get("http://localhost:5000/banqueClient/AllBanques")
         ]);
-  
-        // Vérifiez la structure de la réponse
-        console.log("Réponse client:", ClientResponse.data);
-        
-        // Si la réponse est directement les données du client
-        setFormData(ClientResponse.data.client || ClientResponse.data); // Adaptez selon la structure réelle
-        setBankAccounts(ClientResponse.data.client?.bankAccounts || ClientResponse.data?.bankAccounts || []);
+
+        const clientData = ClientResponse.data.client || ClientResponse.data;
+        setFormData({
+          ...clientData,
+          telephone: clientData.telephone || ["", ""]
+        });
+        setBankAccounts(clientData.bankAccounts || []);
         setSecteurs(SecteursResponse.data);
         setBanques(BanquesResponse.data);
       } catch (error) {
@@ -103,12 +88,10 @@ const [banques, setBanques] = useState([]);
     fetchClient();
   }, [id]);
 
-
   const handleBankAccountChange = (index, field, value) => {
     const updatedAccounts = [...bankAccounts];
     updatedAccounts[index][field] = value;
     
-    // Si on définit comme compte principal, on désactive les autres
     if (field === 'isPrimary' && value) {
       updatedAccounts.forEach((acc, i) => {
         if (i !== index) acc.isPrimary = false;
@@ -117,113 +100,45 @@ const [banques, setBanques] = useState([]);
     
     setBankAccounts(updatedAccounts);
   };
-  
+
   const addBankAccount = () => {
     setBankAccounts([...bankAccounts, {
       banque: '',
       RIB: '',
       adresseBanque: '',
-      isPrimary: bankAccounts.length === 0 // Premier compte par défaut principal
+      isPrimary: bankAccounts.length === 0
     }]);
   };
-  
+
   const removeBankAccount = (index) => {
     const updatedAccounts = [...bankAccounts];
     updatedAccounts.splice(index, 1);
     setBankAccounts(updatedAccounts);
   };
 
-
-
-  // Update client
- /* const updateClient = async () => {
+  const updateClient = async () => {
     try {
-      const formDataToSend = new FormData();
-      Object.keys(formData).forEach((key) => {
-        formDataToSend.append(key, formData[key]);
-      });
-      await axios.put(`http://localhost:5000/client/${id}`, formData);
-      alert("Client mis à jour avec succès !");
-      navigate("/client"); // Redirect to the Client list after update
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour du client :", error.response ? error.response.data : error);
-      alert("Une erreur s'est produite lors de la mise à jour du client.");
-    }
-  };
-
-  */
-
-  /*const updateClient = async () => {
-    try {
-      // Préparez les données à envoyer
       const dataToSend = {
         ...formData,
-        telephone: formData.telephone.filter(tel => tel) // Filtre les téléphones vides
+        bankAccounts: bankAccounts.filter(acc => acc.banque && acc.RIB),
+        telephone: formData.telephone.filter(tel => tel)
       };
-  
-      const response = await axios.put(`http://localhost:5000/client/${id}`, dataToSend);
-      
-      if (response.data) {
-        alert("Client mis à jour avec succès !");
-        navigate("/client");
-      }
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 
-                          "Une erreur s'est produite lors de la mise à jour";
-      console.error("Erreur détaillée:", error.response?.data || error);
-      alert(errorMessage);
-    }
-  };
-*/
- 
-/*const updateClient = async () => {
-  try {
-    // Préparez les données à envoyer
-    const dataToSend = {
-      ...formData,
-      telephone: formData.telephone.filter(tel => tel) // Filtre les téléphones vides
-    };
 
-    // Supprimez les champs inutiles avant l'envoi
-    delete dataToSend._id;
-    delete dataToSend.__v;
+      delete dataToSend._id;
+      delete dataToSend.__v;
 
-    const response = await axios.put(`http://localhost:5000/client/${id}`, dataToSend);
-    
-    if (response.data) {
+      await axios.put(`http://localhost:5000/client/${id}`, dataToSend);
       alert("Client mis à jour avec succès !");
       navigate("/client");
+    } catch (error) {
+      console.error("Erreur:", error);
+      alert("Erreur lors de la mise à jour");
     }
-  } catch (error) {
-    const errorMessage = error.response?.data?.message || "Une erreur s'est produite lors de la mise à jour";
-    console.error("Erreur détaillée:", error.response?.data || error);
-    alert(errorMessage);
-  }
-};
-*/
-const updateClient = async () => {
-  try {
-    const dataToSend = {
-      ...formData,
-      bankAccounts: bankAccounts.filter(acc => acc.banque && acc.RIB),
-      telephone: formData.telephone.filter(tel => tel)
-    };
+  };
 
-    delete dataToSend._id;
-    delete dataToSend.__v;
-
-    await axios.put(`http://localhost:5000/client/${id}`, dataToSend);
-    alert("Client mis à jour !");
-    navigate("/client");
-  } catch (error) {
-    console.error("Erreur:", error);
-    alert("Erreur lors de la mise à jour");
-  }
-};
-
-// Handle input change
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
     if (name === "telephone1" || name === "telephone2") {
       setFormData((prev) => {
         const updatedTelephones = [...prev.telephone];
@@ -234,8 +149,7 @@ const updateClient = async () => {
         }
         return { ...prev, telephone: updatedTelephones };
       });
-    } 
-    else if (name === "codeSecteur" || name === "libelleSecteur") {
+    } else if (name === "codeSecteur" || name === "libelleSecteur") {
       const selectedSecteur = secteurs.find(secteur => 
         name === "codeSecteur" 
           ? secteur.codeSecteur === value 
@@ -248,308 +162,355 @@ const updateClient = async () => {
         codeSecteur: selectedSecteur?.codeSecteur || (name === "codeSecteur" ? value : prev.codeSecteur),
         libelleSecteur: selectedSecteur?.libelle || (name === "libelleSecteur" ? value : prev.libelleSecteur)
       }));
-    } 
-    
-    else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
   return (
     <>
       <Navbar />
-      <Box height={100} />
+      <Box height={70} />
       <Box sx={{ display: "flex" }}>
         <Sidenav />
-        <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: "auto", maxHeight: "100vh" }}>
-          <h2>Modifier un Client</h2>
+        <Box component="main" sx={{ 
+          flexGrow: 1, 
+          p: isMobile ? 2 : 3,
+          overflow: "auto",
+          maxHeight: "calc(100vh - 70px)"
+        }}>
+          <Typography variant="h5" sx={{ 
+            mb: 3, 
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1
+          }}>
+            <EditIcon color="primary" />
+            Modifier Client
+          </Typography>
 
-          <form>
-            {/* Informations Générales */}
-            <Card sx={{ mb: 3 }}>
-              <CardContent>
-                <Typography variant="h6" sx={{ textAlign: "left" }}>
-                  Informations Générales
-                </Typography>
-                <Grid container spacing={3}>
-                  <Grid item xs={3}>
-                    <TextField
-                      name="nom_prenom"
-                      label="Nom&Prenom"
-                      fullWidth
-                      value={formData.nom_prenom}
-                      onChange={handleChange}
-                    />
-                  </Grid>
-                  <Grid item xs={3}>
-                    <TextField
-                      name="matricule_fiscale"
-                      label="Matricule Fiscale"
-                      fullWidth
-                      value={formData.matricule_fiscale}
-                      onChange={handleChange}
-                    />
-                  </Grid>
-                  <Grid item xs={3}>
-                    <TextField
-                      name="adresse"
-                      label="Adresse"
-                      fullWidth
-                      value={formData.adresse}
-                      onChange={handleChange}
-                    />
-                  </Grid>
-                  <Grid item xs={3}>
-                    <TextField
-                      name="telephone1"
-                      label="Téléphone 1"
-                      fullWidth
-                      value={formData.telephone[0] || ""}
-                      onChange={handleChange}
-                    />
-                  </Grid>
-                  <Grid item xs={3}>
-                    <TextField
-                      name="telephone2"
-                      label="Téléphone 2"
-                      fullWidth
-                      value={formData.telephone[1] || ""}
-                      onChange={handleChange}
-                    />
-                  </Grid>
-                    {/* Pour le code Secteur */}
-              <Grid item xs={3}>
-       <TextField
-  fullWidth
-  select
-  label="Code Secteur"
-  name="codeSecteur"
-  value={formData.codeSecteur}
-  onChange={handleChange}
-  required
-  InputProps={{
-    startAdornment: (
-      <InputAdornment position="start">
-        <Category color="primary" />
-      </InputAdornment>
-    ),
-  }}
->
-  {secteurs.map((secteur) => (
-    <MenuItem key={secteur._id} value={secteur.codeSecteur}>
-      {secteur.codeSecteur}
-    </MenuItem>
-  ))}
-        </TextField>
-          </Grid>
-
-      {/* Pour le libellé Secteur */}
-      <Grid item xs={3}>
-<TextField
-  fullWidth
-  select
-  label="Libelle Secteur"
-  name="libelleSecteur"
-  value={formData.libelleSecteur}
-  onChange={handleChange}
-  required
-  InputProps={{
-    startAdornment: (
-      <InputAdornment position="start">
-        <Category color="primary" />
-      </InputAdornment>
-    ),
-  }}
->
-  {secteurs.map((secteur) => (
-    <MenuItem key={secteur._id} value={secteur.libelle}>
-      {secteur.libelle}
-    </MenuItem>
-  ))}
-</TextField>
-      </Grid>
-                 
+          <Card sx={{ mb: 3, borderRadius: 2, boxShadow: 3 }}>
+            <CardContent>
+              <Typography variant="subtitle1" sx={{ 
+                mb: 2, 
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1
+              }}>
+                <PersonIcon fontSize="small" color="primary" />
+                Informations Générales
+              </Typography>
+              
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6} md={4}>
+                  <TextField
+                    name="nom_prenom"
+                    label="Nom & Prénom"
+                    fullWidth
+                    size="small"
+                    value={formData.nom_prenom}
+                    onChange={handleChange}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <PersonIcon fontSize="small" color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
                 </Grid>
-              </CardContent>
-            </Card>
+                
+                <Grid item xs={12} sm={6} md={4}>
+                  <TextField
+                    name="matricule_fiscale"
+                    label="Matricule Fiscale"
+                    fullWidth
+                    size="small"
+                    value={formData.matricule_fiscale}
+                    onChange={handleChange}
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6} md={4}>
+                  <TextField
+                    name="adresse"
+                    label="Adresse"
+                    fullWidth
+                    size="small"
+                    value={formData.adresse}
+                    onChange={handleChange}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LocationOnIcon fontSize="small" color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6} md={4}>
+                  <TextField
+                    name="telephone1"
+                    label="Téléphone 1"
+                    fullWidth
+                    size="small"
+                    value={formData.telephone[0] || ''}
+                    onChange={handleChange}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <PhoneIcon fontSize="small" color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6} md={4}>
+                  <TextField
+                    name="telephone2"
+                    label="Téléphone 2"
+                    fullWidth
+                    size="small"
+                    value={formData.telephone[1] || ''}
+                    onChange={handleChange}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <PhoneIcon fontSize="small" color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6} md={4}>
+                  <TextField
+                    select
+                    fullWidth
+                    size="small"
+                    label="Code Secteur"
+                    name="codeSecteur"
+                    value={formData.codeSecteur}
+                    onChange={handleChange}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <CategoryIcon fontSize="small" color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  >
+                    {secteurs.map((secteur) => (
+                      <MenuItem key={secteur._id} value={secteur.codeSecteur}>
+                        {secteur.codeSecteur}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+                
+                <Grid item xs={12} sm={6} md={4}>
+                  <TextField
+                    select
+                    fullWidth
+                    size="small"
+                    label="Libellé Secteur"
+                    name="libelleSecteur"
+                    value={formData.libelleSecteur}
+                    onChange={handleChange}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <CategoryIcon fontSize="small" color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  >
+                    {secteurs.map((secteur) => (
+                      <MenuItem key={secteur._id} value={secteur.libelle}>
+                        {secteur.libelle}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
 
-            {/* Informations Complémentaires */}
-            <Card sx={{ mb: 3 }}>
-              <CardContent>
-                <Accordion>
-                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography variant="h6">Informations Complémentaires</Typography>
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <Grid container spacing={3}>
-                      <Grid item xs={3}>
+          {/* INFORMATIONS COMPLEMENTAIRES */}
+          <Card sx={{ mb: 3, borderRadius: 2, boxShadow: 3 }}>
+            <CardContent>
+              <Accordion defaultExpanded={!isMobile} sx={{ boxShadow: 'none' }}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                    Informations Complémentaires
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Grid container spacing={2}>
+                    {[
+                      { name: "register_commerce", label: "Register Commerce" },
+                      { name: "solde_initial", label: "Solde Initial" },
+                      { name: "montant_rapprochement", label: "Montant Rapprochement" },
+                      { name: "code_rapprochement", label: "Code Rapprochement" },
+                      { name: "rapBl", label: "Rapprochement BL" },
+                      { name: "solde_initial_bl", label: "Solde Initial BL" },
+                      { name: "montant_reglement_bl", label: "Montant Règlement BL" },
+                      { name: "taux_retenu", label: "Taux Retenu" }
+                    ].map((field, index) => (
+                      <Grid item xs={12} sm={6} md={4} key={index}>
                         <TextField
-                          name="register_commerce"
-                          label="Register Commerce"
+                          name={field.name}
+                          label={field.label}
                           fullWidth
-                          value={formData.register_commerce}
+                          size="small"
+                          value={formData[field.name]}
                           onChange={handleChange}
                         />
                       </Grid>
-                      <Grid item xs={3}>
+                    ))}
+                  </Grid>
+                </AccordionDetails>
+              </Accordion>
+            </CardContent>
+          </Card>
+
+          {/* COMPTES BANCAIRES */}
+          <Card sx={{ mb: 3, borderRadius: 2, boxShadow: 3 }}>
+            <CardContent>
+              <Typography variant="subtitle1" sx={{ 
+                mb: 2, 
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1
+              }}>
+                <AccountBalanceIcon fontSize="small" color="primary" />
+                Comptes Bancaires
+              </Typography>
+              
+              {bankAccounts.map((account, index) => (
+                <Card key={index} variant="outlined" sx={{ 
+                  mb: 2, 
+                  borderRadius: 2,
+                  borderColor: account.isPrimary ? 'primary.main' : 'divider'
+                }}>
+                  <CardContent>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={5}>
                         <TextField
-                          name="solde_initial"
-                          label="Solde Initial"
+                          select
                           fullWidth
-                          value={formData.solde_initial}
-                          onChange={handleChange}
+                          size="small"
+                          label="Banque"
+                          value={account.banque}
+                          onChange={(e) => handleBankAccountChange(index, 'banque', e.target.value)}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <BusinessIcon fontSize="small" color="action" />
+                              </InputAdornment>
+                            ),
+                          }}
+                        >
+                          {banques.map((banque) => (
+                            <MenuItem key={banque._id} value={banque._id}>
+                              {banque.libelle} ({banque.code_banque})
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      </Grid>
+                      
+                      <Grid item xs={12} sm={4}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label="RIB"
+                          value={account.RIB}
+                          onChange={(e) => handleBankAccountChange(index, 'RIB', e.target.value)}
                         />
                       </Grid>
-                      <Grid item xs={3}>
+                      
+                      <Grid item xs={12} sm={2}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+                          <Tooltip title="Compte principal">
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Checkbox
+                                checked={account.isPrimary}
+                                onChange={(e) => handleBankAccountChange(index, 'isPrimary', e.target.checked)}
+                                color="primary"
+                                size="small"
+                              />
+                              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                Principal
+                              </Typography>
+                            </Box>
+                          </Tooltip>
+                        </Box>
+                      </Grid>
+                      
+                      <Grid item xs={12} sm={8}>
                         <TextField
-                          name="montant_rapprochement"
-                          label="Montant Rapprochement"
                           fullWidth
-                          value={formData.montant_rapprochement}
-                          onChange={handleChange}
+                          size="small"
+                          label="Adresse Banque"
+                          value={account.adresseBanque}
+                          onChange={(e) => handleBankAccountChange(index, 'adresseBanque', e.target.value)}
                         />
                       </Grid>
-                      <Grid item xs={3}>
-                        <TextField
-                          name="code_rapprochement"
-                          label="Code Rapprochement"
-                          fullWidth
-                          value={formData.code_rapprochement}
-                          onChange={handleChange}
-                        />
-                      </Grid>
-                      <Grid item xs={3}>
-                        <TextField
-                          name="rapBl"
-                          label="Rapprochement BL"
-                          fullWidth
-                          value={formData.rapBl}
-                          onChange={handleChange}
-                        />
-                      </Grid>
-                      <Grid item xs={3}>
-                        <TextField
-                          name="solde_initial_bl"
-                          label="Solde Initial BL"
-                          fullWidth
-                          value={formData.solde_initial_bl}
-                          onChange={handleChange}
-                        />
-                      </Grid>
-                      <Grid item xs={3}>
-                        <TextField
-                          name="montant_reglement_bl"
-                          label="Montant Règlement BL"
-                          fullWidth
-                          value={formData.montant_reglement_bl}
-                          onChange={handleChange}
-                        />
-                      </Grid>
-                      <Grid item xs={3}>
-                        <TextField
-                          name="taux_retenu"
-                          label="Taux Retenu"
-                          fullWidth
-                          value={formData.taux_retenu}
-                          onChange={handleChange}
-                        />
+                      
+                      <Grid item xs={12} sm={4} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <Tooltip title="Supprimer ce compte">
+                          <IconButton
+                            onClick={() => removeBankAccount(index)}
+                            size="small"
+                            color="error"
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
                       </Grid>
                     </Grid>
-                  </AccordionDetails>
-                </Accordion>
-              </CardContent>
-            </Card>
-
-            {/* Section Comptes Bancaires */}
-<Card sx={{ mb: 3 }}>
-  <CardContent>
-    <Typography variant="h6" sx={{ mb: 2 }}>Comptes Bancaires</Typography>
-    
-    {bankAccounts.map((account, index) => (
-      <Box key={index} sx={{ 
-        mb: 3, 
-        p: 2, 
-        border: '1px solid #e0e0e0', 
-        borderRadius: 1 
-      }}>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              select
-              fullWidth
-              label="Banque"
-              value={account.banque}
-              onChange={(e) => handleBankAccountChange(index, 'banque', e.target.value)}
-            >
-              {banques.map((banque) => (
-                <MenuItem key={banque._id} value={banque._id}>
-                  {banque.libelle} ({banque.code_banque})
-                </MenuItem>
+                  </CardContent>
+                </Card>
               ))}
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={3}>
-            <TextField
-              fullWidth
-              label="RIB"
-              value={account.RIB}
-              onChange={(e) => handleBankAccountChange(index, 'RIB', e.target.value)}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} sm={3}>
-            <TextField
-              fullWidth
-              label="Adresse Banque"
-              value={account.adresseBanque}
-              onChange={(e) => handleBankAccountChange(index, 'adresseBanque', e.target.value)}
-            />
-          </Grid>
-          <Grid item xs={12} sm={2} sx={{ display: 'flex', alignItems: 'center' }}>
-            <Checkbox
-              checked={account.isPrimary}
-              onChange={(e) => handleBankAccountChange(index, 'isPrimary', e.target.checked)}
-              color="primary"
-            />
-            <Typography variant="body2">Principal</Typography>
-          </Grid>
-        </Grid>
-        
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-          <Button 
-            variant="outlined" 
-            color="error"
-            size="small"
-            onClick={() => removeBankAccount(index)}
-            sx={{ mr: 1 }}
-          >
-            Supprimer
-          </Button>
-        </Box>
-      </Box>
-    ))}
-    
-    <Button 
-      variant="outlined" 
-      startIcon={<Add />}
-      onClick={addBankAccount}
-      fullWidth
-    >
-      Ajouter un compte bancaire
-    </Button>
-  </CardContent>
-</Card>
+              
+              <Button 
+                variant="outlined" 
+                startIcon={<AddIcon />}
+                onClick={addBankAccount}
+                size="small"
+                sx={{ mt: 1 }}
+              >
+                Ajouter un compte
+              </Button>
+            </CardContent>
+          </Card>
 
-            {/* Bouton de mise à jour */}
+          {/* BOUTONS D'ACTION */}
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+            <Button
+              variant="outlined"
+              onClick={() => navigate("/client")}
+              size={isMobile ? "small" : "medium"}
+              sx={{ borderRadius: '8px' }}
+            >
+              Annuler
+            </Button>
             <Button
               onClick={updateClient}
-              color="warning"
+              color="primary"
               variant="contained"
-              style={{ marginTop: "20px", float: "right" }}
+              startIcon={<CheckIcon />}
+              size={isMobile ? "small" : "medium"}
+              sx={{ borderRadius: '8px' }}
             >
               Mettre à jour
             </Button>
-          </form>
+          </Box>
         </Box>
       </Box>
     </>

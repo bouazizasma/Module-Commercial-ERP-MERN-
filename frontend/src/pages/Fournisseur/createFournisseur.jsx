@@ -12,7 +12,9 @@ import {
   InputAdornment,
   Snackbar,
   Alert,
-  Fade,
+  useMediaQuery,
+  useTheme,
+  Divider
 } from "@mui/material";
 import {
   Business,
@@ -24,6 +26,7 @@ import {
   ArrowBack,
   Save,
   CheckCircle,
+  Close
 } from "@mui/icons-material";
 import Navbar from "../../navbar/Navbar";
 import Sidenav from "../../navbar/Sidenav";
@@ -31,13 +34,14 @@ import { useNavigate } from "react-router-dom";
 
 export default function CreateFournisseur() {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [fournisseurs, setFournisseurs] = useState([]);
   const [formData, setFormData] = useState({
     raison_sociale: "",
     matricule_fiscale: "",
     adresse: "",
-    telephone: [],
+    telephone: "",
     fax: "",
     register_commerce: "",
     solde_initial: "",
@@ -48,15 +52,6 @@ export default function CreateFournisseur() {
     montant_paie_ebe: "",
     taux_retenu: "",
   });
-
-  const fetchFournisseurs = async () => {
-    try {
-      const response = await axios.get("http://localhost:5000/fournisseur/fournisseurs");
-      setFournisseurs(response.data);
-    } catch (error) {
-      console.error("Error fetching fournisseurs:", error);
-    }
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -71,22 +66,11 @@ export default function CreateFournisseur() {
     try {
       await axios.post("http://localhost:5000/fournisseur/newF", formData);
       setOpenSnackbar(true);
-      setTimeout(() => {
-        navigate("/fournisseur");
-      }, 2000);
+      setTimeout(() => navigate("/fournisseur"), 1500);
     } catch (error) {
       console.error("Erreur lors de la création du fournisseur:", error);
-      alert("Une erreur s'est produite lors de la création du fournisseur.");
     }
   };
-
-  const handleCloseSnackbar = () => {
-    setOpenSnackbar(false);
-  };
-
-  useEffect(() => {
-    fetchFournisseurs();
-  }, []);
 
   return (
     <>
@@ -94,46 +78,74 @@ export default function CreateFournisseur() {
       <Box height={70} />
       <Box sx={{ display: "flex" }}>
         <Sidenav />
-        <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: "auto", maxHeight: "100vh" }}>
-          <Card sx={{ mb: 3, boxShadow: 3, borderRadius: 2 }}>
+        <Box component="main" sx={{ 
+          flexGrow: 1, 
+          p: isMobile ? 2 : 3, 
+          maxHeight: "calc(100vh - 70px)",
+          overflow: "auto"
+        }}>
+          <Card sx={{ 
+            borderRadius: 3,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.05)',
+            border: '1px solid',
+            borderColor: 'divider'
+          }}>
             <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h4" component="h1" sx={{ color: '#1976d2', fontWeight: 'bold' }}>
-                  Création d'un Nouveau Fournisseur
+              {/* Header */}
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                mb: 3,
+                flexWrap: 'wrap',
+                gap: 2
+              }}>
+                <Typography variant="h5" sx={{ fontWeight: 600 }}>
+                  <Business sx={{ 
+                    mr: 1, 
+                    verticalAlign: 'middle', 
+                    color: 'primary.main' 
+                  }} />
+                  Nouveau Fournisseur
                 </Typography>
                 <Button
                   variant="outlined"
-                  color="primary"
                   onClick={() => navigate('/fournisseur')}
                   startIcon={<ArrowBack />}
+                  size={isMobile ? "small" : "medium"}
                   sx={{ 
-                    borderRadius: '8px',
-                    borderColor: '#1976d2',
-                    color: '#1976d2',
-                    '&:hover': {
-                      borderColor: '#1565c0',
-                      backgroundColor: 'rgba(25, 118, 210, 0.04)',
-                    }
+                    borderRadius: '12px',
+                    textTransform: 'none',
+                    px: 3
                   }}
                 >
                   Retour
                 </Button>
               </Box>
 
+              <Divider sx={{ mb: 4 }} />
+
               <form onSubmit={handleSubmit}>
-                <Grid container spacing={3}>
+                <Grid container spacing={2}>
                   {/* Informations Générales */}
                   <Grid item xs={12}>
-                    <Card sx={{ backgroundColor: '#f8f9fa', boxShadow: 2 }}>
+                    <Card variant="outlined" sx={{ borderRadius: 2 }}>
                       <CardContent>
-                        <Typography variant="h6" sx={{ mb: 2, color: '#1976d2', fontWeight: 'bold' }}>
-                          <Business sx={{ mr: 1, verticalAlign: 'middle' }} />
+                        <Typography variant="subtitle1" sx={{ 
+                          mb: 2, 
+                          fontWeight: 600,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1
+                        }}>
+                          <Business color="primary" fontSize="small" />
                           Informations Générales
                         </Typography>
                         <Grid container spacing={2}>
                           <Grid item xs={12} md={6}>
                             <TextField
                               fullWidth
+                              size="small"
                               label="Raison Sociale"
                               name="raison_sociale"
                               value={formData.raison_sociale}
@@ -142,21 +154,16 @@ export default function CreateFournisseur() {
                               InputProps={{
                                 startAdornment: (
                                   <InputAdornment position="start">
-                                    <Business color="primary" />
+                                    <Business color="action" fontSize="small" />
                                   </InputAdornment>
                                 ),
-                              }}
-                              sx={{ 
-                                '& .MuiOutlinedInput-root': {
-                                  borderRadius: '8px',
-                                  backgroundColor: '#fff',
-                                }
                               }}
                             />
                           </Grid>
                           <Grid item xs={12} md={6}>
                             <TextField
                               fullWidth
+                              size="small"
                               label="Matricule Fiscale"
                               name="matricule_fiscale"
                               value={formData.matricule_fiscale}
@@ -165,15 +172,9 @@ export default function CreateFournisseur() {
                               InputProps={{
                                 startAdornment: (
                                   <InputAdornment position="start">
-                                    <Description color="primary" />
+                                    <Description color="action" fontSize="small" />
                                   </InputAdornment>
                                 ),
-                              }}
-                              sx={{ 
-                                '& .MuiOutlinedInput-root': {
-                                  borderRadius: '8px',
-                                  backgroundColor: '#fff',
-                                }
                               }}
                             />
                           </Grid>
@@ -184,16 +185,23 @@ export default function CreateFournisseur() {
 
                   {/* Coordonnées */}
                   <Grid item xs={12}>
-                    <Card sx={{ backgroundColor: '#f8f9fa', boxShadow: 2 }}>
+                    <Card variant="outlined" sx={{ borderRadius: 2 }}>
                       <CardContent>
-                        <Typography variant="h6" sx={{ mb: 2, color: '#1976d2', fontWeight: 'bold' }}>
-                          <LocationOn sx={{ mr: 1, verticalAlign: 'middle' }} />
+                        <Typography variant="subtitle1" sx={{ 
+                          mb: 2, 
+                          fontWeight: 600,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1
+                        }}>
+                          <LocationOn color="primary" fontSize="small" />
                           Coordonnées
                         </Typography>
                         <Grid container spacing={2}>
                           <Grid item xs={12}>
                             <TextField
                               fullWidth
+                              size="small"
                               label="Adresse"
                               name="adresse"
                               value={formData.adresse}
@@ -203,21 +211,16 @@ export default function CreateFournisseur() {
                               InputProps={{
                                 startAdornment: (
                                   <InputAdornment position="start">
-                                    <LocationOn color="primary" />
+                                    <LocationOn color="action" fontSize="small" />
                                   </InputAdornment>
                                 ),
-                              }}
-                              sx={{ 
-                                '& .MuiOutlinedInput-root': {
-                                  borderRadius: '8px',
-                                  backgroundColor: '#fff',
-                                }
                               }}
                             />
                           </Grid>
                           <Grid item xs={12} md={6}>
                             <TextField
                               fullWidth
+                              size="small"
                               label="Téléphone"
                               name="telephone"
                               value={formData.telephone}
@@ -225,21 +228,16 @@ export default function CreateFournisseur() {
                               InputProps={{
                                 startAdornment: (
                                   <InputAdornment position="start">
-                                    <Phone color="primary" />
+                                    <Phone color="action" fontSize="small" />
                                   </InputAdornment>
                                 ),
-                              }}
-                              sx={{ 
-                                '& .MuiOutlinedInput-root': {
-                                  borderRadius: '8px',
-                                  backgroundColor: '#fff',
-                                }
                               }}
                             />
                           </Grid>
                           <Grid item xs={12} md={6}>
                             <TextField
                               fullWidth
+                              size="small"
                               label="Fax"
                               name="fax"
                               value={formData.fax}
@@ -247,15 +245,9 @@ export default function CreateFournisseur() {
                               InputProps={{
                                 startAdornment: (
                                   <InputAdornment position="start">
-                                    <Fax color="primary" />
+                                    <Fax color="action" fontSize="small" />
                                   </InputAdornment>
                                 ),
-                              }}
-                              sx={{ 
-                                '& .MuiOutlinedInput-root': {
-                                  borderRadius: '8px',
-                                  backgroundColor: '#fff',
-                                }
                               }}
                             />
                           </Grid>
@@ -266,16 +258,23 @@ export default function CreateFournisseur() {
 
                   {/* Informations Financières */}
                   <Grid item xs={12}>
-                    <Card sx={{ backgroundColor: '#f8f9fa', boxShadow: 2 }}>
+                    <Card variant="outlined" sx={{ borderRadius: 2 }}>
                       <CardContent>
-                        <Typography variant="h6" sx={{ mb: 2, color: '#1976d2', fontWeight: 'bold' }}>
-                          <AccountBalance sx={{ mr: 1, verticalAlign: 'middle' }} />
+                        <Typography variant="subtitle1" sx={{ 
+                          mb: 2, 
+                          fontWeight: 600,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1
+                        }}>
+                          <AccountBalance color="primary" fontSize="small" />
                           Informations Financières
                         </Typography>
                         <Grid container spacing={2}>
                           <Grid item xs={12} md={6}>
                             <TextField
                               fullWidth
+                              size="small"
                               label="Solde Initial"
                               name="solde_initial"
                               type="number"
@@ -284,21 +283,16 @@ export default function CreateFournisseur() {
                               InputProps={{
                                 startAdornment: (
                                   <InputAdornment position="start">
-                                    <AccountBalance color="primary" />
+                                    <AccountBalance color="action" fontSize="small" />
                                   </InputAdornment>
                                 ),
-                              }}
-                              sx={{ 
-                                '& .MuiOutlinedInput-root': {
-                                  borderRadius: '8px',
-                                  backgroundColor: '#fff',
-                                }
                               }}
                             />
                           </Grid>
                           <Grid item xs={12} md={6}>
                             <TextField
                               fullWidth
+                              size="small"
                               label="Montant Rapprochement"
                               name="montant_rapprochement"
                               type="number"
@@ -307,15 +301,9 @@ export default function CreateFournisseur() {
                               InputProps={{
                                 startAdornment: (
                                   <InputAdornment position="start">
-                                    <AccountBalance color="primary" />
+                                    <AccountBalance color="action" fontSize="small" />
                                   </InputAdornment>
                                 ),
-                              }}
-                              sx={{ 
-                                '& .MuiOutlinedInput-root': {
-                                  borderRadius: '8px',
-                                  backgroundColor: '#fff',
-                                }
                               }}
                             />
                           </Grid>
@@ -326,19 +314,20 @@ export default function CreateFournisseur() {
 
                   {/* Boutons d'action */}
                   <Grid item xs={12}>
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'flex-end', 
+                      gap: 2,
+                      mt: 2
+                    }}>
                       <Button
                         variant="outlined"
-                        color="error"
                         onClick={() => navigate('/fournisseur')}
+                        size={isMobile ? "small" : "medium"}
                         sx={{ 
-                          borderRadius: '8px',
-                          borderColor: '#d32f2f',
-                          color: '#d32f2f',
-                          '&:hover': {
-                            borderColor: '#c62828',
-                            backgroundColor: 'rgba(211, 47, 47, 0.04)',
-                          }
+                          borderRadius: '12px',
+                          textTransform: 'none',
+                          px: 3
                         }}
                       >
                         Annuler
@@ -346,12 +335,12 @@ export default function CreateFournisseur() {
                       <Button
                         type="submit"
                         variant="contained"
-                        color="primary"
                         startIcon={<Save />}
+                        size={isMobile ? "small" : "medium"}
                         sx={{ 
-                          borderRadius: '8px',
-                          backgroundColor: '#1976d2',
-                          '&:hover': { backgroundColor: '#1565c0' }
+                          borderRadius: '12px',
+                          textTransform: 'none',
+                          px: 3
                         }}
                       >
                         Enregistrer
@@ -365,38 +354,23 @@ export default function CreateFournisseur() {
         </Box>
       </Box>
 
+      {/* Snackbar modernisé */}
       <Snackbar
         open={openSnackbar}
-        autoHideDuration={2000}
-        onClose={handleCloseSnackbar}
-        TransitionComponent={Fade}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        autoHideDuration={3000}
+        onClose={() => setOpenSnackbar(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity="success" 
+        <Alert
+          severity="success"
+          icon={<CheckCircle fontSize="inherit" />}
           sx={{ 
-            width: '100%',
-            backgroundColor: '#4caf50',
-            color: 'white',
-            '& .MuiAlert-icon': {
-              color: 'white',
-            },
-            '& .MuiAlert-action': {
-              color: 'white',
-            },
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-            borderRadius: '8px',
-            padding: '16px 24px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
+            borderRadius: '12px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            alignItems: 'center'
           }}
         >
-          <CheckCircle sx={{ fontSize: 28 }} />
-          <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-            Le fournisseur a été créé avec succès !
-          </Typography>
+          Fournisseur créé avec succès
         </Alert>
       </Snackbar>
     </>

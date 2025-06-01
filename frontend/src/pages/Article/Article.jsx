@@ -34,6 +34,11 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  TablePagination,
+  Avatar,
+  Chip,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { Visibility, Delete, Edit, Search, CheckCircle, Add, Inventory } from "@mui/icons-material";
 
@@ -47,7 +52,11 @@ export default function Article() {
   const [selectedArticle, setSelectedArticle] = useState(null);
   const navigate = useNavigate();
   const [openSnackbar, setOpenSnackbar] = useState(false);
- 
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+  
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   // Fetch articles from the backend
   const fetchArticles = async () => {
@@ -70,6 +79,7 @@ export default function Article() {
       console.error("Error deleting Article:", error);
     }
   };
+
   // Delete multiple articles by IDs
   const deleteSelectedArticles = async () => {
     try {
@@ -114,11 +124,11 @@ export default function Article() {
   const filteredArticles = articles.filter((article) => {
     const searchTermLower = searchTerm.toLowerCase();
     const code = String(article.code || '');
-    const designation = String(article.designation || '');
+    const designation = String(article.libelle || '');
     
     const matchesSearch = code.toLowerCase().includes(searchTermLower) ||
                          designation.toLowerCase().includes(searchTermLower);
-    return matchesSearch ;
+    return matchesSearch;
   });
 
   // Handle checkbox selection
@@ -159,17 +169,55 @@ export default function Article() {
     setOpenSnackbar(false);
   };
 
+  // Handle page change
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  // Handle rows per page change
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // Empty rows for pagination
+  const emptyRows = rowsPerPage - Math.min(rowsPerPage, filteredArticles.length - page * rowsPerPage);
+
   return (
     <>
       <Navbar />
       <Box height={70} />
       <Box sx={{ display: "flex" }}>
         <Sidenav />
-        <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: "auto", maxHeight: "100vh" }}>
-          <Card sx={{ mb: 3, boxShadow: 3, borderRadius: 2 }}>
+        <Box component="main" sx={{ 
+          flexGrow: 1, 
+          p: isMobile ? 1 : 3, 
+          overflow: "auto", 
+          maxHeight: "100vh",
+          backgroundColor: '#f5f7fa'
+        }}>
+          <Card sx={{ 
+            mb: 3, 
+            boxShadow: 3, 
+            borderRadius: 2,
+            border: 'none',
+            backgroundColor: 'white'
+          }}>
             <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h4" component="h1" sx={{ color: '#1976d2', fontWeight: 'bold' }}>
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                mb: 3,
+                flexDirection: isMobile ? 'column' : 'row',
+                gap: isMobile ? 2 : 0
+              }}>
+                <Typography variant="h5" component="h1" sx={{ 
+                  color: theme.palette.primary.main, 
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>
                   <Inventory sx={{ mr: 1, verticalAlign: 'middle' }} />
                   Gestion des Articles
                 </Typography>
@@ -180,17 +228,33 @@ export default function Article() {
                   startIcon={<Add />}
                   sx={{ 
                     borderRadius: '8px',
-                    backgroundColor: '#1976d2',
-                    '&:hover': { backgroundColor: '#1565c0' }
+                    textTransform: 'none',
+                    fontWeight: '600',
+                    boxShadow: 'none',
+                    '&:hover': { 
+                      boxShadow: 'none',
+                      backgroundColor: theme.palette.primary.dark
+                    }
                   }}
+                  size={isMobile ? 'small' : 'medium'}
                 >
                   Nouvel Article
                 </Button>
               </Box>
 
-              {/* Barre de recherche */}
-              <Card sx={{ mb: 3, backgroundColor: '#f8f9fa', boxShadow: 2 }}>
-                <CardContent sx={{ display: 'flex', gap: 2 }}>
+              {/* Search bar */}
+              <Card sx={{ 
+                mb: 3, 
+                backgroundColor: '#f8f9fa', 
+                boxShadow: 'none',
+                border: '1px solid #e0e0e0'
+              }}>
+                <CardContent sx={{ 
+                  display: 'flex', 
+                  gap: 2,
+                  flexDirection: isMobile ? 'column' : 'row',
+                  alignItems: isMobile ? 'stretch' : 'center'
+                }}>
                   <TextField
                     fullWidth
                     label="Rechercher un article"
@@ -207,89 +271,184 @@ export default function Article() {
                       '& .MuiOutlinedInput-root': {
                         borderRadius: '8px',
                         backgroundColor: '#fff',
+                      },
+                      '& .MuiInputLabel-root': {
+                        transform: 'translate(14px, 14px) scale(1)',
+                      },
+                      '& .MuiInputLabel-shrink': {
+                        transform: 'translate(14px, -6px) scale(0.75)',
                       }
                     }}
+                    size="small"
                   />
-                 {/* <FormControl sx={{ minWidth: 200 }}>
-                    <InputLabel>Filtrer par famille</InputLabel>
-                    <Select
-                      value={filterFamille}
-                      onChange={(e) => setFilterFamille(e.target.value)}
-                      label="Filtrer par famille"
-                    >
-                      <MenuItem value="">Toutes les familles</MenuItem>
-                      {familles.map((famille) => (
-                        <MenuItem key={famille._id} value={famille._id}>
-                          {famille.nom}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                  */}
                 </CardContent>
               </Card>
 
-              {/* Tableau des articles */}
-              <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 2 }}>
-                <Table>
-                  <TableHead>
-                    <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Code</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Désignation</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Prix TTC</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Stock</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Image</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
+              {/* Articles table */}
+              <TableContainer component={Paper} sx={{ 
+                borderRadius: 2, 
+                boxShadow: 'none',
+                border: '1px solid #e0e0e0',
+                overflowX: 'auto'
+              }}>
+                <Table sx={{ minWidth: 650 }} size="small" aria-label="articles table">
+                  <TableHead sx={{ backgroundColor: theme.palette.primary.light }}>
+                    <TableRow>
+                      <TableCell sx={{ 
+                        fontWeight: 'bold', 
+                        color: 'white',
+                        fontSize: '0.875rem'
+                      }}>Code</TableCell>
+                      <TableCell sx={{ 
+                        fontWeight: 'bold', 
+                        color: 'white',
+                        fontSize: '0.875rem'
+                      }}>Désignation</TableCell>
+                      <TableCell sx={{ 
+                        fontWeight: 'bold', 
+                        color: 'white',
+                        fontSize: '0.875rem'
+                      }}>Prix TTC</TableCell>
+                      <TableCell sx={{ 
+                        fontWeight: 'bold', 
+                        color: 'white',
+                        fontSize: '0.875rem'
+                      }}>Stock</TableCell>
+                      <TableCell sx={{ 
+                        fontWeight: 'bold', 
+                        color: 'white',
+                        fontSize: '0.875rem'
+                      }}>Image</TableCell>
+                      <TableCell sx={{ 
+                        fontWeight: 'bold', 
+                        color: 'white',
+                        fontSize: '0.875rem'
+                      }}>Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {filteredArticles.map((article) => (
-                      <TableRow key={article._id} hover>
-                        <TableCell>{article.code}</TableCell>
-                        <TableCell>{article.libelle}</TableCell>
-                        <TableCell>{article.prix_totale_concre} TND</TableCell>
-                        <TableCell>{article.Nombre_unite}</TableCell>
+                    {(rowsPerPage > 0
+                      ? filteredArticles.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                      : filteredArticles
+                    ).map((article) => (
+                      <TableRow 
+                        key={article._id} 
+                        hover
+                        sx={{ 
+                          '&:nth-of-type(even)': { 
+                            backgroundColor: '#f9f9f9' 
+                          },
+                          '&:last-child td, &:last-child th': { 
+                            border: 0 
+                          }
+                        }}
+                      >
+                        <TableCell sx={{ fontSize: '0.875rem' }}>{article.code}</TableCell>
+                        <TableCell sx={{ fontSize: '0.875rem' }}>{article.libelle}</TableCell>
+                        <TableCell sx={{ fontSize: '0.875rem' }}>
+                          <Chip 
+                            label={`${article.prix_totale_concre} TND`} 
+                            color="primary" 
+                            size="small"
+                            variant="outlined"
+                          />
+                        </TableCell>
+                        <TableCell sx={{ fontSize: '0.875rem' }}>
+                          <Chip 
+                            label={article.Nombre_unite} 
+                            color={article.Nombre_unite > 0 ? "success" : "error"} 
+                            size="small"
+                          />
+                        </TableCell>
                         <TableCell>
-                      {article.image_article ? (
-                        <img
-                          src={`data:image/jpeg;base64,${Buffer.from(article.image_article).toString("base64")}`}
-                          style={{ width: "50px", height: "50px", borderRadius: "5px" }}
-                        />
-                      ) : (
-                        <span>Pas d'image</span>
-                      )}
-                    </TableCell>
+                          {article.image_article ? (
+                            <Avatar
+                              src={`data:image/jpeg;base64,${Buffer.from(article.image_article).toString("base64")}`}
+                              sx={{ width: 40, height: 40 }}
+                              variant="rounded"
+                            />
+                          ) : (
+                            <Avatar sx={{ width: 40, height: 40, bgcolor: theme.palette.grey[300] }}>
+                              <Inventory fontSize="small" />
+                            </Avatar>
+                          )}
+                        </TableCell>
                         <TableCell>
-                          <IconButton
-                            color="info"
-                            onClick={() => handleOpenModal(article)}
-                            sx={{ mr: 1 }}
-                          >
-                            <Visibility />
-                          </IconButton>
-                          <IconButton
-                            color="primary"
-                            onClick={() => navigate(`/updateArticle/${article._id}`)}
-                            sx={{ mr: 1 }}
-                          >
-                            <Edit />
-                          </IconButton>
-                          <IconButton
-                            color="error"
-                            onClick={() => handleDeleteClick(article)}
-                          >
-                            <Delete />
-                          </IconButton>
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            <IconButton
+                              color="primary"
+                              onClick={() => handleOpenModal(article)}
+                              size="small"
+                              sx={{ 
+                                backgroundColor: theme.palette.action.hover,
+                                '&:hover': {
+                                  backgroundColor: theme.palette.primary.light,
+                                  color: 'white'
+                                }
+                              }}
+                            >
+                              <Visibility fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              color="secondary"
+                              onClick={() => navigate(`/updateArticle/${article._id}`)}
+                              size="small"
+                              sx={{ 
+                                backgroundColor: theme.palette.action.hover,
+                                '&:hover': {
+                                  backgroundColor: theme.palette.secondary.light,
+                                  color: 'white'
+                                }
+                              }}
+                            >
+                              <Edit fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              color="error"
+                              onClick={() => handleDeleteClick(article)}
+                              size="small"
+                              sx={{ 
+                                backgroundColor: theme.palette.action.hover,
+                                '&:hover': {
+                                  backgroundColor: theme.palette.error.light,
+                                  color: 'white'
+                                }
+                              }}
+                            >
+                              <Delete fontSize="small" />
+                            </IconButton>
+                          </Box>
                         </TableCell>
                       </TableRow>
                     ))}
+                    {emptyRows > 0 && (
+                      <TableRow style={{ height: 53 * emptyRows }}>
+                        <TableCell colSpan={6} />
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
+                <TablePagination
+                  rowsPerPageOptions={[5, 10, 25]}
+                  component="div"
+                  count={filteredArticles.length}
+                  rowsPerPage={rowsPerPage}
+                  page={page}
+                  onPageChange={handleChangePage}
+                  onRowsPerPageChange={handleChangeRowsPerPage}
+                  labelRowsPerPage="Articles par page:"
+                  sx={{
+                    borderTop: '1px solid #e0e0e0',
+                    '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                      fontSize: '0.875rem'
+                    }
+                  }}
+                />
               </TableContainer>
             </CardContent>
           </Card>
 
-          {/* Modal de détails */}
+          {/* Details modal */}
           <Modal
             open={isModalOpen}
             onClose={handleCloseModal}
@@ -305,56 +464,183 @@ export default function Article() {
                 top: '50%',
                 left: '50%',
                 transform: 'translate(-50%, -50%)',
-                width: 400,
+                width: isMobile ? '90%' : 400,
                 bgcolor: 'background.paper',
                 boxShadow: 24,
-                p: 4,
+                p: 3,
                 borderRadius: 2,
+                outline: 'none'
               }}>
                 {selectedArticle && (
                   <>
-                    <Typography variant="h6" component="h2" gutterBottom>
+                    <Typography variant="h6" component="h2" gutterBottom sx={{ 
+                      color: theme.palette.primary.main,
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1
+                    }}>
+                      <Inventory fontSize="inherit" />
                       Détails de l'article
                     </Typography>
-                    <Typography><strong>Code:</strong> {selectedArticle.code}</Typography>
-                    <Typography><strong>Désignation:</strong> {selectedArticle.libelle}</Typography>
-                    <Typography><strong>Prix d'achat:</strong> {selectedArticle.prix_achat} TND</Typography>
-                    <Typography><strong>Stock :</strong> {selectedArticle.Nombre_unite}</Typography>
-                    <Typography><strong>Famille:</strong> {selectedArticle.libelleFamille}</Typography>
-                    <Typography><strong>TVA:</strong> {selectedArticle.tva}%</Typography>
-                    <Typography><strong>Fodec:</strong> {selectedArticle.fodec}%</Typography>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      gap: 2,
+                      mt: 2
+                    }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Typography variant="body2" sx={{ 
+                          fontWeight: 'bold', 
+                          minWidth: 120,
+                          color: theme.palette.text.secondary
+                        }}>Code:</Typography>
+                        <Typography variant="body2">{selectedArticle.code}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Typography variant="body2" sx={{ 
+                          fontWeight: 'bold', 
+                          minWidth: 120,
+                          color: theme.palette.text.secondary
+                        }}>Désignation:</Typography>
+                        <Typography variant="body2">{selectedArticle.libelle}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Typography variant="body2" sx={{ 
+                          fontWeight: 'bold', 
+                          minWidth: 120,
+                          color: theme.palette.text.secondary
+                        }}>Prix d'achat:</Typography>
+                        <Typography variant="body2">{selectedArticle.prix_achat} TND</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Typography variant="body2" sx={{ 
+                          fontWeight: 'bold', 
+                          minWidth: 120,
+                          color: theme.palette.text.secondary
+                        }}>Stock:</Typography>
+                        <Typography variant="body2">{selectedArticle.Nombre_unite}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Typography variant="body2" sx={{ 
+                          fontWeight: 'bold', 
+                          minWidth: 120,
+                          color: theme.palette.text.secondary
+                        }}>Famille:</Typography>
+                        <Typography variant="body2">{selectedArticle.libelleFamille}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Typography variant="body2" sx={{ 
+                          fontWeight: 'bold', 
+                          minWidth: 120,
+                          color: theme.palette.text.secondary
+                        }}>TVA:</Typography>
+                        <Typography variant="body2">{selectedArticle.tva}%</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Typography variant="body2" sx={{ 
+                          fontWeight: 'bold', 
+                          minWidth: 120,
+                          color: theme.palette.text.secondary
+                        }}>Fodec:</Typography>
+                        <Typography variant="body2">{selectedArticle.fodec}%</Typography>
+                      </Box>
+                    </Box>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'flex-end', 
+                      mt: 3
+                    }}>
+                      <Button 
+                        onClick={handleCloseModal} 
+                        variant="outlined"
+                        size="small"
+                        sx={{
+                          textTransform: 'none',
+                          borderRadius: '8px'
+                        }}
+                      >
+                        Fermer
+                      </Button>
+                    </Box>
                   </>
                 )}
               </Box>
             </Fade>
           </Modal>
 
-          {/* Dialog de confirmation de suppression */}
+          {/* Delete confirmation dialog */}
           <Dialog
             open={openDialog}
             onClose={handleCloseDialog}
             aria-labelledby="alert-dialog-title"
             aria-describedby="alert-dialog-description"
+            PaperProps={{
+              sx: {
+                borderRadius: 2,
+                padding: 2,
+                minWidth: isMobile ? '90%' : 400
+              }
+            }}
           >
-            <DialogTitle id="alert-dialog-title">
-              {"Confirmer la suppression"}
+            <DialogTitle id="alert-dialog-title" sx={{ 
+              fontWeight: 'bold',
+              color: theme.palette.error.main,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
+            }}>
+              <Delete color="error" />
+              Confirmer la suppression
             </DialogTitle>
             <DialogContent>
-              <Typography>
+              <Typography variant="body1">
                 Êtes-vous sûr de vouloir supprimer cet article ?
               </Typography>
+              {selectedArticle && (
+                <Typography variant="body2" sx={{ 
+                  mt: 1,
+                  fontStyle: 'italic',
+                  color: theme.palette.text.secondary
+                }}>
+                  Article: {selectedArticle.code} - {selectedArticle.libelle}
+                </Typography>
+              )}
             </DialogContent>
-            <DialogActions>
-              <Button onClick={handleCloseDialog} color="primary">
+            <DialogActions sx={{ 
+              justifyContent: 'space-between',
+              padding: 2
+            }}>
+              <Button 
+                onClick={handleCloseDialog} 
+                variant="outlined"
+                sx={{
+                  borderRadius: '8px',
+                  textTransform: 'none'
+                }}
+              >
                 Annuler
               </Button>
-              <Button onClick={handleDeleteConfirm} color="error" autoFocus>
+              <Button 
+                onClick={handleDeleteConfirm} 
+                color="error" 
+                variant="contained"
+                sx={{
+                  borderRadius: '8px',
+                  textTransform: 'none',
+                  boxShadow: 'none',
+                  '&:hover': {
+                    boxShadow: 'none',
+                    backgroundColor: theme.palette.error.dark
+                  }
+                }}
+              >
                 Supprimer
               </Button>
             </DialogActions>
           </Dialog>
 
-          {/* Snackbar de confirmation */}
+          {/* Success snackbar */}
           <Snackbar
             open={openSnackbar}
             autoHideDuration={6000}
@@ -364,6 +650,7 @@ export default function Article() {
             <Alert
               onClose={handleCloseSnackbar}
               severity="success"
+              variant="filled"
               sx={{ width: '100%' }}
             >
               Article supprimé avec succès

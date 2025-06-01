@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const paiementFSchema = new mongoose.Schema(
   {
+    numero_paiement: {type: String,required: true,unique: true},
     fournisseurId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "fournisseur",

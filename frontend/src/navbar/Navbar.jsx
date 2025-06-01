@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { useState } from "react";
 import { styled } from "@mui/material/styles";
 import {
   AppBar,
@@ -13,16 +13,28 @@ import {
   Tooltip,
   MenuItem,
   Badge,
-
+  Chip,
+  Divider,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
 } from "@mui/material";
-
+import {
+  Logout as LogoutIcon,
+  Notifications as NotificationsIcon,
+  AccountCircle,
+  Menu as MenuIcon,
+  Settings as SettingsIcon,
+  Inventory as InventoryIcon,
+  DoneAll as DoneAllIcon,
+} from '@mui/icons-material';
 import ListItemIcon from '@mui/material/ListItemIcon';
-import SettingsIcon from '@mui/icons-material/Settings';
-import MenuIcon from "@mui/icons-material/Menu";
-import { useAppStore } from "../appStore";
-import NotificationsIcon from "@mui/icons-material/Notifications";
-import AccountCircle from "@mui/icons-material/AccountCircle";
 import { useNavigate } from "react-router-dom";
+import { useAppStore } from "../appStore";
+import { useNotifications } from "./NotificationContext";
+import { formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
   backgroundColor: '#283593',
@@ -94,6 +106,13 @@ export default function Navbar() {
   const [anchorElNav, setAnchorElNav] = React.useState(null);
   const [anchorElUser, setAnchorElUser] = React.useState(null);
   const [anchorElNotif, setAnchorElNotif] = React.useState(null);
+  
+  const { 
+    notifications = [], 
+    unreadCount = 0, 
+    markAsRead, 
+    markAllAsRead 
+  } = useNotifications() || {};
 
   const handleOpenNavMenu = (event) => {
     setAnchorElNav(event.currentTarget);
@@ -117,6 +136,19 @@ export default function Navbar() {
 
   const handleCloseNotifMenu = () => {
     setAnchorElNotif(null);
+  };
+
+  const handleNotificationClick = (notification) => {
+    markAsRead?.(notification._id);
+    if (notification.articleId) {
+      navigate(`/article/${notification.articleId}`);
+    }
+    handleCloseNotifMenu();
+  };
+
+  const handleMarkAllAsRead = () => {
+    markAllAsRead?.();
+    handleCloseNotifMenu();
   };
 
   const handleLogout = () => {
@@ -165,7 +197,7 @@ export default function Navbar() {
                 color="inherit"
                 onClick={handleOpenNotifMenu}
               >
-                <NotificationBadge badgeContent={4} color="error">
+                <NotificationBadge badgeContent={unreadCount} color="error">
                   <NotificationsIcon />
                 </NotificationBadge>
               </StyledIconButton>
@@ -177,7 +209,7 @@ export default function Navbar() {
               onClose={handleCloseNotifMenu}
               PaperProps={{
                 sx: {
-                  maxHeight: 300,
+                  maxHeight: 400,
                   width: 360,
                   backgroundColor: '#1a237e',
                   color: 'rgba(255, 255, 255, 0.9)',
@@ -185,12 +217,73 @@ export default function Navbar() {
                 },
               }}
             >
-              <StyledMenuItem onClick={handleCloseNotifMenu}>
-                <Typography>Notification 1</Typography>
-              </StyledMenuItem>
-              <StyledMenuItem onClick={handleCloseNotifMenu}>
-                <Typography>Notification 2</Typography>
-              </StyledMenuItem>
+              <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="h6">Notifications</Typography>
+                {notifications.length > 0 && (
+                  <Chip 
+                    label="Tout marquer comme lu" 
+                    size="small" 
+                    onClick={handleMarkAllAsRead}
+                    icon={<DoneAllIcon fontSize="small" />}
+                    sx={{ color: 'white', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+                  />
+                )}
+              </Box>
+              
+              <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.1)' }} />
+              
+              <List sx={{ p: 0, maxHeight: 300, overflow: 'auto' }}>
+                {notifications.length > 0 ? (
+                  notifications.map((notification) => (
+                    <React.Fragment key={notification._id}>
+                      <ListItem 
+                        button 
+                        onClick={() => handleNotificationClick(notification)}
+                        sx={{
+                          backgroundColor: notification.read ? 'inherit' : 'rgba(255, 255, 255, 0.05)',
+                          '&:hover': {
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                          }
+                        }}
+                      >
+                        <ListItemAvatar>
+                          <Avatar sx={{ 
+                            bgcolor: notification.type === 'stock' ? '#ff4081' : '#1976d2',
+                            width: 32, 
+                            height: 32 
+                          }}>
+                            {notification.type === 'stock' ? (
+                              <InventoryIcon fontSize="small" />
+                            ) : (
+                              <NotificationsIcon fontSize="small" />
+                            )}
+                          </Avatar>
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={notification.message}
+                          secondary={formatDistanceToNow(new Date(notification.createdAt), { 
+                            addSuffix: true, 
+                            locale: fr 
+                          })}
+                          primaryTypographyProps={{
+                            color: notification.read ? 'text.secondary' : 'text.primary',
+                            fontWeight: notification.read ? 'normal' : 'medium'
+                          }}
+                          secondaryTypographyProps={{ color: 'rgba(255, 255, 255, 0.6)' }}
+                        />
+                      </ListItem>
+                      <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.1)' }} />
+                    </React.Fragment>
+                  ))
+                ) : (
+                  <ListItem>
+                    <ListItemText 
+                      primary="Aucune notification" 
+                      sx={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.6)' }} 
+                    />
+                  </ListItem>
+                )}
+              </List>
             </Menu>
 
             <Tooltip title="Paramètres du compte">
@@ -238,25 +331,27 @@ export default function Navbar() {
               }}
             >
               <StyledMenuItem onClick={() => { 
-  handleCloseUserMenu(); 
-  navigate('/profile'); 
-}}>
-  <AccountCircle>
-    <SettingsIcon fontSize="small" />
-  </AccountCircle>
-  <Typography textAlign="center">Profil</Typography>
-</StyledMenuItem>
-            <StyledMenuItem onClick={() => { 
-  handleCloseUserMenu(); 
-  navigate('/settings'); 
-}}>
-  <ListItemIcon>
-    <SettingsIcon fontSize="small" />
-  </ListItemIcon>
-  <Typography textAlign="center">Paramètres</Typography>
-</StyledMenuItem>
+                handleCloseUserMenu(); 
+                navigate('/profile'); 
+              }}>
+                <AccountCircle>
+                  <SettingsIcon fontSize="small" color=" #FFFFFF"/>
+                </AccountCircle>
+                <Typography textAlign="center">Profil</Typography>
+              </StyledMenuItem>
+              <StyledMenuItem onClick={() => { 
+                handleCloseUserMenu(); 
+                navigate('/settings'); 
+              }}>
+                <ListItemIcon>
+                  <SettingsIcon fontSize="small"  color=" #FFFFFF"/>
+                </ListItemIcon>
+                <Typography textAlign="center">Paramètres</Typography>
+              </StyledMenuItem>
               <StyledMenuItem onClick={handleLogout}>
-             
+                <ListItemIcon>
+                  <LogoutIcon color=" #FFFFFF" />
+                </ListItemIcon>
                 <Typography textAlign="center">Déconnexion</Typography>
               </StyledMenuItem>
             </Menu>

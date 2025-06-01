@@ -1,9 +1,5 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import Sidenav from "../../navbar/Sidenav";
-import Box from "@mui/material/Box";
-import { useNavigate } from "react-router-dom";
-import Navbar from "../../navbar/Navbar";
 import {
   Table,
   TableBody,
@@ -21,10 +17,19 @@ import {
   TextField,
   InputAdornment,
   Checkbox,
-  Typography,
+  Box,
+  Grid,
+    Typography,
+    CardContent,
   Card,
   Stack,
   Chip,
+  Pagination,
+  Avatar,
+  Tooltip,
+  useMediaQuery,
+  useTheme,
+  Divider
 } from "@mui/material";
 import { 
   Visibility, 
@@ -36,8 +41,13 @@ import {
   LocationOn, 
   Business, 
   Email,
-  Badge 
+  Badge,
+  Add,
+  Close
 } from "@mui/icons-material";
+import Navbar from "../../navbar/Navbar";
+import Sidenav from "../../navbar/Sidenav";
+import { useNavigate } from "react-router-dom";
 
 export default function Client() {
   const [clients, setClients] = useState([]);
@@ -47,12 +57,16 @@ export default function Client() {
   const [selectedClients, setSelectedClients] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
+  const [page, setPage] = useState(1);
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  const itemsPerPage = 4;
 
   const fetchClients = async () => {
     try {
       const response = await axios.get("http://localhost:5000/client/clients");
-      
       setClients(response.data);
     } catch (error) {
       console.error("Error fetching clients:", error);
@@ -73,38 +87,33 @@ export default function Client() {
       await Promise.all(selectedClients.map((id) => axios.delete(`http://localhost:5000/client/${id}`)));
       fetchClients();
       setSelectedClients([]);
+      setPage(1);
     } catch (error) {
       console.error("Error deleting clients:", error);
     }
-  };
-
-  const handleOpenDialog = (id) => {
-    setSelectedClientId(id);
-    setOpenDialog(true);
-  };
-
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-    setSelectedClientId(null);
-  };
-
-  const handleOpenModal = (client) => {
-    setSelectedClient(client);
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedClient(null);
   };
 
   useEffect(() => {
     fetchClients();
   }, []);
 
-  const filteredClients = clients.filter((client) =>
-    client.nom_prenom.toLowerCase().includes(searchTerm.toLowerCase())
+ const filteredClients = clients.filter((client) => {
+  const searchTermLower = searchTerm.toLowerCase();
+  return (
+    client.nom_prenom?.toLowerCase().includes(searchTermLower) ||
+    client.matricule_fiscale?.toLowerCase().includes(searchTermLower) ||
+    (client.code && client.code.toString().toLowerCase().includes(searchTermLower))
   );
+});
+
+  const paginatedClients = filteredClients.slice(
+    (page - 1) * itemsPerPage,
+    page * itemsPerPage
+  );
+
+  const handlePageChange = (event, value) => {
+    setPage(value);
+  };
 
   const handleSelectClient = (id) => {
     if (selectedClients.includes(id)) {
@@ -125,326 +134,502 @@ export default function Client() {
   return (
     <>
       <Navbar />
-      <Box height={100} />
-      <Box sx={{ overflow: "auto", flexGrow: 1, p: 3, display: "flex", backgroundColor: "#f5f5f5" }}>
+      <Box height={70} />
+      <Box sx={{ display: "flex" }}>
         <Sidenav />
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            p: 3,
-            overflow: "auto",
-            backgroundColor: "#f5f5f5",
-            maxWidth: "none",
-            maxHeight: "100vh",
-            width: "100%",
-          }}
-        >
-          <Card sx={{ p: 3, mb: 3, borderRadius: 2, boxShadow: 3 }}>
-            <Stack direction="row" alignItems="center" spacing={2} mb={3}>
-              <Person sx={{ fontSize: 40, color: "#1976d2" }} />
-              <Typography variant="h4" component="h1" sx={{ fontWeight: "bold" }}>
-                Liste des Clients
-              </Typography>
-            </Stack>
+        <Box component="main" sx={{ 
+          flexGrow: 1, 
+          p: isMobile ? 2 : 3,
+          overflow: "auto",
+          maxHeight: "calc(100vh - 70px)"
+        }}>
+          <Card sx={{ 
+            borderRadius: 3,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.05)',
+            border: '1px solid',
+            borderColor: 'divider'
+          }}>
+            <CardContent>
+              {/* Header */}
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                mb: 3,
+                flexWrap: 'wrap',
+                gap: 2
+              }}>
+                <Typography variant="h5" sx={{ fontWeight: 600 }}>
+                  <Person sx={{ 
+                    mr: 1, 
+                    verticalAlign: 'middle', 
+                    color: 'primary.main' 
+                  }} />
+                  Gestion des Clients
+                </Typography>
+                <Button
+                  variant="contained"
+                  onClick={() => navigate("/Client/create")}
+                  startIcon={<Add />}
+                  size={isMobile ? "small" : "medium"}
+                  sx={{ 
+                    borderRadius: '12px',
+                    textTransform: 'none',
+                    px: 3,
+                    boxShadow: 'none',
+                    '&:hover': { boxShadow: 'none' }
+                  }}
+                >
+                  Nouveau Client
+                </Button>
+              </Box>
 
-            {/* Barre de recherche et bouton Créer */}
-            <Box sx={{ display: "flex", alignItems: "center", mb: 3, gap: 2 }}>
-              <TextField
-                fullWidth
-                label="Rechercher un client"
-                variant="outlined"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                sx={{
-                  maxWidth: "400px",
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: "8px",
-                  },
-                }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search sx={{ color: "#1976d2" }} />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <Button
-                variant="contained"
-                onClick={() => navigate("/Client/create")}
-                startIcon={<Person />}
-                sx={{
-                  borderRadius: "8px",
-                  textTransform: "none",
-                  backgroundColor: "#2e7d32",
-                  "&:hover": {
-                    backgroundColor: "#1b5e20",
-                  },
+              {/* Search and Bulk Actions */}
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                mb: 3,
+                flexDirection: isMobile ? 'column' : 'row',
+                gap: 2
+              }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Rechercher..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setPage(1);
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Search color="action" />
+                      </InputAdornment>
+                    ),
+                    sx: {
+                      borderRadius: '12px',
+                      backgroundColor: 'background.paper',
+                      '&:hover': { backgroundColor: 'action.hover' }
+                    }
+                  }}
+                  sx={{
+                    maxWidth: isMobile ? '100%' : '400px',
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderWidth: '1px',
+                        borderColor: 'divider'
+                      },
+                      '&:hover fieldset': {
+                        borderColor: 'primary.main'
+                      }
+                    }
+                  }}
+                />
+
+                {selectedClients.length > 0 && (
+                  <Button
+                    variant="contained"
+                    color="error"
+                    onClick={deleteSelectedClients}
+                    startIcon={<Delete />}
+                    size={isMobile ? "small" : "medium"}
+                    sx={{ 
+                      borderRadius: '12px',
+                      textTransform: 'none',
+                      px: 3,
+                      ml: isMobile ? 0 : 'auto',
+                      boxShadow: 'none',
+                      '&:hover': { boxShadow: 'none' }
+                    }}
+                  >
+                    Supprimer ({selectedClients.length})
+                  </Button>
+                )}
+              </Box>
+
+              {/* Client Table */}
+              <TableContainer 
+                component={Paper} 
+                sx={{ 
+                  borderRadius: 2, 
+                  boxShadow: 'none', 
+                  border: '1px solid', 
+                  borderColor: 'divider',
+                  mb: 2
                 }}
               >
-                Créer un client
-              </Button>
-            </Box>
-
-            {selectedClients.length > 0 && (
-              <Button
-                variant="contained"
-                color="error"
-                sx={{ mb: 2, borderRadius: "8px" }}
-                onClick={deleteSelectedClients}
-                startIcon={<Delete />}
-              >
-                Supprimer les clients sélectionnés ({selectedClients.length})
-              </Button>
-            )}
-
-            {/* Tableau des clients */}
-            <TableContainer component={Paper} sx={{ mt: 3, boxShadow: 2, borderRadius: 2 }}>
-              <Table>
-                <TableHead>
-                  <TableRow sx={{ backgroundColor: "#f8f9fa" }}>
-                    <TableCell padding="checkbox">
-                      <Checkbox
-                        checked={selectedClients.length === filteredClients.length}
-                        indeterminate={selectedClients.length > 0 && selectedClients.length < filteredClients.length}
-                        onChange={handleSelectAll}
-                      />
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: "bold", color: "#1976d2" }}>Code</TableCell>
-                    <TableCell sx={{ fontWeight: "bold", color: "#1976d2" }}>Nom & Prénom</TableCell>
-                    <TableCell sx={{ fontWeight: "bold", color: "#1976d2" }}>Matricule Fiscale</TableCell>
-                    <TableCell sx={{ fontWeight: "bold", color: "#1976d2" }}>Adresse</TableCell>
-                    <TableCell sx={{ fontWeight: "bold", color: "#1976d2" }}>Téléphone</TableCell>
-                    <TableCell sx={{ fontWeight: "bold", color: "#1976d2" }}>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredClients.map((client) => (
-                    <TableRow 
-                      key={client._id}
-                      sx={{ 
-                        "&:last-child td, &:last-child th": { border: 0 },
-                        "&:hover": { backgroundColor: "#f5f5f5" }
-                      }}
-                    >
-                      <TableCell padding="checkbox">
+                <Table size={isMobile ? "small" : "medium"}>
+                  <TableHead>
+                    <TableRow sx={{ backgroundColor: 'background.default' }}>
+                      <TableCell padding="checkbox" sx={{ width: '48px' }}>
                         <Checkbox
-                          checked={selectedClients.includes(client._id)}
-                          onChange={() => handleSelectClient(client._id)}
+                          checked={selectedClients.length === filteredClients.length && filteredClients.length > 0}
+                          indeterminate={selectedClients.length > 0 && selectedClients.length < filteredClients.length}
+                          onChange={handleSelectAll}
+                          size="small"
                         />
                       </TableCell>
-                      <TableCell>{client.code}</TableCell>
-                      <TableCell>{client.nom_prenom}</TableCell>
-                      <TableCell>{client.matricule_fiscale}</TableCell>
-                      <TableCell>{client.adresse}</TableCell>
-                      <TableCell>
-                        {client.telephone.map((tel, index) => (
-                          <Chip 
-                            key={index}
-                            label={tel}
-                            size="small"
-                            sx={{ mr: 1, backgroundColor: "#e3f2fd" }}
-                            icon={<Phone sx={{ fontSize: 16 }} />}
-                          />
-                        ))}
-                      </TableCell>
-                      <TableCell>
-                        <Stack direction="row" spacing={1}>
-                          <IconButton
-                            onClick={() => handleOpenModal(client)}
-                            sx={{ color: "#1976d2" }}
-                            size="small"
-                            title="Voir les détails"
-                          >
-                            <Visibility />
-                          </IconButton>
-                          <IconButton
-                            onClick={() => navigate(`/Client/update/${client._id}`)}
-                            sx={{ color: "#ff9800" }}
-                            size="small"
-                            title="Modifier"
-                          >
-                            <Edit />
-                          </IconButton>
-                          <IconButton
-                            onClick={() => handleOpenDialog(client._id)}
-                            sx={{ color: "#d32f2f" }}
-                            size="small"
-                            title="Supprimer"
-                          >
-                            <Delete />
-                          </IconButton>
-                        </Stack>
-                      </TableCell>
+                      {!isMobile && <TableCell sx={{ fontWeight: '600' }}>Code</TableCell>}
+                      <TableCell sx={{ fontWeight: '600' }}>Client</TableCell>
+                      {!isMobile && <TableCell sx={{ fontWeight: '600' }}>Matricule</TableCell>}
+                      <TableCell sx={{ fontWeight: '600' }}>Contact</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: '600' }}>Actions</TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {paginatedClients.map((client) => (
+                      <TableRow 
+                        key={client._id}
+                        hover
+                        sx={{ 
+                          '&:last-child td': { borderBottom: 0 },
+                          '& td': { py: isMobile ? 1 : 1.5 }
+                        }}
+                      >
+                        <TableCell padding="checkbox">
+                          <Checkbox
+                            checked={selectedClients.includes(client._id)}
+                            onChange={() => handleSelectClient(client._id)}
+                            size="small"
+                          />
+                        </TableCell>
+                        {!isMobile && <TableCell>{client.code}</TableCell>}
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <Avatar sx={{ 
+                              bgcolor: 'primary.main', 
+                              width: 32, 
+                              height: 32,
+                              fontSize: '0.875rem'
+                            }}>
+                              {client.nom_prenom?.charAt(0) }
+                            </Avatar>
+                            <Box>
+                              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                {client.nom_prenom}
+                              </Typography>
+                              {isMobile && client.code && (
+                                <Typography variant="caption" color="text.secondary">
+                                  {client.code}
+                                </Typography>
+                              )}
+                            </Box>
+                          </Box>
+                        </TableCell>
+                        {!isMobile && <TableCell>{client.matricule_fiscale}</TableCell>}
+                        <TableCell>
+                          {isMobile ? (
+                            <Box>
+                              {client.telephone?.[0] && (
+                                <Typography variant="body2">
+                                  <Phone fontSize="small" sx={{ 
+                                    verticalAlign: 'middle', 
+                                    mr: 0.5,
+                                    color: 'text.secondary'
+                                  }} />
+                                  {client.telephone[0]}
+                                </Typography>
+                              )}
+                            </Box>
+                          ) : (
+                            <Stack direction="row" spacing={1} flexWrap="wrap">
+                              {client.telephone?.map((tel, index) => (
+                                <Chip 
+                                  key={index}
+                                  label={tel}
+                                  size="small"
+                                  icon={<Phone fontSize="small" />}
+                                  sx={{ mb: 0.5 }}
+                                />
+                              ))}
+                            </Stack>
+                          )}
+                        </TableCell>
+                        <TableCell align="right">
+                          <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                            <Tooltip title="Voir détails">
+                              <IconButton
+                                onClick={() => {
+                                  setSelectedClient(client);
+                                  setIsModalOpen(true);
+                                }}
+                                size="small"
+                                sx={{ 
+                                  color: 'text.secondary',
+                                  '&:hover': { color: 'info.main' }
+                                }}
+                              >
+                                <Visibility fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Modifier">
+                              <IconButton
+                                onClick={() => navigate(`/Client/update/${client._id}`)}
+                                size="small"
+                                sx={{ 
+                                  color: 'text.secondary',
+                                  '&:hover': { color: 'warning.main' }
+                                }}
+                              >
+                                <Edit fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Supprimer">
+                              <IconButton
+                                onClick={() => {
+                                  setSelectedClientId(client._id);
+                                  setOpenDialog(true);
+                                }}
+                                size="small"
+                                sx={{ 
+                                  color: 'text.secondary',
+                                  '&:hover': { color: 'error.main' }
+                                }}
+                              >
+                                <Delete fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Stack>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
+             {/* Pagination */}
+{filteredClients.length > itemsPerPage && (
+  <Box sx={{ 
+    display: 'flex', 
+    justifyContent: 'center',
+    '& .MuiPagination-ul': { flexWrap: 'nowrap' }
+  }}>
+    <Pagination
+      count={Math.ceil(filteredClients.length / itemsPerPage)}
+      page={page}
+      onChange={handlePageChange}
+      shape="rounded"
+      color="primary"
+      size={isMobile ? "small" : "medium"}
+      sx={{
+        '& .MuiPaginationItem-root': {
+          borderRadius: '8px',
+          '&.Mui-selected': { fontWeight: '600' }
+        }
+      }}
+    />
+  </Box>
+)}
+            </CardContent>
           </Card>
         </Box>
       </Box>
 
-      {/* Dialog de confirmation de suppression */}
-      <Dialog 
-        open={openDialog} 
-        onClose={handleCloseDialog}
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={openDialog}
+        onClose={() => setOpenDialog(false)}
         PaperProps={{
-          sx: { borderRadius: 2 }
+          sx: { 
+            borderRadius: 3,
+            width: isMobile ? '90vw' : '400px'
+          }
         }}
       >
-        <DialogTitle sx={{ backgroundColor: "#f8f9fa", pb: 2 }}>
-          Confirmation de suppression
-        </DialogTitle>
-        <DialogContent sx={{ mt: 2 }}>
-          Êtes-vous sûr de vouloir supprimer ce client ?
+        <DialogTitle sx={{ fontWeight: '600' }}>Confirmer la suppression</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Êtes-vous sûr de vouloir supprimer ce client ?
+          </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button 
-            onClick={handleCloseDialog} 
+          <Button
+            onClick={() => setOpenDialog(false)}
             variant="outlined"
-            sx={{ borderRadius: "8px" }}
+            size={isMobile ? "small" : "medium"}
+            sx={{ borderRadius: '12px', textTransform: 'none', px: 3 }}
           >
             Annuler
           </Button>
           <Button
             onClick={() => {
               deleteClient(selectedClientId);
-              handleCloseDialog();
+              setOpenDialog(false);
             }}
-            variant="contained"
             color="error"
-            sx={{ borderRadius: "8px" }}
+            variant="contained"
+            size={isMobile ? "small" : "medium"}
+            sx={{ borderRadius: '12px', textTransform: 'none', px: 3 }}
           >
             Supprimer
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Modal de détails du client */}
+      {/* Client Details Modal */}
       <Dialog
         open={isModalOpen}
-        onClose={handleCloseModal}
-        maxWidth="md"
+        onClose={() => setIsModalOpen(false)}
+        maxWidth="sm"
         fullWidth
         PaperProps={{
-          sx: { borderRadius: 2 }
+          sx: { 
+            borderRadius: 3,
+            width: isMobile ? '95vw' : '600px'
+          }
         }}
       >
         <DialogTitle sx={{ 
-          backgroundColor: "#f8f9fa",
-          borderBottom: "1px solid #e0e0e0",
-          pb: 2
+          fontWeight: '600',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
         }}>
-          <Stack direction="row" alignItems="center" spacing={2}>
-            <Person sx={{ color: "#1976d2" }} />
-            <Typography variant="h6">
-              Détails du Client
-            </Typography>
-          </Stack>
-        </DialogTitle>
-        <DialogContent sx={{ mt: 2 }}>
-          {selectedClient && (
-            <Stack spacing={3}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Badge sx={{ color: "#1976d2" }} />
-                <Typography>
-                  <strong>Code :</strong> {selectedClient.code}
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Person sx={{ color: "#1976d2" }} />
-                <Typography>
-                  <strong>Nom & Prénom :</strong> {selectedClient.nom_prenom}
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Business sx={{ color: "#1976d2" }} />
-                <Typography>
-                  <strong>Matricule Fiscale :</strong> {selectedClient.matricule_fiscale}
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <LocationOn sx={{ color: "#1976d2" }} />
-                <Typography>
-                  <strong>Adresse :</strong> {selectedClient.adresse}
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Phone sx={{ color: "#1976d2" }} />
-                <Typography>
-                  <strong>Téléphones :</strong>
-                  {selectedClient.telephone.map((tel, index) => (
-                    <Chip 
-                      key={index}
-                      label={tel}
-                      size="small"
-                      sx={{ ml: 1, backgroundColor: "#e3f2fd" }}
-                    />
-                  ))}
-                </Typography>
-              </Box>
-              {selectedClient.email && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Email sx={{ color: "#1976d2" }} />
-                  <Typography>
-                    <strong>Email :</strong> {selectedClient.email}
-                  </Typography>
-                </Box>
-              )}
-
-<Box>
-        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
-          Comptes Bancaires:
-        </Typography>
-        {selectedClient.bankAccounts?.length > 0 ? (
-          <Box sx={{ 
-            border: '1px solid #e0e0e0', 
-            borderRadius: 1,
-            p: 2 
-          }}>
-            {selectedClient.bankAccounts.map((account, index) => (
-              <Box key={index} sx={{ mb: 2, pb: 2, borderBottom: index < selectedClient.bankAccounts.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Business sx={{ color: "#1976d2" }} />
-                  <Box>
-                    <Typography><strong>Banque:</strong> {account.banque?.libelle || 'Non spécifié'}</Typography>
-                    <Typography><strong>RIB:</strong> {account.RIB}</Typography>
-                    <Typography><strong>Adresse:</strong> {account.adresseBanque || 'Non spécifié'}</Typography>
-                    {account.isPrimary && (
-                      <Chip 
-                        label="Compte principal" 
-                        size="small" 
-                        color="primary" 
-                        sx={{ mt: 1 }}
-                      />
-                    )}
-                  </Box>
-                </Stack>
-              </Box>
-            ))}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Person color="primary" />
+            Détails du Client
           </Box>
-        ) : (
-          <Typography>Aucun compte bancaire enregistré</Typography>
-        )}
-      </Box>
+          <IconButton onClick={() => setIsModalOpen(false)} size="small">
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          {selectedClient && (
+            <Stack spacing={2} sx={{ pt: 1 }}>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <Avatar sx={{ 
+                  bgcolor: 'primary.main', 
+                  width: 56, 
+                  height: 56,
+                  fontSize: '1.25rem'
+                }}>
+                  {selectedClient.nom_prenom?.charAt(0) || 'C'}
+                </Avatar>
+                <Box>
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    {selectedClient.nom_prenom}
+                  </Typography>
+                  {selectedClient.code && (
+                    <Typography variant="body2" color="text.secondary">
+                      Code: {selectedClient.code}
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+
+              <Divider sx={{ my: 1 }} />
+
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                  INFORMATIONS PRINCIPALES
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Business fontSize="small" color="action" />
+                      <Box>
+                        <Typography component="span" color="text.secondary">Matricule: </Typography>
+                        {selectedClient.matricule_fiscale || 'Non spécifié'}
+                      </Box>
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Typography variant="body2" sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                      <LocationOn fontSize="small" color="action" />
+                      <Box>
+                        <Typography component="span" color="text.secondary">Adresse: </Typography>
+                        {selectedClient.adresse || 'Non spécifié'}
+                      </Box>
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Box>
+
+              <Divider sx={{ my: 1 }} />
+
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                  COORDONNÉES
+                </Typography>
+                <Grid container spacing={2}>
+                  {selectedClient.telephone?.map((tel, index) => (
+                    <Grid item xs={12} sm={6} key={index}>
+                      <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Phone fontSize="small" color="action" />
+                        <Box>
+                          <Typography component="span" color="text.secondary">
+                            Téléphone {selectedClient.telephone.length > 1 ? index + 1 : ''}: 
+                          </Typography> {tel}
+                        </Box>
+                      </Typography>
+                    </Grid>
+                  ))}
+                  {selectedClient.email && (
+                    <Grid item xs={12}>
+                      <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Email fontSize="small" color="action" />
+                        <Box>
+                          <Typography component="span" color="text.secondary">Email: </Typography>
+                          {selectedClient.email}
+                        </Box>
+                      </Typography>
+                    </Grid>
+                  )}
+                </Grid>
+              </Box>
+
+              {selectedClient.bankAccounts?.length > 0 && (
+                <>
+                  <Divider sx={{ my: 1 }} />
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                      COMPTES BANCAIRES
+                    </Typography>
+                    <Stack spacing={2}>
+                      {selectedClient.bankAccounts.map((account, index) => (
+                        <Card key={index} variant="outlined" sx={{ borderRadius: 2 }}>
+                          <CardContent sx={{ p: 2 }}>
+                            <Stack spacing={1}>
+                              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                {account.banque?.libelle || 'Banque non spécifiée'}
+                              </Typography>
+                              <Typography variant="body2">
+                                <Typography component="span" color="text.secondary">RIB: </Typography>
+                                {account.RIB || 'Non spécifié'}
+                              </Typography>
+                              {account.adresseBanque && (
+                                <Typography variant="body2">
+                                  <Typography component="span" color="text.secondary">Adresse: </Typography>
+                                  {account.adresseBanque}
+                                </Typography>
+                              )}
+                              {account.isPrimary && (
+                                <Chip 
+                                  label="Compte principal" 
+                                  size="small" 
+                                  color="primary"
+                                  sx={{ alignSelf: 'flex-start', mt: 1 }}
+                                />
+                              )}
+                            </Stack>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </Stack>
+                  </Box>
+                </>
+              )}
             </Stack>
           )}
         </DialogContent>
-        <DialogActions sx={{ p: 3, borderTop: "1px solid #e0e0e0" }}>
-          <Button 
-            onClick={handleCloseModal}
-            variant="outlined"
-            sx={{ borderRadius: "8px" }}
-          >
-            Fermer
-          </Button>
+        <DialogActions sx={{ p: 2 }}>
           <Button
             onClick={() => navigate(`/Client/update/${selectedClient._id}`)}
             variant="contained"
             startIcon={<Edit />}
-            sx={{ borderRadius: "8px" }}
+            size={isMobile ? "small" : "medium"}
+            sx={{ borderRadius: '12px', textTransform: 'none', px: 3 }}
           >
             Modifier
           </Button>
