@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Sidenav from "../../navbar/Sidenav";
 import Box from "@mui/material/Box";
@@ -8,9 +8,12 @@ import {
   CardContent,
   Typography,
   Grid,
-  TextField,
   Button,
-  IconButton,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
   Table,
   TableBody,
   TableCell,
@@ -18,23 +21,26 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Autocomplete,
-  FormControl,
-  FormLabel,
+  Radio,
   RadioGroup,
   FormControlLabel,
-  Radio,
-  Select,
-  MenuItem,
-  InputLabel,
-  Alert,
-  Snackbar,
-  Divider,
-  Stack,
-  useTheme,
-  FormGroup,
   Checkbox,
+  Stack,
+  Autocomplete,
+  Divider,
+  IconButton,
+  useTheme,
+  Snackbar,
+  Alert,
+  FormGroup,
+  Fade,
+  Zoom,
+  Slide,
+  Avatar,
   Chip,
+  LinearProgress,
+  Tooltip,
+  Badge
 } from "@mui/material";
 import {
   Payment,
@@ -43,6 +49,20 @@ import {
   MonetizationOn,
   CheckCircle,
   Delete,
+  Business,
+  AttachMoney,
+  CreditCard,
+  AccountBalanceWallet,
+  TrendingUp,
+  Schedule,
+  CheckCircleOutline,
+  ErrorOutline,
+  WarningAmber,
+  Add,
+  Save,
+  Refresh,
+  FilterList,
+  Search
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 
@@ -638,185 +658,409 @@ const fetchClients = async () => {
     navigate("/ListeReglementsClients");
   };
 
+  // Fonction pour réinitialiser la page
+  const resetPage = () => {
+    setSelectedFactures([]);
+    setFactures([]);
+    setBonsLivraison([]);
+    setSelectedBonsLivraison([]);
+    setPaiementsEnAttente([]);
+    setPaiementDetails({});
+    setTotalMontant(0);
+    setMontantRestant(0);
+  };
+
   return (
     <>
       <Navbar />
       <Box height={64} />
-      <Box sx={{ 
-        display: "flex", 
-        backgroundColor: "#f5f5f5",
+      <Box sx={{
+        display: "flex",
+        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
         minHeight: "calc(100vh - 64px)",
         overflow: "hidden"
       }}>
         <Sidenav />
-        <Box component="main" sx={{ 
-          flexGrow: 1, 
-          p: 3, 
+        <Box component="main" sx={{
+          flexGrow: 1,
+          p: 3,
           overflow: "auto",
           height: "calc(100vh - 64px)",
           "&::-webkit-scrollbar": {
             width: "8px",
-            backgroundColor: "#f5f5f5"
+            backgroundColor: "rgba(0,0,0,0.1)"
           },
           "&::-webkit-scrollbar-thumb": {
-            borderRadius: "4px",
-            backgroundColor: "#888"
+            borderRadius: "8px",
+            background: "linear-gradient(135deg, #495057 0%, #6c757d 100%)"
           },
           "&::-webkit-scrollbar-track": {
-            backgroundColor: "#f5f5f5"
+            backgroundColor: "rgba(0,0,0,0.05)"
           }
         }}>
+          {/* Header moderne avec animation */}
+          <Fade in={true} timeout={800}>
+            <Box sx={{
+              mb: 4,
+              p: 4,
+              background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+              borderRadius: 4,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+              color: 'white',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              {/* Effet de particules en arrière-plan */}
+              <Box sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%)',
+                animation: 'pulse 3s ease-in-out infinite alternate'
+              }} />
+
+              <Box sx={{ position: 'relative', zIndex: 1 }}>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
+                  <Stack direction="row" alignItems="center" spacing={3}>
+                    <Box sx={{
+                      width: 80,
+                      height: 80,
+                      borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backdropFilter: 'blur(10px)',
+                      border: '2px solid rgba(255,255,255,0.3)'
+                    }}>
+                      <Payment sx={{ fontSize: 40, color: 'white' }} />
+                    </Box>
+                    <Box>
+                      <Typography variant="h5" component="h1" sx={{
+                        fontWeight: "bold",
+                        textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                        mb: 1
+                      }}>
+                        Règlement Client
+                      </Typography>
+                      <Typography variant="h6" sx={{ opacity: 0.9 }}>
+                        Effectuer un règlement
+                      </Typography>
+                    </Box>
+                  </Stack>
+                  <Tooltip title="Retour à la liste des règlements">
+                    <Button
+                      variant="contained"
+                      onClick={handleRetourListe}
+                      sx={{
+                        borderRadius: 3,
+                        textTransform: 'none',
+                        px: 2,
+                        py: 1,
+                        background: 'rgba(255,255,255,0.2)',
+                        backdropFilter: 'blur(10px)',
+                        border: '1px solid rgba(255,255,255,0.3)',
+                        color: 'white',
+                        fontWeight: 'bold',
+                        '&:hover': {
+                          background: 'rgba(255,255,255,0.3)',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 8px 25px rgba(0,0,0,0.2)'
+                        },
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      ← Retour à la liste
+                    </Button>
+                  </Tooltip>
+                </Stack>
+              </Box>
+            </Box>
+          </Fade>
+
           <Grid container spacing={3}>
             {/* Section Sélection Client */}
             <Grid item xs={12}>
-              <Card sx={{ p: 2, borderRadius: 2, boxShadow: 3 }}>
-                <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Payment sx={{ fontSize: 40, color: "#1976d2" }} />
-                    <Typography variant="h4" component="h1" sx={{ fontWeight: "bold", color: "#1976d2" }}>
-                      Règlement Client
-                    </Typography>
-                  </Stack>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    onClick={handleRetourListe}
-                    sx={{ 
-                      borderRadius: 2,
-                      textTransform: 'none',
-                      px: 3
-                    }}
-                  >
-                    Retour à la liste
-                  </Button>
-                </Stack>
+              <Zoom in={true} timeout={600}>
+                <Card sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
+                  },
+                  transition: 'all 0.3s ease'
+                }}>
 
-                <Stack direction="row" spacing={2} alignItems="center" mb={3}>
-                  {/* Client */}
-                  <Autocomplete
-                    options={clients}
-                    getOptionLabel={option => option.nom_prenom || ""}
-                    value={selectedClient}
-                    onChange={handleClientChange}
-                    renderInput={params => (
-                      <TextField 
-                        {...params} 
-                        label="Client" 
-                        fullWidth 
-                        sx={{ flex: 1 }}
+                  <Typography variant="h6" sx={{
+                    mb: 3,
+                    fontWeight: 'bold',
+                    color: '#2c3e50',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1
+                  }}>
+                    <Business sx={{ color: '#495057' }} />
+                    Informations de Règlement
+                  </Typography>
+
+                  <Stack direction="row" spacing={3} alignItems="center" mb={3}>
+                    {/* Client avec icône */}
+                    <FormControl fullWidth sx={{ flex: 1 }}>
+                      <Autocomplete
+                        options={clients}
+                        getOptionLabel={(option) => option.nom_prenom}
+                        value={clients.find((c) => c._id === selectedClient) || null}
+                        onChange={(event, newValue) => {
+                          setSelectedClient(newValue ? newValue._id : "");
+                          resetPage();
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="🏢 Sélectionner un client"
+                            variant="outlined"
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 3,
+                                background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                                '&:hover': {
+                                  boxShadow: '0 4px 12px rgba(52, 73, 94, 0.2)'
+                                },
+                                '&.Mui-focused': {
+                                  boxShadow: '0 4px 12px rgba(52, 73, 94, 0.3)'
+                                }
+                              }
+                            }}
+                          />
+                        )}
                       />
-                    )}
-                    sx={{ flex: 1 }}
-                  />
-                  
-                  {/* Caisse */}
-                  <Autocomplete
-                    options={caisses}
-                    getOptionLabel={option => option.libelle || ""}
-                    value={caisses.find(c => c._id === selectedCaisse) || null}
-                    onChange={handleCaisseChange}
-                    renderInput={params => (
-                      <TextField 
-                        {...params} 
-                        label="Caisse" 
-                        fullWidth 
-                        sx={{ flex: 1 }}
+                    </FormControl>
+
+                    {/* Caisse avec icône */}
+                    <FormControl fullWidth sx={{ flex: 1 }}>
+                      <Autocomplete
+                        options={caisses}
+                        getOptionLabel={(option) => option.libelle}
+                        value={caisses.find((c) => c._id === selectedCaisse) || null}
+                        onChange={(event, newValue) => {
+                          setSelectedCaisse(newValue ? newValue._id : "");
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="💰 Sélectionner une caisse"
+                            variant="outlined"
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 3,
+                                background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                                '&:hover': {
+                                  boxShadow: '0 4px 12px rgba(52, 73, 94, 0.2)'
+                                },
+                                '&.Mui-focused': {
+                                  boxShadow: '0 4px 12px rgba(52, 73, 94, 0.3)'
+                                }
+                              }
+                            }}
+                          />
+                        )}
                       />
-                    )}
-                    sx={{ flex: 1 }}
-                  />
-                  
-                  {/* Date */}
-                  <TextField
-                    fullWidth
-                    type="date"
-                    label="Date de Règlement"
-                    InputLabelProps={{ shrink: true }}
-                    value={paiementDetails.date || dateReglement}
-                    onChange={e => setPaiementDetails({...paiementDetails, date: e.target.value})}
-                    sx={{ flex: 1 }}
-                  />
-                </Stack>
-              </Card>
+                    </FormControl>
+
+                    {/* Date avec style moderne */}
+                    <TextField
+                      fullWidth
+                      type="date"
+                      label="📅 Date"
+                      InputLabelProps={{ shrink: true }}
+                      value={paiementDetails.date || dateReglement}
+                      onChange={(e) => setPaiementDetails({...paiementDetails, date: e.target.value})}
+                      sx={{
+                        flex: 1,
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 3,
+                          background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                          '&:hover': {
+                            boxShadow: '0 4px 12px rgba(52, 73, 94, 0.2)'
+                          },
+                          '&.Mui-focused': {
+                            boxShadow: '0 4px 12px rgba(52, 73, 94, 0.3)'
+                          }
+                        }
+                      }}
+                    />
+                  </Stack>
+                </Card>
+              </Zoom>
             </Grid>
 
-            {/* Section Liste des Documents */}
+            {/* Section Liste des Factures */}
             <Grid item xs={12} md={8}>
-              <Card sx={{ p: 2, borderRadius: 2, boxShadow: 3 }}>
-                <Typography variant="h6" sx={{ mb: 2, color: "#1976d2", fontWeight: "bold" }}>
-                Documents à Régler
-                </Typography>
+              <Slide direction="up" in={true} timeout={800}>
+                <Card sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
+                  },
+                  transition: 'all 0.3s ease'
+                }}>
+                  <Typography variant="h6" sx={{
+                    mb: 3,
+                    fontWeight: 'bold',
+                    color: '#2c3e50',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1
+                  }}>
+                    <Receipt sx={{ color: '#495057' }} />
+                    Liste des Factures
+                  </Typography>
+                  {/* Tableau des Factures */}
+                  <Typography variant="h6" sx={{
+                    mb: 3,
+                    color: '#2c3e50',
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}>
+                    <MonetizationOn sx={{ mr: 1, color: '#52c41a' }} />
+                    Factures ({factures.length})
+                  </Typography>
 
-                {/* Tableau des Factures */}
-                <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, color: "#1976d2", fontWeight: "bold" }}>
-                  Factures
-                </Typography>
-                <TableContainer component={Paper} sx={{ boxShadow: 2, mb: 3 }}>
-                  <Table>
-                    <TableHead>
-                      <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                        <TableCell padding="checkbox">
-                          <Checkbox
-                            indeterminate={selectedFactures.length > 0 && selectedFactures.length < factures.length}
-                            checked={selectedFactures.length === factures.length}
-                            onChange={(e) => setSelectedFactures(e.target.checked ? factures.map(f => f._id) : [])}
-                          />
-                        </TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>N° Facture</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Montant TTC</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Montant Payé</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Montant Restant</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Statut</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {factures.map((facture) => {
-                        const montantPaye = facture.montantPaye || 0;
-                        const montantRestant = Math.max(facture.total_ttc - montantPaye, 0);
-                        let statut = "non_paye";
-                        if (montantPaye >= facture.total_ttc) {
-                          statut = "paye";
-                        } else if (montantPaye > 0) {
-                          statut = "partiellement_paye";
-                        }
-                        return (
-                          <TableRow key={facture._id}>
-                            <TableCell padding="checkbox">
+                  <TableContainer component={Paper} sx={{
+                    borderRadius: 2,
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                    overflow: 'hidden',
+                    mb: 4
+                  }}>
+                    <Table>
+                      <TableHead sx={{
+                        background: 'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)'
+                      }}>
+                        <TableRow>
+                          <TableCell padding="checkbox" sx={{ color: 'white' }}>
                             <Checkbox
-                                checked={selectedFactures.includes(facture._id)}
-      onChange={() => handleFactureSelection(facture._id)}
-    />
-                            </TableCell>
-                            <TableCell>{facture.numero}</TableCell>
-                            <TableCell>{new Date(facture.dateFacture).toLocaleDateString()}</TableCell>
-                            <TableCell>{facture.total_ttc?.toFixed(3)} DT</TableCell>
-                            <TableCell>{montantPaye.toFixed(3)} DT</TableCell>
-                            <TableCell>{montantRestant.toFixed(3)} DT</TableCell>
-                            <TableCell>
-                              <Chip
-                                label={statut}
-                                color={
-                                  statut === "paye"
-                                    ? "success"
-                                    : statut === "partiellement_paye"
-                                    ? "warning"
-                                    : "error"
-                                }
-                                size="small"
-                              />
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                              indeterminate={selectedFactures.length > 0 && selectedFactures.length < factures.length}
+                              checked={factures.length > 0 && selectedFactures.length === factures.length}
+                              onChange={(e) => setSelectedFactures(e.target.checked ? factures.map(f => f._id) : [])}
+                              sx={{ color: 'white' }}
+                            />
+                          </TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
+                            N° Facture
+                          </TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
+                            Date
+                          </TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
+                            Montant TTC
+                          </TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
+                            Montant Payé
+                          </TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
+                            Montant Restant
+                          </TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
+                            Statut
+                          </TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {factures.map((facture) => {
+                          const montantPaye = facture.montantPaye || 0;
+                          const montantRestant = Math.max(facture.total_ttc - montantPaye, 0);
+                          let statut = "non_paye";
+                          if (montantPaye >= facture.total_ttc) {
+                            statut = "paye";
+                          } else if (montantPaye > 0) {
+                            statut = "partiellement_paye";
+                          }
+                          return (
+                            <TableRow
+                              key={facture._id}
+                              sx={{
+                                '&:nth-of-type(odd)': {
+                                  backgroundColor: '#f8f9fa',
+                                },
+                                '&:hover': {
+                                  backgroundColor: '#e3f2fd',
+                                  transform: 'scale(1.01)',
+                                  transition: 'all 0.2s ease'
+                                },
+                                transition: 'all 0.2s ease'
+                              }}
+                            >
+                              <TableCell padding="checkbox">
+                                <Checkbox
+                                  checked={selectedFactures.includes(facture._id)}
+                                  onChange={() => handleFactureSelection(facture._id)}
+                                />
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 'medium' }}>
+                                <Chip
+                                  label={facture.numero}
+                                  size="small"
+                                  sx={{
+                                    background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                                    color: 'white',
+                                    fontWeight: 'bold'
+                                  }}
+                                />
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 'medium' }}>
+                                {new Date(facture.dateFacture).toLocaleDateString()}
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 'medium' }}>
+                                {facture.total_ttc?.toFixed(3)} DT
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 'medium', color: '#52c41a' }}>
+                                {montantPaye.toFixed(3)} DT
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 'bold', color: '#f5222d' }}>
+                                {montantRestant.toFixed(3)} DT
+                              </TableCell>
+                              <TableCell>
+                                <Chip
+                                  label={statut === "non_paye" ? "Non payé" :
+                                         statut === "partiellement_paye" ? "Partiellement payé" : "Payé"}
+                                  color={
+                                    statut === "paye" ? "success" :
+                                    statut === "partiellement_paye" ? "warning" : "error"
+                                  }
+                                  size="small"
+                                  sx={{ fontWeight: 'bold' }}
+                                />
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
 
-                {/* Tableau des Bons de Livraison */}
-                <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, color: "#1976d2", fontWeight: "bold" }}>
-                  Bons de Livraison Non Facturés
-                </Typography>
+                  {/* Tableau des Bons de Livraison */}
+                  <Typography variant="h6" sx={{
+                    mb: 3,
+                    color: '#2c3e50',
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}>
+                    <Receipt sx={{ mr: 1, color: '#1890ff' }} />
+                    Bons de Livraison Non Facturés ({bonsLivraison.length})
+                  </Typography>
                 <TableContainer component={Paper} sx={{ boxShadow: 2 }}>
                   <Table>
                     <TableHead>
@@ -878,143 +1122,420 @@ const fetchClients = async () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
-              </Card>
+                </Card>
+              </Slide>
             </Grid>
-            
 
             {/* Section Récapitulatif */}
             <Grid item xs={12} md={4}>
-              <Card sx={{ p: 8, borderRadius: 2, boxShadow: 3 }}>
-                <Typography variant="h6" sx={{ mb: 2, color: "#1976d2", fontWeight: "bold" }}>
-                  Récapitulatif
-                </Typography>
-                <Typography variant="h6" gutterBottom>
-                  Total TTC: {totalMontant.toFixed(3)} DT
-                </Typography>
-                <Typography variant="h6" gutterBottom sx ={{color: "#FF0000"}}>
-                  Montant Restant: {montantRestant.toFixed(3)} DT
-                </Typography>
-              </Card>
+              <Fade in={true} timeout={1000}>
+                <Card sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
+                  },
+                  transition: 'all 0.3s ease'
+                }}>
+                  <Typography variant="h6" sx={{
+                    mb: 3,
+                    fontWeight: 'bold',
+                    color: '#2c3e50',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1
+                  }}>
+                    <TrendingUp sx={{ color: '#495057' }} />
+                    Récapitulatif
+                  </Typography>
+
+                  <Stack spacing={2}>
+                    <Box sx={{
+                      p: 2,
+                      borderRadius: 3,
+                      background: 'linear-gradient(135deg, #27ae60 0%, #2ecc71 100%)',
+                      color: 'white',
+                      textAlign: 'center',
+                      boxShadow: '0 4px 15px rgba(39, 174, 96, 0.3)'
+                    }}>
+                      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 1 }}>
+                        {totalMontant.toFixed(2)} DT
+                      </Typography>
+                      <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                        💰 Total TTC
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{
+                      p: 2,
+                      borderRadius: 3,
+                      background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
+                      color: 'white',
+                      textAlign: 'center',
+                      boxShadow: '0 4px 15px rgba(231, 76, 60, 0.3)'
+                    }}>
+                      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 1 }}>
+                        {montantRestant.toFixed(2)} DT
+                      </Typography>
+                      <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                        📊 Montant Restant
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{
+                      p: 2,
+                      borderRadius: 3,
+                      background: 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)',
+                      color: 'white',
+                      textAlign: 'center',
+                      boxShadow: '0 4px 15px rgba(52, 152, 219, 0.3)'
+                    }}>
+                      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 1 }}>
+                        {paiementsEnAttente.reduce((sum, p) => sum + parseFloat(p.montantChiffres || 0), 0).toFixed(2)} DT
+                      </Typography>
+                      <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                        ⏳ En attente
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Card>
+              </Fade>
             </Grid>
 
-            
- {/* Section Mode de Paiement */}
- <Grid item xs={12}>
-              <Card sx={{ p: 2, borderRadius: 2, boxShadow: 3, mt: 3 }}>
-                <Typography variant="h6" sx={{ mb: 2, color: "#1976d2", fontWeight: "bold" }}>
-                  Mode de Paiement
-                </Typography>
-                <RadioGroup
-                  row
-                  value={modePaiement}
-                  onChange={handleModePaiementChange}
-                  sx={{ mb: 2 }}
-                >
-                  <FormControlLabel 
-                    value="ESPECE" 
-                    control={<Radio color="primary" />} 
-                    label="Espèce" 
-                  />
-                  <FormControlLabel 
-                    value="CHEQUE" 
-                    control={<Radio color="primary" />} 
-                    label="Chèque" 
-                  />
-                  <FormControlLabel 
-                    value="EFFET" 
-                    control={<Radio color="primary" />} 
-                    label="Effet" 
-                  />
-                </RadioGroup>
-                
-                {renderPaiementFields()}
-                
-                <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-                  <Button
-                    variant="contained"
-                    color="secondary"
-                    onClick={handleAjoutPaiement}
-                    sx={{ 
-                      borderRadius: 2,
-                      textTransform: 'none',
-                      px: 3
-                    }}
+            {/* Section Mode de Paiement */}
+            <Grid item xs={12}>
+              <Fade in={true} timeout={1200}>
+                <Card sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
+                  },
+                  transition: 'all 0.3s ease'
+                }}>
+                  <Typography variant="h6" sx={{
+                    mb: 3,
+                    fontWeight: 'bold',
+                    color: '#2c3e50',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1
+                  }}>
+                    <CreditCard sx={{ color: '#495057' }} />
+                    Mode de Paiement
+                  </Typography>
+
+                  <RadioGroup
+                    value={modePaiement}
+                    onChange={handleModePaiementChange}
+                    sx={{ mb: 3 }}
                   >
-                    Ajouter Paiement
-                  </Button>
-                </Stack>
-              </Card>
+                    <Stack direction="row" spacing={3}>
+                      <FormControlLabel
+                        value="ESPECE"
+                        control={<Radio sx={{ color: '#27ae60' }} />}
+                        label={
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <AttachMoney sx={{ color: '#27ae60' }} />
+                            💵 Espèces
+                          </Box>
+                        }
+                      />
+                      <FormControlLabel
+                        value="CHEQUE"
+                        control={<Radio sx={{ color: '#3498db' }} />}
+                        label={
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <AccountBalance sx={{ color: '#3498db' }} />
+                            🏦 Chèque
+                          </Box>
+                        }
+                      />
+                      <FormControlLabel
+                        value="EFFET"
+                        control={<Radio sx={{ color: '#f39c12' }} />}
+                        label={
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Receipt sx={{ color: '#f39c12' }} />
+                            📄 Effet
+                          </Box>
+                        }
+                      />
+                    </Stack>
+                  </RadioGroup>
+
+                  <Box sx={{
+                    p: 3,
+                    borderRadius: 3,
+                    border: '1px solid rgba(52, 73, 94, 0.1)'
+                  }}>
+                    {renderPaiementFields()}
+                  </Box>
+
+                  <Stack direction="row" justifyContent="center" sx={{ mt: 3 }}>
+                    <Tooltip title="Ajouter ce paiement à la liste">
+                      <Button
+                        variant="contained"
+                        onClick={handleAjoutPaiement}
+                        sx={{
+                          background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                          borderRadius: 3,
+                          px: 4,
+                          py: 1.5,
+                          textTransform: 'none',
+                          fontWeight: 'bold',
+                          boxShadow: '0 4px 15px rgba(52, 73, 94, 0.3)',
+                          '&:hover': {
+                            background: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 6px 20px rgba(52, 73, 94, 0.4)'
+                          },
+                          transition: 'all 0.3s ease'
+                        }}
+                        startIcon={<Add />}
+                      >
+                        Ajouter Paiement
+                      </Button>
+                    </Tooltip>
+                  </Stack>
+                </Card>
+              </Fade>
             </Grid>
 
 
             {/* Liste des paiements en attente */}
             {paiementsEnAttente.length > 0 && (
               <Grid item xs={12}>
-                <Card sx={{ p: 2, borderRadius: 2, boxShadow: 3, mt: 3 }}>
-                  <Typography variant="h6" gutterBottom sx={{ color: "#1976d2", fontWeight: "bold" }}>
-                    Paiements en attente
-                  </Typography>
-                  <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
-                    <Button
-                      variant="contained"
-                      color="success"
-                      onClick={handleValiderPaiement}
-                      sx={{ 
-                        borderRadius: 2,
-                        textTransform: 'none',
-                        px: 3
-                      }}
-                    >
-                      Valider tous les paiements
-                    </Button>
-                  </Stack>
-                  <TableContainer component={Paper} sx={{ borderRadius: 2, mb: 3 }}>
-                    <Table>
-                      <TableHead sx={{ bgcolor: theme.palette.primary.main }}>
-                        <TableRow>
-                          <TableCell sx={{ color: 'white' }}>Date</TableCell>
-                          <TableCell sx={{ color: 'white' }}>Type</TableCell>
-                          <TableCell sx={{ color: 'white' }}>Montant</TableCell>
-                          <TableCell sx={{ color: 'white' }}>Actions</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {paiementsEnAttente.map((paiement) => (
-                          <TableRow key={paiement.id}>
-                            <TableCell>{new Date(paiement.dateCreation).toLocaleDateString()}</TableCell>
-                            <TableCell>{paiement.modePaiement}</TableCell>
-                            <TableCell>{paiement.montantChiffres ? parseFloat(paiement.montantChiffres).toFixed(3) : '0.000'} DT</TableCell>
-                            <TableCell>
-                              <IconButton
-                                color="error"
-                                onClick={() => handleSupprimerPaiement(paiement.id)}
-                                size="small"
-                              >
-                                <Delete />
-                              </IconButton>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </Card>
+                <Zoom in={true} timeout={1400}>
+                  <Card sx={{
+                    p: 3,
+                    borderRadius: 3,
+                    background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                    color: 'white',
+                    boxShadow: '0 8px 32px rgba(149, 165, 166, 0.3)',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: '0 12px 40px rgba(149, 165, 166, 0.4)'
+                    },
+                    transition: 'all 0.3s ease'
+                  }}>
+                    {/* Effet de brillance */}
+                    <Box sx={{
+                      position: 'absolute',
+                      top: 0,
+                      right: 0,
+                      width: 120,
+                      height: 120,
+                      background: 'rgba(255,255,255,0.1)',
+                      borderRadius: '50%',
+                      transform: 'translate(30%, -30%)'
+                    }} />
+
+                    <Box sx={{ position: 'relative', zIndex: 1 }}>
+                      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
+                        <Typography variant="h6" sx={{
+                          fontWeight: 'bold',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                          textShadow: '1px 1px 2px rgba(0,0,0,0.3)'
+                        }}>
+                          <Schedule sx={{ fontSize: 28 }} />
+                          Paiements en attente ({paiementsEnAttente.length})
+                        </Typography>
+
+                        <Tooltip title="Valider tous les paiements en attente">
+                          <Button
+                            variant="contained"
+                            onClick={handleValiderPaiement}
+                            sx={{
+                              background: 'rgba(255,255,255,0.2)',
+                              backdropFilter: 'blur(10px)',
+                              border: '1px solid rgba(255,255,255,0.3)',
+                              color: 'white',
+                              borderRadius: 3,
+                              textTransform: 'none',
+                              px: 4,
+                              py: 1.5,
+                              fontWeight: 'bold',
+                              '&:hover': {
+                                background: 'rgba(255,255,255,0.3)',
+                                transform: 'translateY(-2px)',
+                                boxShadow: '0 8px 25px rgba(0,0,0,0.2)'
+                              },
+                              transition: 'all 0.3s ease'
+                            }}
+                            startIcon={<CheckCircleOutline />}
+                          >
+                            Valider tous les paiements
+                          </Button>
+                        </Tooltip>
+                      </Stack>
+
+                      <TableContainer component={Paper} sx={{
+                        borderRadius: 3,
+                        overflow: 'hidden',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                      }}>
+                        <Table>
+                          <TableHead sx={{
+                            background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)'
+                          }}>
+                            <TableRow>
+                              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>📅 Date</TableCell>
+                              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>💳 Type</TableCell>
+                              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>💰 Montant</TableCell>
+                              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>⚡ Actions</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {paiementsEnAttente.map((paiement, index) => (
+                              <Fade in={true} timeout={1500 + index * 100} key={paiement.id}>
+                                <TableRow sx={{
+                                  '&:hover': {
+                                    backgroundColor: 'rgba(52, 73, 94, 0.05)',
+                                    transform: 'scale(1.01)',
+                                    transition: 'all 0.2s ease'
+                                  },
+                                  '&:nth-of-type(even)': {
+                                    backgroundColor: 'rgba(0,0,0,0.02)'
+                                  }
+                                }}>
+                                  <TableCell sx={{ fontWeight: 'bold' }}>
+                                    {new Date(paiement.dateCreation).toLocaleDateString('fr-FR')}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Chip
+                                      label={paiement.modePaiement}
+                                      size="small"
+                                      sx={{
+                                        backgroundColor: paiement.modePaiement === 'ESPECE' ? '#27ae60' :
+                                                       paiement.modePaiement === 'CHEQUE' ? '#f39c12' : '#e74c3c',
+                                        color: 'white',
+                                        fontWeight: 'bold'
+                                      }}
+                                    />
+                                  </TableCell>
+                                  <TableCell sx={{ fontWeight: 'bold', color: '#27ae60' }}>
+                                    {paiement.montantChiffres ? parseFloat(paiement.montantChiffres).toFixed(2) : '0.00'} DT
+                                  </TableCell>
+                                  <TableCell>
+                                    <Tooltip title="Supprimer ce paiement">
+                                      <IconButton
+                                        onClick={() => handleSupprimerPaiement(paiement.id)}
+                                        size="small"
+                                        sx={{
+                                          color: '#e74c3c',
+                                          backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                                          '&:hover': {
+                                            backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                                            transform: 'scale(1.1)'
+                                          },
+                                          transition: 'all 0.2s ease'
+                                        }}
+                                      >
+                                        <Delete />
+                                      </IconButton>
+                                    </Tooltip>
+                                  </TableCell>
+                                </TableRow>
+                              </Fade>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </Box>
+                  </Card>
+                </Zoom>
               </Grid>
             )}
-          </Grid>
+        </Grid>
         </Box>
       </Box>
 
+      {/* Snackbar moderne */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        TransitionComponent={Slide}
       >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{
+            width: "100%",
+            borderRadius: 3,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            '& .MuiAlert-icon': {
+              fontSize: '1.5rem'
+            },
+            '& .MuiAlert-message': {
+              fontWeight: 'bold'
+            }
+          }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Styles CSS pour les animations */}
+      <style jsx global>{`
+        @keyframes pulse {
+          0% {
+            opacity: 0.6;
+          }
+          100% {
+            opacity: 1;
+          }
+        }
+
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+        }
+
+        @keyframes shimmer {
+          0% {
+            background-position: -200px 0;
+          }
+          100% {
+            background-position: calc(200px + 100%) 0;
+          }
+        }
+
+        .floating-animation {
+          animation: float 3s ease-in-out infinite;
+        }
+
+        .shimmer-effect {
+          background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.2),
+            transparent
+          );
+          background-size: 200px 100%;
+          animation: shimmer 2s infinite;
+        }
+      `}</style>
     </>
   );
 }

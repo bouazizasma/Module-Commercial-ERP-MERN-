@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const {createBonCommande,getBonCommandeByID, getBCF, deleteBCF, updateBCF , createBonReception, getBEF, deleteBEF, deleteMultipleBEF, getBonReceptionByID} = require('../../Controllers/EnteteAchatControlleur');
+const { checkStockLevels } = require('../../Middlewares/StockCheckMiddleware');
 
 ////////////////////
 //all BCF
@@ -25,7 +26,7 @@ router.get('/BEF/all', getBEF);
 router.get('/BEF/:id', getBonReceptionByID);
 
 //post BEF
-router.post('/BEF/create', createBonReception);
+router.post('/BEF/create', checkStockLevels, createBonReception);
 
 //delete BEF
 router.delete('/BEF/:id', deleteBEF);

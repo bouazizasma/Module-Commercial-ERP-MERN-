@@ -1,11 +1,15 @@
 const CategorieArticle = require('../Models/Article/CategorieArticle');
 const mongoose = require('mongoose');
+const familleArticle = require('../Models/Article/FamilleArticle')
 const CounterModel=require ("../Models/counters");
 
 // Create a new CategorieArticle
 const createCategorieArticle = async (req, res) => {
-  const { code, designationCategorie } = req.body;
-
+  const { code, designationCategorie , famillearticle} = req.body;
+ const FamilleExists = await familleArticle.findById(famillearticle);
+    if (!FamilleExists) {
+      return res.status(400).json({ message: 'famille non trouvé' });
+    }
   try {
     const counter = await CounterModel.findOneAndUpdate(
         { model: 'categorieArticle' }, // Rechercher le compteur pour le modèle 
@@ -21,9 +25,16 @@ const createCategorieArticle = async (req, res) => {
     const newCategorieArticle = await CategorieArticle.create({
       code,
       designationCategorie,
+      famillearticle,
+      famillearticleInfo:{
+         code: FamilleExists.code,
+        designationFamille: FamilleExists.designationFamille
+      }
     });
 
-    res.status(201).json(newCategorieArticle);
+    const populatedCategorie = await CategorieArticle.findById(newCategorieArticle._id).populate('famillearticle');
+
+    res.status(201).json(populatedCategorie);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -32,7 +43,7 @@ const createCategorieArticle = async (req, res) => {
 // Get all CategorieArticles
 const getCategorieArticles = async (req, res) => {
   try {
-    const categorieArticles = await CategorieArticle.find();
+    const categorieArticles = await CategorieArticle.find().populate('famillearticle');
     res.status(200).json(categorieArticles);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -44,7 +55,7 @@ const getCategorieArticleByID = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const categorieArticle = await CategorieArticle.findById(id);
+    const categorieArticle = await CategorieArticle.findById(id).populate('famillearticle');
 
     if (!categorieArticle) {
       return res.status(404).json({ message: 'CategorieArticle not found' });
@@ -57,27 +68,42 @@ const getCategorieArticleByID = async (req, res) => {
 };
 
 // Update a CategorieArticle
-const updateCategorieArticle = async (req, res) => {
+
+const updateCategorieArticle= async (req, res) => {
   const { id } = req.params;
-  const {   designationCategorie } = req.body;
+  const {  designationCategorie , famillearticle } = req.body;
 
   try {
-    const updatedCategorieArticle = await CategorieArticle.findByIdAndUpdate(
-      id,
-      {   designationCategorie },
-      { new: true }
-    );
+    let updateData = { designationCategorie , famillearticle };
 
-    if (!updatedCategorieArticle) {
-      return res.status(404).json({ message: 'CategorieArticle not found' });
+    // Si un nouveau secteur est fourni, vérifier qu'il existe et mettre à jour les infos
+    if (famillearticle) {
+      const FamilleExists= await familleArticle.findById(famillearticle);
+      if (!FamilleExists){
+        return res.status(400).json({ message: 'familleArticle non trouvé' });
+      }
+
+      updateData.famillearticle =famillearticle;
+      updateData.famillearticleInfo = {
+        designationFamille:FamilleExists.designationFamille
+      };
     }
 
-    res.status(200).json(updatedCategorieArticle);
+    const updatedCategorie = await CategorieArticle.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true }
+    ).populate('famillearticle ');
+
+    if (!updatedCategorie ) {
+      return res.status(404).json({ message: 'Catégorie not found' });
+    }
+
+    res.status(200).json(updatedCategorie );
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
-
 // Delete a CategorieArticle
 const deleteCategorieArticle = async (req, res) => {
   const { id } = req.params;

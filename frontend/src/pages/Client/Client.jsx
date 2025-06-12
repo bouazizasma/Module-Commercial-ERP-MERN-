@@ -19,82 +19,191 @@ import {
   Checkbox,
   Box,
   Grid,
-    Typography,
-    CardContent,
+  Typography,
+  CardContent,
   Card,
   Stack,
   Chip,
-  Pagination,
   Avatar,
   Tooltip,
   useMediaQuery,
   useTheme,
-  Divider
+  Divider,
+  Alert,
+  Snackbar,
+  LinearProgress
 } from "@mui/material";
-import { 
-  Visibility, 
-  Delete, 
-  Edit, 
-  Search, 
-  Person, 
-  Phone, 
-  LocationOn, 
-  Business, 
+import {
+  Visibility,
+  Delete,
+  Edit,
+  Search,
+  Person,
+  Phone,
+  LocationOn,
+  Business,
   Email,
   Badge,
   Add,
-  Close
+  Close,
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon
 } from "@mui/icons-material";
+import { styled } from '@mui/material/styles';
 import Navbar from "../../navbar/Navbar";
 import Sidenav from "../../navbar/Sidenav";
 import { useNavigate } from "react-router-dom";
 
+const ActionButton = styled(IconButton)(({ theme }) => ({
+  transition: 'all 0.2s ease',
+  '&:hover': {
+    transform: 'scale(1.1)',
+    backgroundColor: 'rgba(0, 0, 0, 0.04)'
+  }
+}));
+
+const ModernCard = styled(Card)(({ theme }) => ({
+  borderRadius: '16px',
+  boxShadow: '0 8px 32px rgba(0,0,0,0.05)',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+  }
+}));
+
 export default function Client() {
   const [clients, setClients] = useState([]);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [selectedClientId, setSelectedClientId] = useState(null);
+   const [banques, setBanques] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClients, setSelectedClients] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
-  const [page, setPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const itemsPerPage = 4;
 
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
+
+  // États pour les popups de suppression
+  const [deleteDialog, setDeleteDialog] = useState({
+    open: false,
+    clientId: null,
+    clientName: ''
+  });
+
+  const [deleteMultipleDialog, setDeleteMultipleDialog] = useState({
+    open: false,
+    count: 0
+  });
+
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
   const fetchClients = async () => {
     try {
+      setLoading(true);
       const response = await axios.get("http://localhost:5000/client/clients");
       setClients(response.data);
+      setLoading(false);
     } catch (error) {
       console.error("Error fetching clients:", error);
+      showSnackbar('Erreur lors de la récupération des clients', 'error');
+      setLoading(false);
+    }
+  };
+    const fetchBanques = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get("http://localhost:5000/banqueClient/AllBanques");
+      setBanques(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching Banques:", error);
+      showSnackbar('Erreur lors de la récupération des Banques', 'error');
+      setLoading(false);
     }
   };
 
-  const deleteClient = async (id) => {
+
+  // Fonctions pour ouvrir les popups de suppression
+  const handleOpenDeleteDialog = (client) => {
+    setDeleteDialog({
+      open: true,
+      clientId: client._id,
+      clientName: client.nom_prenom
+    });
+  };
+
+  const handleOpenDeleteMultipleDialog = () => {
+    setDeleteMultipleDialog({
+      open: true,
+      count: selectedClients.length
+    });
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialog({
+      open: false,
+      clientId: null,
+      clientName: ''
+    });
+  };
+
+  const handleCloseDeleteMultipleDialog = () => {
+    setDeleteMultipleDialog({
+      open: false,
+      count: 0
+    });
+  };
+
+  const deleteClient = async () => {
     try {
-      await axios.delete(`http://localhost:5000/client/${id}`);
+      setLoading(true);
+      await axios.delete(`http://localhost:5000/client/${deleteDialog.clientId}`);
+      showSnackbar('Client supprimé avec succès');
       fetchClients();
+      handleCloseDeleteDialog();
     } catch (error) {
       console.error("Error deleting client:", error);
+      showSnackbar('Erreur lors de la suppression', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
   const deleteSelectedClients = async () => {
     try {
+      setLoading(true);
       await Promise.all(selectedClients.map((id) => axios.delete(`http://localhost:5000/client/${id}`)));
+      showSnackbar(`${selectedClients.length} client(s) supprimé(s) avec succès`);
       fetchClients();
       setSelectedClients([]);
-      setPage(1);
+      setCurrentPage(1);
+      handleCloseDeleteMultipleDialog();
     } catch (error) {
       console.error("Error deleting clients:", error);
+      showSnackbar('Erreur lors de la suppression', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchClients();
+    fetchBanques();
   }, []);
 
  const filteredClients = clients.filter((client) => {
@@ -107,13 +216,9 @@ export default function Client() {
 });
 
   const paginatedClients = filteredClients.slice(
-    (page - 1) * itemsPerPage,
-    page * itemsPerPage
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
-
-  const handlePageChange = (event, value) => {
-    setPage(value);
-  };
 
   const handleSelectClient = (id) => {
     if (selectedClients.includes(id)) {
@@ -134,338 +239,475 @@ export default function Client() {
   return (
     <>
       <Navbar />
-      <Box height={70} />
-      <Box sx={{ display: "flex" }}>
+      <Box height={64} />
+      <Box sx={{
+        display: "flex",
+        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+        minHeight: "calc(100vh - 64px)",
+        overflow: "hidden"
+      }}>
         <Sidenav />
-        <Box component="main" sx={{ 
-          flexGrow: 1, 
-          p: isMobile ? 2 : 3,
+        <Box component="main" sx={{
+          flexGrow: 1,
+          p: 3,
           overflow: "auto",
-          maxHeight: "calc(100vh - 70px)"
+          height: "calc(100vh - 64px)",
+          width:"1000px",
+          "&::-webkit-scrollbar": {
+            width: "8px",
+            backgroundColor: "rgba(0,0,0,0.1)"
+          },
+          "&::-webkit-scrollbar-thumb": {
+            borderRadius: "8px",
+            background: "linear-gradient(135deg, #495057 0%, #6c757d 100%)"
+          },
+          "&::-webkit-scrollbar-track": {
+            backgroundColor: "rgba(0,0,0,0.05)"
+          }
         }}>
-          <Card sx={{ 
-            borderRadius: 3,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.05)',
-            border: '1px solid',
-            borderColor: 'divider'
-          }}>
-            <CardContent>
-              {/* Header */}
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center', 
-                mb: 3,
-                flexWrap: 'wrap',
-                gap: 2
+        {/* Carte consolidée moderne unifiée */}
+        <ModernCard sx={{
+          borderRadius: 3,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+          background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+          border: '1px solid rgba(255,255,255,0.2)',
+          transition: 'all 0.3s ease-in-out',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
+          }
+        }}>
+          <CardContent sx={{ p: 3 }}>
+            {/* Header principal intégré */}
+            <Box sx={{
+              textAlign: 'center',
+              mb: 4,
+              p: 3,
+              background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+              borderRadius: 3,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+              color: 'white'
+            }}>
+              <Person sx={{ fontSize: 48, mb: 2 }} />
+              <Typography variant="h5" sx={{
+                fontWeight: 'bold',
+                textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                mb: 1
               }}>
-                <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                  <Person sx={{ 
-                    mr: 1, 
-                    verticalAlign: 'middle', 
-                    color: 'primary.main' 
-                  }} />
-                  Gestion des Clients
+                Gestion des Clients
+              </Typography>
+              <Typography variant="h6" sx={{ opacity: 0.9 }}>
+                Gérez vos clients et leurs informations
+              </Typography>
+            </Box>
+
+            {/* Section Recherche et Actions */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Search sx={{
+                  fontSize: 32,
+                  mr: 2,
+                  background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                  borderRadius: '50%',
+                  p: 1,
+                  color: 'white'
+                }} />
+                <Typography variant="h5" sx={{
+                  fontWeight: 'bold',
+                  background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent'
+                }}>
+                  Recherche et Filtres
                 </Typography>
-                <Button
-                  variant="contained"
-                  onClick={() => navigate("/Client/create")}
-                  startIcon={<Add />}
-                  size={isMobile ? "small" : "medium"}
-                  sx={{ 
-                    borderRadius: '12px',
-                    textTransform: 'none',
-                    px: 3,
-                    boxShadow: 'none',
-                    '&:hover': { boxShadow: 'none' }
-                  }}
-                >
-                  Nouveau Client
-                </Button>
               </Box>
-
-              {/* Search and Bulk Actions */}
-              <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                mb: 3,
-                flexDirection: isMobile ? 'column' : 'row',
-                gap: 2
-              }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  placeholder="Rechercher..."
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setPage(1);
-                  }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Search color="action" />
-                      </InputAdornment>
-                    ),
-                    sx: {
-                      borderRadius: '12px',
-                      backgroundColor: 'background.paper',
-                      '&:hover': { backgroundColor: 'action.hover' }
-                    }
-                  }}
-                  sx={{
-                    maxWidth: isMobile ? '100%' : '400px',
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': {
-                        borderWidth: '1px',
-                        borderColor: 'divider'
-                      },
-                      '&:hover fieldset': {
-                        borderColor: 'primary.main'
-                      }
-                    }
-                  }}
-                />
-
-                {selectedClients.length > 0 && (
-                  <Button
-                    variant="contained"
-                    color="error"
-                    onClick={deleteSelectedClients}
-                    startIcon={<Delete />}
-                    size={isMobile ? "small" : "medium"}
-                    sx={{ 
-                      borderRadius: '12px',
-                      textTransform: 'none',
-                      px: 3,
-                      ml: isMobile ? 0 : 'auto',
-                      boxShadow: 'none',
-                      '&:hover': { boxShadow: 'none' }
-                    }}
-                  >
-                    Supprimer ({selectedClients.length})
-                  </Button>
-                )}
-              </Box>
-
-              {/* Client Table */}
-              <TableContainer 
-                component={Paper} 
-                sx={{ 
-                  borderRadius: 2, 
-                  boxShadow: 'none', 
-                  border: '1px solid', 
-                  borderColor: 'divider',
-                  mb: 2
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={() => navigate("/Client/create")}
+                sx={{
+                  borderRadius: 2,
+                  height: '35px',
+                  background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                  fontWeight: 'bold',
+                  px: 3,
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 8px 25px rgba(52, 73, 94, 0.4)'
+                  },
+                  transition: 'all 0.3s ease'
                 }}
               >
-                <Table size={isMobile ? "small" : "medium"}>
-                  <TableHead>
-                    <TableRow sx={{ backgroundColor: 'background.default' }}>
-                      <TableCell padding="checkbox" sx={{ width: '48px' }}>
-                        <Checkbox
-                          checked={selectedClients.length === filteredClients.length && filteredClients.length > 0}
-                          indeterminate={selectedClients.length > 0 && selectedClients.length < filteredClients.length}
-                          onChange={handleSelectAll}
-                          size="small"
-                        />
-                      </TableCell>
-                      {!isMobile && <TableCell sx={{ fontWeight: '600' }}>Code</TableCell>}
-                      <TableCell sx={{ fontWeight: '600' }}>Client</TableCell>
-                      {!isMobile && <TableCell sx={{ fontWeight: '600' }}>Matricule</TableCell>}
-                      <TableCell sx={{ fontWeight: '600' }}>Contact</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: '600' }}>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {paginatedClients.map((client) => (
-                      <TableRow 
-                        key={client._id}
-                        hover
-                        sx={{ 
-                          '&:last-child td': { borderBottom: 0 },
-                          '& td': { py: isMobile ? 1 : 1.5 }
-                        }}
-                      >
-                        <TableCell padding="checkbox">
+                Nouveau Client
+              </Button>
+            </Box>
+            <Divider sx={{ mb: 3, background: 'linear-gradient(90deg, #2c3e50, #34495e)' }} />
+
+            <TextField
+              fullWidth
+              variant="outlined"
+              label="Rechercher un client"
+              placeholder="Rechercher par nom, matricule ou code..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search sx={{ color: '#2c3e50' }} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                mb: 3,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    boxShadow: '0 4px 12px rgba(52, 73, 94, 0.15)'
+                  },
+                  '&.Mui-focused': {
+                    boxShadow: '0 4px 12px rgba(52, 73, 94, 0.25)'
+                  }
+                }
+              }}
+            />
+
+            {selectedClients.length > 0 && (
+              <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
+                <Button
+                  variant="contained"
+                  color="error"
+                  onClick={handleOpenDeleteMultipleDialog}
+                  startIcon={<Delete />}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    px: 3,
+                    background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #c0392b 0%, #e74c3c 100%)',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 8px 25px rgba(231, 76, 60, 0.4)'
+                    },
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  Supprimer ({selectedClients.length}) client(s)
+                </Button>
+              </Box>
+            )}
+
+            {/* Section Liste des Clients */}
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+              <Person sx={{
+                fontSize: 32,
+                mr: 2,
+                background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                borderRadius: '50%',
+                p: 1,
+                color: 'white'
+              }} />
+              <Typography variant="h5" sx={{
+                fontWeight: 'bold',
+                background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}>
+                Liste des Clients ({filteredClients.length})
+              </Typography>
+            </Box>
+            <Divider sx={{ mb: 3, background: 'linear-gradient(90deg, #95a5a6, #7f8c8d)' }} />
+
+            {loading ? (
+              <LinearProgress sx={{
+                my: 2,
+                background: 'linear-gradient(90deg, #95a5a6, #7f8c8d)',
+                '& .MuiLinearProgress-bar': {
+                  background: 'linear-gradient(90deg, #2c3e50, #34495e)'
+                }
+              }} />
+            ) : (
+              <>
+                <TableContainer component={Paper} sx={{
+                  borderRadius: 2,
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                  overflow: 'hidden'
+                }}>
+                  <Table size={isMobile ? "small" : "medium"}>
+                    <TableHead sx={{
+                      background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)'
+                    }}>
+                      <TableRow>
+                        <TableCell padding="checkbox" sx={{ color: 'white', fontWeight: 'bold' }}>
                           <Checkbox
-                            checked={selectedClients.includes(client._id)}
-                            onChange={() => handleSelectClient(client._id)}
+                            checked={selectedClients.length === filteredClients.length && filteredClients.length > 0}
+                            indeterminate={selectedClients.length > 0 && selectedClients.length < filteredClients.length}
+                            onChange={handleSelectAll}
                             size="small"
+                            sx={{ color: 'white' }}
                           />
                         </TableCell>
-                        {!isMobile && <TableCell>{client.code}</TableCell>}
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                            <Avatar sx={{ 
-                              bgcolor: 'primary.main', 
-                              width: 32, 
-                              height: 32,
-                              fontSize: '0.875rem'
-                            }}>
-                              {client.nom_prenom?.charAt(0) }
-                            </Avatar>
-                            <Box>
-                              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                {client.nom_prenom}
-                              </Typography>
-                              {isMobile && client.code && (
-                                <Typography variant="caption" color="text.secondary">
-                                  {client.code}
-                                </Typography>
-                              )}
-                            </Box>
-                          </Box>
-                        </TableCell>
-                        {!isMobile && <TableCell>{client.matricule_fiscale}</TableCell>}
-                        <TableCell>
-                          {isMobile ? (
-                            <Box>
-                              {client.telephone?.[0] && (
-                                <Typography variant="body2">
-                                  <Phone fontSize="small" sx={{ 
-                                    verticalAlign: 'middle', 
-                                    mr: 0.5,
-                                    color: 'text.secondary'
-                                  }} />
-                                  {client.telephone[0]}
-                                </Typography>
-                              )}
-                            </Box>
-                          ) : (
-                            <Stack direction="row" spacing={1} flexWrap="wrap">
-                              {client.telephone?.map((tel, index) => (
-                                <Chip 
-                                  key={index}
-                                  label={tel}
-                                  size="small"
-                                  icon={<Phone fontSize="small" />}
-                                  sx={{ mb: 0.5 }}
-                                />
-                              ))}
-                            </Stack>
-                          )}
-                        </TableCell>
-                        <TableCell align="right">
-                          <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                            <Tooltip title="Voir détails">
-                              <IconButton
-                                onClick={() => {
-                                  setSelectedClient(client);
-                                  setIsModalOpen(true);
-                                }}
-                                size="small"
-                                sx={{ 
-                                  color: 'text.secondary',
-                                  '&:hover': { color: 'info.main' }
-                                }}
-                              >
-                                <Visibility fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Modifier">
-                              <IconButton
-                                onClick={() => navigate(`/Client/update/${client._id}`)}
-                                size="small"
-                                sx={{ 
-                                  color: 'text.secondary',
-                                  '&:hover': { color: 'warning.main' }
-                                }}
-                              >
-                                <Edit fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Supprimer">
-                              <IconButton
-                                onClick={() => {
-                                  setSelectedClientId(client._id);
-                                  setOpenDialog(true);
-                                }}
-                                size="small"
-                                sx={{ 
-                                  color: 'text.secondary',
-                                  '&:hover': { color: 'error.main' }
-                                }}
-                              >
-                                <Delete fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </Stack>
-                        </TableCell>
+                        {!isMobile && <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>Code</TableCell>}
+                        <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>Client</TableCell>
+                        {!isMobile && <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>Matricule</TableCell>}
+                        <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>Contact</TableCell>
+                        <TableCell align="right" sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>Actions</TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                    </TableHead>
+                    <TableBody>
+                      {paginatedClients.length > 0 ? (
+                        paginatedClients.map((client) => (
+                          <TableRow
+                            key={client._id}
+                            sx={{
+                              '&:nth-of-type(odd)': {
+                                backgroundColor: '#f8f9fa',
+                              },
+                              '&:hover': {
+                                backgroundColor: '#e3f2fd',
+                                transform: 'scale(1.01)',
+                                transition: 'all 0.2s ease'
+                              },
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            <TableCell padding="checkbox">
+                              <Checkbox
+                                checked={selectedClients.includes(client._id)}
+                                onChange={() => handleSelectClient(client._id)}
+                                size="small"
+                              />
+                            </TableCell>
+                            {!isMobile && <TableCell>{client.code}</TableCell>}
+                            <TableCell>
+                              <Stack direction="row" alignItems="center" spacing={2}>
+                                <Avatar sx={{
+                                  background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                                  color: 'white'
+                                }}>
+                                  <Person />
+                                </Avatar>
+                                <Box>
+                                  <Typography sx={{ fontWeight: 'bold', color: '#2c3e50' }}>
+                                    {client.nom_prenom}
+                                  </Typography>
+                                  {isMobile && client.code && (
+                                    <Typography variant="caption" color="text.secondary">
+                                      Code: {client.code}
+                                    </Typography>
+                                  )}
+                                </Box>
+                              </Stack>
+                            </TableCell>
+                            {!isMobile && <TableCell>{client.matricule_fiscale}</TableCell>}
+                            <TableCell>
+                              {isMobile ? (
+                                <Box>
+                                  {client.telephone?.[0] && (
+                                    <Typography variant="body2">
+                                      <Phone fontSize="small" sx={{
+                                        verticalAlign: 'middle',
+                                        mr: 0.5,
+                                        color: 'text.secondary'
+                                      }} />
+                                      {client.telephone[0]}
+                                    </Typography>
+                                  )}
+                                </Box>
+                              ) : (
+                                <Stack direction="row" spacing={1} flexWrap="wrap">
+                                  {client.telephone?.map((tel, index) => (
+                                    <Chip
+                                      key={index}
+                                      label={tel}
+                                      size="small"
+                                      icon={<Phone fontSize="small" />}
+                                      sx={{
+                                        mb: 0.5,
+                                        backgroundColor: '#d4edda',
+                                        color: '#155724',
+                                        border: '1px solid #c3e6cb'
+                                      }}
+                                    />
+                                  ))}
+                                </Stack>
+                              )}
+                            </TableCell>
+                            <TableCell align="right">
+                              <Tooltip title="Voir détails">
+                                <ActionButton
+                                  onClick={() => {
+                                    setSelectedClient(client);
+                                    setIsModalOpen(true);
+                                  }}
+                                  sx={{
+                                    color: '#2c3e50',
+                                    '&:hover': {
+                                      backgroundColor: '#e3f2fd',
+                                      transform: 'scale(1.1)',
+                                      color: '#34495e'
+                                    },
+                                    transition: 'all 0.3s ease'
+                                  }}
+                                >
+                                  <Visibility />
+                                </ActionButton>
+                              </Tooltip>
+                              <Tooltip title="Modifier">
+                                <ActionButton
+                                  onClick={() => navigate(`/Client/update/${client._id}`)}
+                                  sx={{
+                                    color: '#2c3e50',
+                                    '&:hover': {
+                                      backgroundColor: '#e3f2fd',
+                                      transform: 'scale(1.1)',
+                                      color: '#34495e'
+                                    },
+                                    transition: 'all 0.3s ease'
+                                  }}
+                                >
+                                  <Edit />
+                                </ActionButton>
+                              </Tooltip>
+                              <Tooltip title="Supprimer">
+                                <ActionButton
+                                  onClick={() => handleOpenDeleteDialog(client)}
+                                  sx={{
+                                    color: '#e74c3c',
+                                    '&:hover': {
+                                      backgroundColor: '#ffebee',
+                                      transform: 'scale(1.1)',
+                                      color: '#c0392b'
+                                    },
+                                    transition: 'all 0.3s ease'
+                                  }}
+                                >
+                                  <Delete />
+                                </ActionButton>
+                              </Tooltip>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={isMobile ? 4 : 6} align="center" sx={{ py: 4 }}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                              <CancelIcon color="disabled" sx={{ fontSize: 48, mb: 1 }} />
+                              <Typography color="textSecondary">
+                                Aucun client trouvé
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
 
-             {/* Pagination */}
-{filteredClients.length > itemsPerPage && (
-  <Box sx={{ 
-    display: 'flex', 
-    justifyContent: 'center',
-    '& .MuiPagination-ul': { flexWrap: 'nowrap' }
-  }}>
-    <Pagination
-      count={Math.ceil(filteredClients.length / itemsPerPage)}
-      page={page}
-      onChange={handlePageChange}
-      shape="rounded"
-      color="primary"
-      size={isMobile ? "small" : "medium"}
-      sx={{
-        '& .MuiPaginationItem-root': {
-          borderRadius: '8px',
-          '&.Mui-selected': { fontWeight: '600' }
-        }
-      }}
-    />
-  </Box>
-)}
-            </CardContent>
-          </Card>
-        </Box>
-      </Box>
+                {/* Divider entre tableau et pagination */}
+                <Divider sx={{ my: 3, background: 'linear-gradient(90deg, #95a5a6, #7f8c8d)' }} />
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={openDialog}
-        onClose={() => setOpenDialog(false)}
-        PaperProps={{
-          sx: { 
-            borderRadius: 3,
-            width: isMobile ? '90vw' : '400px'
-          }
-        }}
-      >
-        <DialogTitle sx={{ fontWeight: '600' }}>Confirmer la suppression</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Êtes-vous sûr de vouloir supprimer ce client ?
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button
-            onClick={() => setOpenDialog(false)}
-            variant="outlined"
-            size={isMobile ? "small" : "medium"}
-            sx={{ borderRadius: '12px', textTransform: 'none', px: 3 }}
-          >
-            Annuler
-          </Button>
-          <Button
-            onClick={() => {
-              deleteClient(selectedClientId);
-              setOpenDialog(false);
+                {/* Section Pagination intégrée */}
+                <Box sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  mt: 2
+                }}>
+                  <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+                    <Button
+                      variant="contained"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                      sx={{
+                        borderRadius: 2,
+                        background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                        fontWeight: 'bold',
+                        px: 3,
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 8px 25px rgba(102, 126, 234, 0.4)'
+                        },
+                        '&:disabled': {
+                          background: '#e0e0e0',
+                          color: '#9e9e9e'
+                        },
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      Précédent
+                    </Button>
+                    <Button
+                      variant="contained"
+                      disabled={currentPage * itemsPerPage >= filteredClients.length}
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                      sx={{
+                        borderRadius: 2,
+                        background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                        fontWeight: 'bold',
+                        px: 3,
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 8px 25px rgba(102, 126, 234, 0.4)'
+                        },
+                        '&:disabled': {
+                          background: '#e0e0e0',
+                          color: '#9e9e9e'
+                        },
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      Suivant
+                    </Button>
+                  </Box>
+                  <Typography variant="body2" sx={{ color: '#666', textAlign: 'center' }}>
+                    Page {currentPage} sur {Math.ceil(filteredClients.length / itemsPerPage)}
+                    ({filteredClients.length} clients au total)
+                  </Typography>
+                </Box>
+              </>
+            )}
+          </CardContent>
+        </ModernCard>
+        {/* Snackbar pour les notifications modernisé */}
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={4000}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        >
+          <Alert
+            onClose={handleCloseSnackbar}
+            severity={snackbar.severity}
+            variant="filled"
+            sx={{
+              borderRadius: 2,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+              '&.MuiAlert-filledSuccess': {
+                background: 'linear-gradient(135deg, #4caf50 0%, #45a049 100%)',
+              },
+              '&.MuiAlert-filledError': {
+                background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
+              }
             }}
-            color="error"
-            variant="contained"
-            size={isMobile ? "small" : "medium"}
-            sx={{ borderRadius: '12px', textTransform: 'none', px: 3 }}
+            iconMapping={{
+              success: <CheckCircleIcon fontSize="inherit" />,
+              error: <CancelIcon fontSize="inherit" />
+            }}
           >
-            Supprimer
-          </Button>
-        </DialogActions>
-      </Dialog>
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+      </Box>
+    </Box>
 
       {/* Client Details Modal */}
       <Dialog
@@ -586,13 +828,13 @@ export default function Client() {
                     <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
                       COMPTES BANCAIRES
                     </Typography>
-                    <Stack spacing={2}>
+           <Stack spacing={2}>
                       {selectedClient.bankAccounts.map((account, index) => (
                         <Card key={index} variant="outlined" sx={{ borderRadius: 2 }}>
                           <CardContent sx={{ p: 2 }}>
                             <Stack spacing={1}>
-                              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                {account.banque?.libelle || 'Banque non spécifiée'}
+                              <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                                { 'COMPTE' +(index+1)}
                               </Typography>
                               <Typography variant="body2">
                                 <Typography component="span" color="text.secondary">RIB: </Typography>
@@ -635,6 +877,183 @@ export default function Client() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Popup de suppression individuelle */}
+      <Dialog
+        open={deleteDialog.open}
+        onClose={handleCloseDeleteDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.15)'
+          }
+        }}
+      >
+        <DialogTitle sx={{
+          background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
+          color: 'white',
+          textAlign: 'center',
+          py: 3
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+            <Delete sx={{ fontSize: 32 }} />
+            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+              Confirmer la suppression
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3, textAlign: 'center' }}>
+          <Typography variant="h6" sx={{ mb: 2, color: '#2c3e50' }}>
+            Êtes-vous sûr de vouloir supprimer ce client ?
+          </Typography>
+          <Typography variant="body1" sx={{ color: '#7f8c8d', mb: 2 }}>
+            <strong>{deleteDialog.clientName}</strong>
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Cette action est irréversible et supprimera définitivement toutes les données associées à ce client.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, justifyContent: 'center', gap: 2 }}>
+          <Button
+            onClick={handleCloseDeleteDialog}
+            variant="outlined"
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              borderColor: '#95a5a6',
+              color: '#95a5a6',
+              '&:hover': {
+                borderColor: '#7f8c8d',
+                backgroundColor: '#f8f9fa'
+              }
+            }}
+          >
+            Annuler
+          </Button>
+          <Button
+            onClick={deleteClient}
+            variant="contained"
+            color="error"
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #c0392b 0%, #e74c3c 100%)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 8px 25px rgba(231, 76, 60, 0.4)'
+              },
+              transition: 'all 0.3s ease'
+            }}
+          >
+            Supprimer
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Popup de suppression multiple */}
+      <Dialog
+        open={deleteMultipleDialog.open}
+        onClose={handleCloseDeleteMultipleDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.15)'
+          }
+        }}
+      >
+        <DialogTitle sx={{
+          background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
+          color: 'white',
+          textAlign: 'center',
+          py: 3
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+            <Delete sx={{ fontSize: 32 }} />
+            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+              Suppression multiple
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3, textAlign: 'center' }}>
+          <Typography variant="h6" sx={{ mb: 2, color: '#2c3e50' }}>
+            Êtes-vous sûr de vouloir supprimer {deleteMultipleDialog.count} client(s) ?
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Cette action est irréversible et supprimera définitivement tous les clients sélectionnés ainsi que leurs données associées.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, justifyContent: 'center', gap: 2 }}>
+          <Button
+            onClick={handleCloseDeleteMultipleDialog}
+            variant="outlined"
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              borderColor: '#95a5a6',
+              color: '#95a5a6',
+              '&:hover': {
+                borderColor: '#7f8c8d',
+                backgroundColor: '#f8f9fa'
+              }
+            }}
+          >
+            Annuler
+          </Button>
+          <Button
+            onClick={deleteSelectedClients}
+            variant="contained"
+            color="error"
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #c0392b 0%, #e74c3c 100%)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 8px 25px rgba(231, 76, 60, 0.4)'
+              },
+              transition: 'all 0.3s ease'
+            }}
+          >
+            Supprimer ({deleteMultipleDialog.count})
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar pour les notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{
+            borderRadius: 2,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+            '&.MuiAlert-filledSuccess': {
+              background: 'linear-gradient(135deg, #4caf50 0%, #45a049 100%)',
+            },
+            '&.MuiAlert-filledError': {
+              background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
+            }
+          }}
+          iconMapping={{
+            success: <CheckCircleIcon fontSize="inherit" />,
+            error: <CancelIcon fontSize="inherit" />
+          }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 }

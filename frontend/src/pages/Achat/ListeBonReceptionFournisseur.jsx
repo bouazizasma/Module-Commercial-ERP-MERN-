@@ -4,24 +4,32 @@ import Sidenav from "../../navbar/Sidenav";
 import Box from "@mui/material/Box";
 import Navbar from "../../navbar/Navbar";
 import { Visibility, Delete, Edit } from "@mui/icons-material";
-import { Chip } from "@mui/material";
+import { Chip, Tooltip, Divider } from "@mui/material";
 import { format } from 'date-fns';
 import { useNavigate } from "react-router-dom";
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import {
   Card, CardContent, Typography, Grid, Button, TextField, MenuItem, Select, FormControl, InputLabel, IconButton, Drawer, Modal, Backdrop, Fade, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
-  Dialog, DialogTitle, DialogContent, DialogActions, Checkbox
+  Dialog, DialogTitle, DialogContent, DialogActions, Checkbox, Autocomplete, Collapse
 } from "@mui/material";
 import { Stack } from "@mui/material";
-import { FilterList, Search, Clear } from "@mui/icons-material";
+import { FilterList, Search, Clear, ExpandMore, ExpandLess } from "@mui/icons-material";
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import { InputAdornment } from "@mui/material";
 import jsPDF from "jspdf";
 import 'jspdf-autotable';
 import { Add, NavigateBefore, NavigateNext, Close } from "@mui/icons-material";
 import InfoIcon from '@mui/icons-material/Info';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
+// Nouvelles icônes pour un design moderne
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import BusinessIcon from '@mui/icons-material/Business';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import InventoryIcon from '@mui/icons-material/Inventory';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+// Composant moderne de suppression
+import ModernDeleteDialog from '../../components/ModernDeleteDialog';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 
 export default function ListeBonReceptionFournisseur() {
   const [bonsReception, setBonsReception] = useState([]);
@@ -31,6 +39,7 @@ export default function ListeBonReceptionFournisseur() {
     fournisseur: "",
     startDate: "",
     endDate: "",
+    article: "",
     numeroFacture: "",
     timbre: "1.000",
   });
@@ -38,6 +47,7 @@ export default function ListeBonReceptionFournisseur() {
   const [openPreviewModal, setOpenPreviewModal] = useState(false);
   const [error, setError] = useState(null);
   const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [selectedBonReception, setSelectedBonReception] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -209,16 +219,23 @@ export default function ListeBonReceptionFournisseur() {
   };
 
   const filteredBonsReception = useMemo(() => {
-    console.log("État actuel de bonsReception:", bonsReception);
-    
-    if (!bonsReception || !Array.isArray(bonsReception) || bonsReception.length === 0) {
-      console.log("bonsReception est vide ou invalide");
-      return [];
-    }
+    return bonsReception.filter((bonReception) => {
+      const matchesSearchTerm =
+        bonReception.numero_Bon.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (bonReception.fournisseur && bonReception.fournisseur.raison_sociale.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (bonReception.lignes && bonReception.lignes.some((ligne) =>
+          ligne.article.libelle.toLowerCase().includes(searchTerm.toLowerCase())
+        ));
 
-    // Simplifions d'abord le filtrage pour voir si les données de base s'affichent
-    return bonsReception;
-  }, [bonsReception]);
+      const matchesFilters =
+        (!filters.fournisseur || (bonReception.fournisseur && bonReception.fournisseur.raison_sociale === filters.fournisseur)) &&
+        (!filters.startDate || new Date(bonReception.dateReception) >= new Date(filters.startDate)) &&
+        (!filters.endDate || new Date(bonReception.dateReception) <= new Date(filters.endDate)) &&
+        (!filters.article || (bonReception.lignes && bonReception.lignes.some((ligne) => ligne.article.libelle === filters.article)));
+
+      return matchesSearchTerm && matchesFilters;
+    });
+  }, [bonsReception, searchTerm, filters]);
 
   const paginatedBonsReception = useMemo(() => {
     if (!filteredBonsReception || filteredBonsReception.length === 0) {
@@ -298,6 +315,7 @@ export default function ListeBonReceptionFournisseur() {
       fournisseur: "",
       startDate: "",
       endDate: "",
+      article: "",
       numeroFacture: "",
       timbre: "1.000",
     });
@@ -354,73 +372,319 @@ export default function ListeBonReceptionFournisseur() {
   return (
     <>
       <Navbar />
-      <Box height={200} />
-      <Box sx={{ display: "flex", backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+      <Box height={120} />
+      <Box sx={{ display: "flex" }}>
         <Sidenav />
-        <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-          <Card sx={{ borderRadius: 2, boxShadow: 3 }}>
-            <CardContent>
-              {/* En-tête avec titre et statistiques */}
-              <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Box>
-                  <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-                    Liste des Bons de Réception
-                  </Typography>
-                  <Typography variant="subtitle1" sx={{ color: 'text.secondary', mt: 1 }}>
-                    Total: {bonsReception.length} bons de réception
-                  </Typography>
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            p: 3,
+            overflow: "auto",
+            maxHeight: "100vh",
+            background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+            minHeight: '100vh'
+          }}
+        >
+          {/* Header moderne avec statistiques */}
+          <Fade in={true} timeout={800}>
+            <Box sx={{
+              textAlign: 'center',
+              mb: 2,
+              p: 1,
+              background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+              borderRadius: 3,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+              color: 'white'
+            }}>
+              <LocalShippingIcon sx={{ fontSize: 48, mb: 2 }} />
+              <Typography variant="h5" sx={{
+                fontWeight: 'bold',
+                textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                mb: 1
+              }}>
+                Bons de Réceptions Fournisseurs
+              </Typography>  
+               <Typography variant="h6" sx={{ opacity: 0.9 }}>
+                             gérez vos Bons de Réceptions facilement
+                          </Typography>           
+            </Box>
+          </Fade>
+
+          {/* Section principale avec tout le contenu dans une seule carte */}
+          <Fade in={true} timeout={1000}>
+            <Card sx={{
+              p: 2,
+              mb: 2,
+              borderRadius: 3,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+              background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              transition: 'all 0.3s ease-in-out',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
+              }
+            }}>
+              <CardContent>
+                {/* Section Liste des Bons de Réception */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <InventoryIcon sx={{
+                      fontSize: 32,
+                      mr: 2,
+                      background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                      borderRadius: '50%',
+                      p: 1,
+                      color: 'white'
+                    }} />
+                    <Typography variant="h5" sx={{
+                      fontWeight: 'bold',
+                      background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent'
+                    }}>
+                      Liste des Bons de Réception ({filteredBonsReception.length})
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      onClick={() => navigate('/BonReceptionFournisseur')}
+                      startIcon={<Add />}
+                      sx={{
+                        borderRadius: 2,
+                        height: '35px',
+                        width: '279px',
+                        left: '245px',
+                        background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                        fontWeight: 'bold',
+                        px: 3,
+                        py: 1.5,
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 8px 25px rgba(44, 62, 80, 0.4)'
+                        }
+                      }}
+                    >
+                      Créer Bon de réception
+                    </Button>
+                  </Box>
                 </Box>
-                <Button
-                  variant="contained"
-                  onClick={() => navigate('/ajout-bon-reception')}
-                  startIcon={<Add />}
-                  sx={{ borderRadius: 2 }}
-                >
-                  Nouveau Bon de Réception
-                </Button>
-              </Box>
+                <Divider sx={{ mb: 3, background: 'linear-gradient(90deg, #95a5a6, #7f8c8d)' }} />
 
-              {/* Barre de recherche et filtres */}
-              <Box sx={{ display: "flex", alignItems: "center", mb: 3, gap: 2 }}>
-                <TextField
-                  fullWidth
-                  placeholder="Rechercher par numéro, fournisseur ou article..."
-                  variant="outlined"
-                  value={searchTerm}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  sx={{
-                    maxWidth: 400,
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: 2,
-                      backgroundColor: 'white'
-                    }
-                  }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Search sx={{ color: '#1976d2' }} />
-                      </InputAdornment>
-                    )
-                  }}
-                />
-                
-                <Button
-                  variant="outlined"
-                  onClick={() => setIsFilterSidebarOpen(true)}
-                  startIcon={<FilterList />}
-                  sx={{ borderRadius: 2, height: 56 }}
-                >
-                  Filtres
-                </Button>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                  {/* Barre de recherche fine avec bouton filtrer */}
+                  <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center' }}>
+                    <TextField
+                      fullWidth
+                      placeholder="Rechercher par numéro, fournisseur ou article..."
+                      variant="outlined"
+                      size="small"
+                      value={searchTerm}
+                      onChange={(e) => handleSearch(e.target.value)}
+                      sx={{
+                        backgroundColor: 'white',
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 3,
+                          height: '35px',
+                          left:'445px',
+                          width: '380px',
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            boxShadow: '0 4px 12px rgba(52, 73, 94, 0.15)'
+                          },
+                          '&.Mui-focused': {
+                            boxShadow: '0 4px 12px rgba(52, 73, 94, 0.25)'
+                          }
+                        }
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Search sx={{ color: '#2c3e50' }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                    <Button
+                      variant="contained"
+                      startIcon={<FilterList />}
+                      onClick={() => setShowFilters(!showFilters)}
+                      sx={{
+                        left: '410px',
+                        height: '35px',
+                        minWidth: '20px',
+                        borderRadius: 3,
+                        background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                        fontWeight: 'bold',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 8px 25px rgba(44, 62, 80, 0.4)'
+                        }
+                      }}
+                    >
+                      Filtrer
+                      {showFilters ? <ExpandLess sx={{ ml: 1 }} /> : <ExpandMore sx={{ ml: 1 }} />}
+                    </Button>
+                  </Box>
+                </Box>
 
+                {/* Section des filtres avec animation */}
+                <Collapse in={showFilters} timeout={300}>
+                  <Box sx={{
+                    p: 3,
+                    backgroundColor: '#f8f9fa',
+                    borderRadius: 2,
+                    border: '1px solid #e9ecef',
+                    mb: 2
+                  }}>
+                    <Typography variant="h6" sx={{
+                      mb: 3,
+                      color: '#2c3e50',
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}>
+                      <FilterList sx={{ mr: 1 }} />
+                      Filtres avancés
+                    </Typography>
+
+                    <Grid container spacing={3}>
+                      {/* Filtre Fournisseur avec Autocomplete */}
+                      <Grid item xs={12} sm={6} md={3}>
+                        <Autocomplete
+                          options={[...new Set(bonsReception.map((bon) => bon.fournisseur?.raison_sociale).filter(Boolean))]}
+                          value={filters.fournisseur || null}
+                          onChange={(event, newValue) => handleFilterChange("fournisseur", newValue || "")}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Fournisseur"
+                              variant="outlined"
+                              size="small"
+                              sx={{
+                                backgroundColor: 'white',
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: 2,
+                                }
+                              }}
+                            />
+                          )}
+                          sx={{ width: '100%' }}
+                        />
+                      </Grid>
+
+                      {/* Filtre Date début */}
+                      <Grid item xs={12} sm={6} md={3}>
+                        <TextField
+                          label="Date début"
+                          type="date"
+                          value={filters.startDate}
+                          onChange={(e) => handleFilterChange("startDate", e.target.value)}
+                          InputLabelProps={{ shrink: true }}
+                          size="small"
+                          fullWidth
+                          sx={{
+                            backgroundColor: 'white',
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 2,
+                            }
+                          }}
+                        />
+                      </Grid>
+
+                      {/* Filtre Date fin */}
+                      <Grid item xs={12} sm={6} md={3}>
+                        <TextField
+                          label="Date fin"
+                          type="date"
+                          value={filters.endDate}
+                          onChange={(e) => handleFilterChange("endDate", e.target.value)}
+                          InputLabelProps={{ shrink: true }}
+                          size="small"
+                          fullWidth
+                          sx={{
+                            backgroundColor: 'white',
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 2,
+                            }
+                          }}
+                        />
+                      </Grid>
+
+                      {/* Filtre Article avec Autocomplete */}
+                      <Grid item xs={12} sm={6} md={3}>
+                        <Autocomplete
+                          options={[...new Set(bonsReception.flatMap((bon) => bon.lignes?.map((ligne) => ligne.article?.libelle).filter(Boolean) || []))]}
+                          value={filters.article || null}
+                          onChange={(event, newValue) => handleFilterChange("article", newValue || "")}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Article"
+                              variant="outlined"
+                              size="small"
+                              sx={{
+                                backgroundColor: 'white',
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: 2,
+                                }
+                              }}
+                            />
+                          )}
+                          sx={{ width: '100%' }}
+                        />
+                      </Grid>
+                    </Grid>
+
+                    {/* Bouton pour réinitialiser les filtres */}
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+                      <Button
+                        onClick={resetFilters}
+                        startIcon={<Clear />}
+                        variant="outlined"
+                        sx={{
+                          borderRadius: 2,
+                          borderColor: '#2c3e50',
+                          color: '#2c3e50',
+                          fontWeight: 'bold',
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            borderColor: '#34495e',
+                            backgroundColor: 'rgba(52, 73, 94, 0.1)',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 12px rgba(52, 73, 94, 0.3)'
+                          }
+                        }}
+                      >
+                        Réinitialiser les filtres
+                      </Button>
+                    </Box>
+                  </Box>
+                </Collapse>
+
+                {/* Boutons d'actions pour les éléments sélectionnés */}
                 {selectedBons.length > 0 && (
-                  <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Box sx={{ display: 'flex', gap: 2, mt: 2, mb: 2, flexWrap: 'wrap' }}>
                     <Button
                       variant="contained"
                       color="error"
                       onClick={deleteSelectedBons}
                       startIcon={<Delete />}
-                      sx={{ borderRadius: 2 }}
+                      sx={{
+                        borderRadius: 2,
+                        background: 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #d32f2f 0%, #f44336 100%)',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 8px 25px rgba(244, 67, 54, 0.4)'
+                        },
+                        transition: 'all 0.3s ease'
+                      }}
                     >
                       Supprimer ({selectedBons.length})
                     </Button>
@@ -429,44 +693,79 @@ export default function ListeBonReceptionFournisseur() {
                         variant="contained"
                         onClick={handleGroupedFacturation}
                         startIcon={<ReceiptIcon />}
-                        sx={{ borderRadius: 2 }}
+                        sx={{
+                          borderRadius: 2,
+                          background: 'linear-gradient(135deg, #4caf50 0%, #45a049 100%)',
+                          '&:hover': {
+                            background: 'linear-gradient(135deg, #45a049 0%, #4caf50 100%)',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 8px 25px rgba(76, 175, 80, 0.4)'
+                          },
+                          transition: 'all 0.3s ease'
+                        }}
                       >
                         Facturer groupé
                       </Button>
                     )}
                   </Box>
                 )}
-              </Box>
 
-              {/* Tableau des bons de réception */}
-              <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 2 }}>
-                <Table>
-                  <TableHead>
-                    <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
-                      <TableCell padding="checkbox">
-                        <Checkbox
-                          checked={selectedBons.length === filteredBonsReception.length}
-                          indeterminate={selectedBons.length > 0 && selectedBons.length < filteredBonsReception.length}
-                          onChange={handleSelectAll}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>N° Réception</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Fournisseur</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Total HT</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Total TTC</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Statut</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
+                <TableContainer component={Paper} sx={{
+                  borderRadius: 2,
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                  overflow: 'hidden'
+                }}>
+                  <Table>
+                    <TableHead sx={{
+                      background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)'
+                    }}>
+                      <TableRow>
+                        <TableCell padding="checkbox">
+                          <Checkbox
+                            checked={selectedBons.length === filteredBonsReception.length}
+                            indeterminate={selectedBons.length > 0 && selectedBons.length < filteredBonsReception.length}
+                            onChange={handleSelectAll}
+                            sx={{ color: 'white' }}
+                          />
+                        </TableCell>
+                        <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                          Numéro
+                        </TableCell>
+                        <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                          Date
+                        </TableCell>
+                        <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                          Fournisseur
+                        </TableCell>
+                        <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                          Total HT
+                        </TableCell>
+                        <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                          Total TTC
+                        </TableCell>
+                        <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                          Status
+                        </TableCell>
+                        <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                          Actions
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
                   <TableBody>
                     {paginatedBonsReception.length > 0 ? (
                       paginatedBonsReception.map((bon, index) => (
-                        <TableRow 
+                        <TableRow
                           key={bon._id || index}
-                          sx={{ 
-                            '&:hover': { backgroundColor: '#f5f5f5' },
-                            cursor: 'pointer'
+                          sx={{
+                            '&:nth-of-type(odd)': {
+                              backgroundColor: '#f8f9fa',
+                            },
+                            '&:hover': {
+                              backgroundColor: '#e3f2fd',
+                              transform: 'scale(1.01)',
+                              transition: 'all 0.2s ease'
+                            },
+                            transition: 'all 0.2s ease'
                           }}
                         >
                           <TableCell padding="checkbox">
@@ -474,78 +773,108 @@ export default function ListeBonReceptionFournisseur() {
                               checked={selectedBons.includes(bon._id)}
                               onChange={() => handleSelectBon(bon._id)}
                               disabled={bon.statut === "Facturé"}
+                              sx={{
+                                color: '#667eea',
+                                '&.Mui-checked': {
+                                  color: '#667eea'
+                                }
+                              }}
                             />
                           </TableCell>
-                          <TableCell>{bon.numero_Bon}</TableCell>
-                          <TableCell>
-                            {new Date(bon.dateReception).toLocaleDateString('fr-FR', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric'
-                            })}
+                          <TableCell sx={{ fontWeight: 'medium', color: '#2c3e50' }}>
+                            {bon.numero_Bon}
                           </TableCell>
-                          <TableCell>{bon.fournisseur?.raison_sociale || "Non spécifié"}</TableCell>
-                          <TableCell>{bon.total_hors_Taxe?.toFixed(3)} TND</TableCell>
-                          <TableCell>{bon.total_ttc?.toFixed(3)} TND</TableCell>
+                          <TableCell sx={{ fontWeight: 'medium' }}>
+                            <CalendarTodayIcon sx={{ fontSize: 16, mr: 1, color: '#2c3e50' }} />
+                            {new Date(bon.dateReception).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 'medium' }}>
+                            <BusinessIcon sx={{ fontSize: 16, mr: 1, color: '#2c3e50' }} />
+                            {bon.fournisseur ? bon.fournisseur.raison_sociale : "Non spécifié"}
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 'medium', color: '#95a5a6' }}>
+                            {bon.total_hors_Taxe?.toFixed(2)} TND
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 'medium', color: '#2c3e50' }}>
+                            {bon.total_ttc?.toFixed(2)} TND
+                          </TableCell>
                           <TableCell>
-                            <Chip 
+                            <Chip
                               label={bon.statut}
-                              color={
-                                bon.statut === "Facturé" ? "success" :
-                                bon.statut === "Annulée" ? "error" :
-                                bon.statut === "En attente" ? "warning" : "default"
-                              }
-                              sx={{ 
+                              color={bon.statut === "Facturé" ? "success" :
+                                     bon.statut === "Annulée" ? "error" :
+                                     bon.statut === "En attente" ? "warning" : "info"}
+                              sx={{
                                 fontWeight: 'bold',
-                                minWidth: 100,
-                                justifyContent: 'center'
+                                fontSize: '0.9rem',
+                                borderRadius: 2,
+                                padding: '4px 8px'
                               }}
                             />
                           </TableCell>
                           <TableCell>
-                            <Box sx={{ display: 'flex', gap: 1 }}>
-                              <IconButton
-                                size="small"
-                                onClick={() => handleOpenModal(bon)}
-                                sx={{ color: 'primary.main' }}
-                                title="Voir les détails"
-                              >
-                                <Visibility />
-                              </IconButton>
-                              <IconButton
-                                size="small"
-                                onClick={() => navigate(`/updateBonReception/${bon._id}`)}
-                                sx={{ color: 'warning.main' }}
-                                title="Modifier"
-                              >
-                                <Edit />
-                              </IconButton>
-                              <IconButton
-                                size="small"
-                                onClick={() => handleDeleteBonReception(bon._id)}
-                                sx={{ color: 'error.main' }}
-                                title="Supprimer"
-                              >
-                                <Delete />
-                              </IconButton>
-                              <IconButton
-                                size="small"
-                                onClick={() => handleDownload(bon)}
-                                sx={{ color: 'info.main' }}
-                                title="Télécharger"
-                              >
-                                <FileDownloadIcon />
-                              </IconButton>
-                              <IconButton
-                                size="small"
-                                onClick={() => handleOpenFactureModal(bon)}
-                                disabled={bon.statut === "Facturé"}
-                                sx={{ color: bon.statut === "Facturé" ? 'text.disabled' : 'success.main' }}
-                                title="Générer la facture"
-                              >
-                                <ReceiptIcon />
-                              </IconButton>
-                            </Box>
+                            <Stack direction="row" spacing={1}>
+                              <Tooltip title="Voir les détails">
+                                <IconButton
+                                  onClick={() => handleOpenModal(bon)}
+                                  sx={{
+                                    color: '#667eea',
+                                    '&:hover': {
+                                      backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                      transform: 'scale(1.1)'
+                                    },
+                                    transition: 'all 0.3s ease'
+                                  }}
+                                >
+                                  <Visibility />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Supprimer">
+                                <IconButton
+                                  onClick={() => handleDeleteBonReception(bon._id)}
+                                  sx={{
+                                    color: '#f44336',
+                                    '&:hover': {
+                                      backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                                      transform: 'scale(1.1)'
+                                    },
+                                    transition: 'all 0.3s ease'
+                                  }}
+                                >
+                                  <Delete />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Modifier">
+                                <IconButton
+                                  onClick={() => navigate(`/updateBonReception/${bon._id}`)}
+                                  sx={{
+                                    color: '#4caf50',
+                                    '&:hover': {
+                                      backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                                      transform: 'scale(1.1)'
+                                    },
+                                    transition: 'all 0.3s ease'
+                                  }}
+                                >
+                                  <Edit />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Télécharger PDF">
+                                <IconButton
+                                  onClick={() => handleDownload(bon)}
+                                  sx={{
+                                    color: '#ff9800',
+                                    '&:hover': {
+                                      backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                                      transform: 'scale(1.1)'
+                                    },
+                                    transition: 'all 0.3s ease'
+                                  }}
+                                >
+                                  <FileDownloadIcon />
+                                </IconButton>
+                              </Tooltip>
+                            </Stack>
                           </TableCell>
                         </TableRow>
                       ))
@@ -564,37 +893,78 @@ export default function ListeBonReceptionFournisseur() {
                       </TableRow>
                     )}
                   </TableBody>
-                </Table>
-              </TableContainer>
+                  </Table>
+                </TableContainer>
 
-              {/* Pagination */}
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 3 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Affichage de {Math.min(currentPage * itemsPerPage, filteredBonsReception.length)} sur {filteredBonsReception.length} bons
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <Button
-                    variant="outlined"
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    startIcon={<NavigateBefore />}
-                    sx={{ borderRadius: 2 }}
-                  >
-                    Précédent
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    disabled={currentPage * itemsPerPage >= filteredBonsReception.length}
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    endIcon={<NavigateNext />}
-                    sx={{ borderRadius: 2 }}
-                  >
-                    Suivant
-                  </Button>
-                </Box>
+                {/* Divider entre tableau et pagination */}
+                <Divider sx={{ my: 3, background: 'linear-gradient(90deg, #95a5a6, #7f8c8d)' }} />
+
+                {/* Section Pagination intégrée */}
+                <Box sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  mt: 2
+                }}>
+              <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+                <Button
+                  variant="contained"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  sx={{
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                    fontWeight: 'bold',
+                    px: 3,
+                    '&:hover': {
+                    background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 8px 25px rgba(102, 126, 234, 0.4)'
+                    },
+                    '&:disabled': {
+                      background: '#e0e0e0',
+                      color: '#9e9e9e'
+                    },
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  Précédent
+                </Button>
+                <Button
+                  variant="contained"
+                  disabled={currentPage * itemsPerPage >= filteredBonsReception.length}
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  sx={{
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                    fontWeight: 'bold',
+                    px: 3,
+                    '&:hover': {
+                    background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 8px 25px rgba(102, 126, 234, 0.4)'
+                    },
+                    '&:disabled': {
+                      background: '#e0e0e0',
+                      color: '#9e9e9e'
+                    },
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  Suivant
+                </Button>
               </Box>
-            </CardContent>
-          </Card>
+              <Typography variant="body1" sx={{
+                color: '#667eea',
+                fontWeight: 'medium',
+                fontSize: '1.1rem'
+              }}>
+                Page {currentPage} sur {Math.ceil(filteredBonsReception.length / itemsPerPage)}
+              </Typography>
+            </Box>
+              </CardContent>
+            </Card>
+          </Fade>
         </Box>
       </Box>
 
@@ -609,6 +979,7 @@ export default function ListeBonReceptionFournisseur() {
       >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h6">Filtres avancés</Typography>
+          
           <IconButton onClick={() => setIsFilterSidebarOpen(false)}>
             <Close />
           </IconButton>
@@ -808,9 +1179,7 @@ export default function ListeBonReceptionFournisseur() {
                         <Typography variant="body1" sx={{ mb: 1 }}>
                           Tél: {selectedBonReception.fournisseur?.telephone || "Non spécifié"}
                         </Typography>
-                        <Typography variant="body1">
-                          Email: {selectedBonReception.fournisseur?.email || "Non spécifié"}
-                        </Typography>
+                       
                       </CardContent>
                     </Card>
                   </Grid>

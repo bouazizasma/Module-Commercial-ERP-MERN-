@@ -51,9 +51,10 @@ const openedMixin = (theme) => ({
     duration: theme.transitions.duration.enteringScreen,
   }),
   overflowX: "hidden",
-  backgroundColor: "#1a237e",
-  background: "linear-gradient(180deg, #1a237e 0%,rgb(117, 120, 141) 100%)",
-  boxShadow: "4px 0 20px rgba(0, 0, 0, 0.1)",
+  backgroundColor: "#ffffff",
+  background: "linear-gradient(180deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%)",
+  boxShadow: "4px 0 20px rgba(0, 0, 0, 0.08)",
+  borderRight: "1px solid #e2e8f0",
 });
 
 const closedMixin = (theme) => ({
@@ -66,9 +67,10 @@ const closedMixin = (theme) => ({
   [theme.breakpoints.up("sm")]: {
     width: `calc(${theme.spacing(9)} + 1px)`,
   },
-  backgroundColor: "#1a237e",
-  background: "linear-gradient(180deg, #1a237e 0%,rgb(117, 120, 141) 100%)",
-  boxShadow: "4px 0 20px rgba(0, 0, 0, 0.1)",
+  backgroundColor: "#ffffff",
+  background: "linear-gradient(180deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%)",
+  boxShadow: "4px 0 20px rgba(0, 0, 0, 0.08)",
+  borderRight: "1px solid #e2e8f0",
 });
 
 const Drawer = styled(MuiDrawer)(({ theme, open }) => ({
@@ -91,15 +93,15 @@ const Drawer = styled(MuiDrawer)(({ theme, open }) => ({
       background: 'transparent',
     },
     '&::-webkit-scrollbar-thumb': {
-      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      backgroundColor: 'rgba(100, 116, 139, 0.3)',
       borderRadius: '4px',
       '&:hover': {
-        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        backgroundColor: 'rgba(100, 116, 139, 0.5)',
       },
     },
     // Pour Firefox
     scrollbarWidth: 'thin',
-    scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent',
+    scrollbarColor: 'rgba(100, 116, 139, 0.3) transparent',
 
   },
 }));
@@ -110,8 +112,8 @@ const DrawerHeader = styled('div')(({ theme }) => ({
   padding: theme.spacing(0, 2),
   ...theme.mixins.toolbar,
   justifyContent: 'space-between',
-  background: 'rgba(255, 255, 255, 0.05)',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  background: 'rgba(59, 130, 246, 0.05)',
+  borderBottom: '1px solid #e2e8f0',
 }));
 
 const MenuItem = styled(ListItemButton)(({ theme }) => ({
@@ -120,37 +122,37 @@ const MenuItem = styled(ListItemButton)(({ theme }) => ({
   padding: '8px 12px',
   transition: 'all 0.2s ease',
   '&:hover': {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
     transform: 'translateX(4px)',
   },
   '&.Mui-selected': {
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    color: '#b0b0b0',
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    color: '#3b82f6',
     '&:hover': {
-      backgroundColor: 'rgba(0, 0, 0, 0.4)',
+      backgroundColor: 'rgba(59, 130, 246, 0.2)',
     },
     '& .MuiListItemIcon-root': {
-      color: '#b0b0b0',
+      color: '#3b82f6',
     },
   },
 }));
 
 const MenuItemText = styled(ListItemText)(({ theme }) => ({
   '& .MuiTypography-root': {
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: '#475569',
     fontWeight: 500,
     fontSize: '0.9rem',
   },
   '&.Mui-selected .MuiTypography-root': {
-    color: '#b0b0b0',
+    color: '#3b82f6',
   },
 }));
 
 const MenuItemIcon = styled(ListItemIcon)(({ theme }) => ({
-  color: 'rgba(255, 255, 255, 0.9)',
+  color: '#64748b',
   minWidth: '40px !important',
   '&.Mui-selected': {
-    color: '#b0b0b0',
+    color: '#3b82f6',
   },
 }));
 
@@ -160,43 +162,43 @@ const SubMenuItem = styled(ListItemButton)(({ theme }) => ({
   borderRadius: '6px',
   transition: 'all 0.2s ease',
   '&:hover': {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
     transform: 'translateX(4px)',
   },
   '&.Mui-selected': {
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    color: '#b0b0b0',
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    color: '#10b981',
     '&:hover': {
-      backgroundColor: 'rgba(0, 0, 0, 0.4)',
+      backgroundColor: 'rgba(16, 185, 129, 0.2)',
     },
     '& .MuiListItemIcon-root': {
-      color: '#b0b0b0',
+      color: '#10b981',
     },
   },
 }));
 
 const SubMenuIcon = styled(ListItemIcon)(({ theme }) => ({
-  color: 'rgba(255, 255, 255, 0.7)',
+  color: '#64748b',
   minWidth: '36px !important',
   '&.Mui-selected': {
-    color: '#b0b0b0',
+    color: '#10b981',
   },
 }));
 
 const SubMenuText = styled(ListItemText)(({ theme }) => ({
   '& .MuiTypography-root': {
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: '#64748b',
     fontSize: '0.85rem',
   },
   '&.Mui-selected .MuiTypography-root': {
-    color: '#b0b0b0',
+    color: '#10b981',
   },
 }));
 
 const LogoText = styled(Typography)(({ theme }) => ({
   fontWeight: 700,
   fontSize: '1.2rem',
-  background: 'linear-gradient(90deg, #ffffff 0%, #e0e0e0 100%)',
+  background: 'linear-gradient(90deg, #3b82f6 0%, #1e40af 100%)',
   WebkitBackgroundClip: 'text',
   WebkitTextFillColor: 'transparent',
   letterSpacing: '0.5px',
@@ -307,7 +309,7 @@ export default function Sidenav() {
             <LogoText variant="h6">GS</LogoText>
           )}
         </DrawerHeader>
-        <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.1)' }} />
+        <Divider sx={{ borderColor: '#e2e8f0' }} />
         <List sx={{
           padding: '8px',
           overflowY: 'auto',
@@ -341,13 +343,13 @@ export default function Sidenav() {
                     <MenuItemText primary={item.text} sx={{ opacity: open ? 1 : 0 }} />
                     {open && (
                       item.text === "Articles" ?
-                      (openSubMenu ? <ExpandLess sx={{ color: 'rgba(255, 255, 255, 0.9)' }} /> : <ExpandMore sx={{ color: 'rgba(255, 255, 255, 0.9)' }} />) :
+                      (openSubMenu ? <ExpandLess sx={{ color: '#64748b' }} /> : <ExpandMore sx={{ color: '#64748b' }} />) :
                       item.text === "Achats" ?
-                      (openAchatSubMenu ? <ExpandLess sx={{ color: 'rgba(255, 255, 255, 0.9)' }} /> : <ExpandMore sx={{ color: 'rgba(255, 255, 255, 0.9)' }} />) :
+                      (openAchatSubMenu ? <ExpandLess sx={{ color: '#64748b' }} /> : <ExpandMore sx={{ color: '#64748b' }} />) :
                       item.text === "Ventes" ?
-                      (openVentesSubMenu ? <ExpandLess sx={{ color: 'rgba(255, 255, 255, 0.9)' }} /> : <ExpandMore sx={{ color: 'rgba(255, 255, 255, 0.9)' }} />) :
+                      (openVentesSubMenu ? <ExpandLess sx={{ color: '#64748b' }} /> : <ExpandMore sx={{ color: '#64748b' }} />) :
                       item.text === "Clients" ?
-                      (openClientsSubMenu ? <ExpandLess sx={{ color: 'rgba(255, 255, 255, 0.9)' }} /> : <ExpandMore sx={{ color: 'rgba(255, 255, 255, 0.9)' }} />) :
+                      (openClientsSubMenu ? <ExpandLess sx={{ color: '#64748b' }} /> : <ExpandMore sx={{ color: '#64748b' }} />) :
                       null
                     )}
                   </MenuItem>

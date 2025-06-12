@@ -16,20 +16,17 @@ import CreateClient from './pages/Client/createClient';
 import UpdateClient from './pages/Client/updateClient';
 import Dashbord from "../src/pages/Dashbord";
 import Secteur from "../src/pages/Client/Secteur"
-import CreateSecteur from "../src/pages/Client/createSecteur";
-import UpdateSecteur from "../src/pages/Client/updateSecteur";
+//import CreateSecteur from "../src/pages/Client/createSecteur";
+//import UpdateSecteur from "../src/pages/Client/updateSecteur";
 import BanqueClient from "../src/pages/Client/BanqueClient";
 import Region from "../src/pages/Client/Region";
-import CreateRegion from './pages/Client/createRegion';
 ///////ARTICLE///////////
 
 import Article from './pages/Article/Article';
 import CreateArticle from './pages/Article/createArticle';
 import FamilleArticle from './pages/Article/FamilleArticle';
-import CreateFamilleArticle from './pages/Article/createFamilleArticle';
 import CategorieArticle from './pages/Article/CategorieArticle';
 import CreateCategorieArticle from './pages/Article/createCategorieArticle';
-import UpdateFamilleArticle from './pages/Article/updateFamilleArticle';
 import UpdateCategorieArticle from './pages/Article/updateCategorieArticle';
 import UpdateArticle from './pages/Article/updateArticle';
 ////////////ACHATS///////////////
@@ -73,6 +70,7 @@ import { useState } from 'react';
 import RefrshHandler from './RefrshHandler';
 import { lightTheme, darkTheme } from './theme';
 import { useAppStore } from './appStore';
+import { NotificationProvider } from './navbar/NotificationContext';
 function App() {
   const { mode } = useAppStore();
   
@@ -82,9 +80,10 @@ function App() {
   }
   return (
      <ThemeProvider theme={mode === 'dark' ? darkTheme : lightTheme}>
-    <div className="App">
-      <RefrshHandler setIsAuthenticated={setIsAuthenticated} />
-      <Routes>
+      <NotificationProvider>
+        <div className="App">
+          <RefrshHandler setIsAuthenticated={setIsAuthenticated} />
+          <Routes>
         <Route path='/' element={<Navigate to="/login" />} />
         <Route path='/login' element={<Login />} />
         <Route path='/signup' element={<Signup />} />
@@ -98,18 +97,14 @@ function App() {
         <Route path='/Client/create' element={<PrivateRoute element={<CreateClient/>} />} />
         <Route path='/Client/update/:id' element={<PrivateRoute element={<UpdateClient/>} />} />
         <Route path='/Secteur' element={<PrivateRoute element={<Secteur/>} />} />
-        <Route path='/Secteur/create' element={<PrivateRoute element={<CreateSecteur/>} />} />
-        <Route path='/Secteur/update/:id' element={<PrivateRoute element={<UpdateSecteur/>} />} />
+      
         <Route path='/BanqueClient' element={<PrivateRoute element={<BanqueClient/>} />} />
         <Route path='/Region' element={<PrivateRoute element={<Region/>} />} />
-        <Route path='/Region/create' element={<PrivateRoute element={<CreateRegion/>} />} />
         {/* ARTICLE */}
         <Route path='/article' element={<PrivateRoute element={<Article/>} />} />
         <Route path='/createArticle' element={<PrivateRoute element={<CreateArticle/>} />} />
         <Route path='/updateArticle/:id' element={<PrivateRoute element={<UpdateArticle/>} />} />
         <Route path='/FamilleArticle' element={<PrivateRoute element={<FamilleArticle/>} />} />
-        <Route path='/FamilleArticle/create' element={<PrivateRoute element={<CreateFamilleArticle/>} />} />
-        <Route path='/FamilleArticle/update/:id' element={<PrivateRoute element={<UpdateFamilleArticle/>} />} />
         <Route path='/CategorieArticle' element={<PrivateRoute element={<CategorieArticle/>} />} />
         <Route path='/categorieArticle/create' element={<PrivateRoute element={<CreateCategorieArticle/>} />} />
         <Route path='/CategorieArticle/update/:id' element={<PrivateRoute element={<UpdateCategorieArticle/>} />} />
@@ -150,8 +145,9 @@ function App() {
 
 
 
-      </Routes>
-    </div>
+          </Routes>
+        </div>
+      </NotificationProvider>
     </ThemeProvider>
   );
 }

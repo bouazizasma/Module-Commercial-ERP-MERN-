@@ -3,19 +3,29 @@ import axios from "axios";
 import Sidenav from "../../navbar/Sidenav";
 import Box from "@mui/material/Box";
 import Navbar from "../../navbar/Navbar";
-import { Visibility, Delete, Edit } from "@mui/icons-material";
+import { Visibility, Delete, Edit, Add } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import { Chip } from "@mui/material";
-import {
-  Card, CardContent, Typography, Grid, Button, TextField, MenuItem, Select, FormControl, InputLabel, IconButton, Drawer, Modal, Backdrop, Fade, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
-} from "@mui/material";
+import { Chip, Tooltip, Divider } from "@mui/material";
+import {  Card, CardContent, Typography, Grid, Button, TextField, MenuItem, Select,
+  FormControl, InputLabel, IconButton, Drawer, Modal, Backdrop, Fade, Table, TableBody,
+   TableCell, TableContainer, TableHead, TableRow, Paper, Autocomplete, Collapse} from "@mui/material";
 import { Stack } from "@mui/material";
-import { FilterList, Search, Clear } from "@mui/icons-material";
+import { FilterList, Search, Clear, ExpandMore, ExpandLess } from "@mui/icons-material";
 import { InputAdornment } from "@mui/material";
 import jsPDF from "jspdf";
 import 'jspdf-autotable';
 import autoTable from "jspdf-autotable";
+// Nouvelles icônes pour un design moderne
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import BusinessIcon from '@mui/icons-material/Business';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import InventoryIcon from '@mui/icons-material/Inventory';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+// Composant moderne de suppression
+import ModernDeleteDialog from '../../components/ModernDeleteDialog';
+import { set } from "date-fns";
 export default function ListeBonCommandeFournisseur() {
   const [bonsCommande, setBonsCommande] = useState([]);
   const [editLignes, setEditLignes] = useState([]); // État pour les lignes modifiables
@@ -29,6 +39,7 @@ export default function ListeBonCommandeFournisseur() {
   }); 
   const [error, setError] = useState(null);
   const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [selectedBonCommande, setSelectedBonCommande] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1); // État pour la pagination
@@ -39,6 +50,9 @@ export default function ListeBonCommandeFournisseur() {
   const [articles, setArticles] = useState([]);
   const [depots, setDepots] = useState([]);
   const navigate = useNavigate();
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [bonCommandeToDelete, setBonCommandeToDelete] = useState(null);
 
   // Récupération des données
   useEffect(() => {
@@ -168,17 +182,25 @@ export default function ListeBonCommandeFournisseur() {
   };
 
   // Suppression d'un bon de commande
-  const handleDeleteBonCommande = async (id) => {
-    try {
-      const confirmDelete = window.confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande ?");
-      if (!confirmDelete) return;
+  
+  
+ 
+  const handleDeleteBonCommande = (bonCommande) => {
+    setBonCommandeToDelete(bonCommande);
+    setDeleteDialogOpen(true);
+  };
 
-      await axios.delete(`http://localhost:5000/achat/BCF${id}`);
-      setBonsCommande(bonsCommande.filter((bon) => bon._id !== id)); // Mettre à jour l'état local
-      alert("Bon de commande supprimé avec succès !");
+  const confirmDelete = async () => {
+    setDeleteLoading(true);
+    try {
+      await axios.delete(`http://localhost:5000/achat/BCF/${bonCommandeToDelete._id}`);
+      setBonsCommande(bonsCommande.filter((bon) => bon._id !== bonCommandeToDelete._id));
+      setDeleteDialogOpen(false);
     } catch (error) {
       console.error("Erreur lors de la suppression du bon de commande :", error);
       alert("Erreur lors de la suppression du bon de commande.");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -289,8 +311,8 @@ const getStatusChip = (statut) => {
   return (
     <>
       <Navbar />
-      <Box height={150} />
-      <Box sx={{ overflow: "auto", flexGrow: 1, p: 3, display: "flex", backgroundColor: "#FFFFFF" }}>
+      <Box height={120} />
+      <Box sx={{ display: "flex" }}>
         <Sidenav />
         <Box
           component="main"
@@ -298,245 +320,462 @@ const getStatusChip = (statut) => {
             flexGrow: 1,
             p: 3,
             overflow: "auto",
-            backgroundColor: "#FFFFFF",
-            maxWidth: "none",
             maxHeight: "100vh",
-            width: "100%",
+            background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+            minHeight: '100vh'
           }}
         >
-          <Box sx={{ flexGrow: 1, p: 3 }}>
-            <Typography variant="h4" sx={{ mb: 3, color: '#1976d2', fontWeight: 'bold', textAlign: 'center' }}>
-              Liste des Bons de Commande
-            </Typography>
-            <Box height={50} />
+          {/* Header moderne avec statistiques */}
+          <Fade in={true} timeout={800}>
+            <Box sx={{
+              textAlign: 'center',
+              mb: 2,
+              p: 1,
+              background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+              borderRadius: 3,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+              color: 'white'
+            }}>
+              <ShoppingCartIcon sx={{ fontSize: 48, mb: 2 }} />
+              <Typography variant="h5" sx={{
+                fontWeight: 'bold',
+                textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                mb: 1
+              }}>
+                Bons de Commande Fournisseurs
+              </Typography>
+              <Typography variant="h6" sx={{ opacity: 0.9 }}>
+                                           gérez vos Bons de  Commandes facilement
+                                        </Typography>     
+             
 
-            {/* Barre de recherche et filtres */}
-            <Card sx={{ p: 3, mb: 3, boxShadow: 3, borderRadius: 2, backgroundColor: '#f8f9fa' }}>
+            </Box>
+          </Fade>
+
+          {/* Section Recherche et Filtres modernisée */}
+          <Fade in={true} timeout={1000}>
+            <Card sx={{
+              p: 2,
+              mb: 2,
+              borderRadius: 3,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+              background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              transition: 'all 0.3s ease-in-out',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
+              }
+            }}>
               <CardContent>
-                <Typography variant="h6" sx={{ mb: 3, color: '#1976d2', fontWeight: 'bold' }}>
-                  Recherche et Filtres
-                </Typography>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={12} sm={6} md={4}>
-                    <TextField
-                      fullWidth
-                      label="Rechercher"
-                      variant="outlined"
-                      value={searchTerm}
-                      onChange={(e) => handleSearch(e.target.value)}
-                      sx={{
-                        backgroundColor: 'white',
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: '8px',
-                        }
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <Search sx={{ color: '#1976d2' }} />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
-                    <FormControl fullWidth>
-                      <InputLabel>Fournisseur</InputLabel>
-                      <Select
-                        value={filters.fournisseur}
-                        onChange={(e) => handleFilterChange("fournisseur", e.target.value)}
-                        sx={{ 
-                          backgroundColor: 'white',
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: '8px',
-                          }
-                        }}
-                      >
-                        <MenuItem value="">Tous</MenuItem>
-                        {[...new Set(bonsCommande.map((bon) => bon.fournisseur?.raison_sociale))].map((name, index) => (
-                          <MenuItem key={index} value={name}>
-                            {name}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
-                    <FormControl fullWidth>
-                      <InputLabel>Article</InputLabel>
-                      <Select
-                        value={filters.article}
-                        onChange={(e) => handleFilterChange("article", e.target.value)}
-                        sx={{ 
-                          backgroundColor: 'white',
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: '8px',
-                          }
-                        }}
-                      >
-                        <MenuItem value="">Tous</MenuItem>
-                        {[...new Set(bonsCommande.flatMap((bon) => bon.lignes.map((ligne) => ligne.article.libelle)))].map((article, index) => (
-                          <MenuItem key={index} value={article}>
-                            {article}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
-                    <FormControl fullWidth>
-                      <InputLabel>Année</InputLabel>
-                      <Select
-                        value={filters.year}
-                        onChange={(e) => handleFilterChange("year", e.target.value)}
-                        sx={{ 
-                          backgroundColor: 'white',
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: '8px',
-                          }
-                        }}
-                      >
-                        <MenuItem value="">Toutes</MenuItem>
-                        {[...new Set(bonsCommande.map((bon) => new Date(bon.dateCommande).getFullYear().toString()))].map((year, index) => (
-                          <MenuItem key={index} value={year}>
-                            {year}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
-                    <FormControl fullWidth>
-                      <InputLabel>Mois</InputLabel>
-                      <Select
-                        value={filters.month}
-                        onChange={(e) => handleFilterChange("month", e.target.value)}
-                        sx={{ 
-                          backgroundColor: 'white',
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: '8px',
-                          }
-                        }}
-                      >
-                        <MenuItem value="">Tous</MenuItem>
-                        {Array.from({ length: 12 }, (_, i) => (i + 1).toString()).map((month, index) => (
-                          <MenuItem key={index} value={month}>
-                            {month}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
-                    <Button
-                      onClick={resetFilters}
-                      startIcon={<Clear />}
-                      fullWidth
-                      variant="outlined"
-                      sx={{ 
-                        borderRadius: '8px',
-                        borderColor: '#1976d2',
-                        color: '#1976d2',
+            
+
+                {/* Section Liste des Bons de Commande */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <InventoryIcon sx={{
+                      fontSize: 32,
+                      mr: 2,
+                      background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                      borderRadius: '50%',
+                      p: 1,
+                      color: 'white'
+                    }} />
+                    <Typography variant="h5" sx={{
+                      fontWeight: 'bold',
+                      background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent'
+                    }}>
+                      Liste des Bons de Commande ({filteredBonsCommande.length})
+                    </Typography>
+                     <Button
+                    variant="contained"
+                    onClick={() => navigate('/BonCommandeFournisseur')}
+                    startIcon={<Add />}
+                    sx={{
+                      borderRadius: 2,
+                       height: '35px',
+                        width: '279px',
+                        left: '245px',
+                      background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                      fontWeight: 'bold',
+                      px: 3,
+                      py: 1.5,
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)',
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 8px 25px rgba(44, 62, 80, 0.4)'
+                      }
+                    }}
+                  >
+                    Créer Bon de commande
+                  </Button>
+                  </Box>
+                
+                </Box>
+                <Divider sx={{ mb: 3, background: 'linear-gradient(90deg, #95a5a6, #7f8c8d)' }} />
+    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+       
+                  {/* Barre de recherche fine avec bouton filtrer */}
+                <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center' }}>
+                  <TextField
+                    fullWidth
+                    placeholder="Rechercher par numéro, fournisseur ou article..."
+                    variant="outlined"
+                    size="small"
+                    value={searchTerm}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    sx={{
+                      backgroundColor: 'white',
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 3,
+                        height: '35px',
+                        left:'445px',
+                        width: '380px',
+                        transition: 'all 0.3s ease',
                         '&:hover': {
-                          borderColor: '#1565c0',
-                          backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                          boxShadow: '0 4px 12px rgba(52, 73, 94, 0.15)'
+                        },
+                        '&.Mui-focused': {
+                          boxShadow: '0 4px 12px rgba(52, 73, 94, 0.25)'
                         }
-                      }}
-                    >
-                      Réinitialiser les filtres
-                    </Button>
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
+                      }
+                    }}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Search sx={{ color: '#2c3e50' }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  <Button
+                    variant="contained"
+                    startIcon={<FilterList />}
+                    onClick={() => setShowFilters(!showFilters)}
+                    sx={{
+                      left: '410px',
+                      height: '35px',
+                      minWidth: '20px',
+                      borderRadius: 3,
+                      background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                      fontWeight: 'bold',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)',
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 8px 25px rgba(44, 62, 80, 0.4)'
+                      }
+                    }}
+                  >
+                    Filtrer
+                    {showFilters ? <ExpandLess sx={{ ml: 1 }} /> : <ExpandMore sx={{ ml: 1 }} />}
+                  </Button>
+                </Box>    
+                </Box>
 
-            {/* Tableau des bons de commande */}
-            <Card sx={{ p: 3, mb: 3, boxShadow: 3, borderRadius: 2, backgroundColor: '#f8f9fa' }}>
-              <CardContent>
-                <Typography variant="h6" sx={{ mb: 3, color: '#1976d2', fontWeight: 'bold' }}>
-                  Liste des Bons de Commande
-                </Typography>
-                <TableContainer component={Paper} sx={{ boxShadow: 2, borderRadius: 2 }}>
+              {/* Section des filtres avec animation */}
+                <Collapse in={showFilters} timeout={300}>
+                  <Box sx={{
+                    p: 3,
+                    backgroundColor: '#f8f9fa',
+                    borderRadius: 2,
+                    border: '1px solid #e9ecef',
+                    mb: 2
+                  }}>
+                    <Typography variant="h6" sx={{
+                      mb: 3,
+                      color: '#2c3e50',
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}>
+                      <FilterList sx={{ mr: 1 }} />
+                      Filtres avancés
+                    </Typography>
+
+                    <Grid container spacing={3}>
+                      {/* Filtre Fournisseur avec Autocomplete */}
+                      <Grid item xs={12} sm={6} md={3}>
+                        <Autocomplete
+                          options={[...new Set(bonsCommande.map((bon) => bon.fournisseur?.raison_sociale).filter(Boolean))]}
+                          value={filters.fournisseur || null}
+                          onChange={(event, newValue) => handleFilterChange("fournisseur", newValue || "")}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Fournisseur"
+                              variant="outlined"
+                              size="small"
+                              sx={{
+                                backgroundColor: 'white',
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: 2,
+                                }
+                              }}
+                            />
+                          )}
+                          sx={{ width: '100%' }}
+                        />
+                      </Grid>
+
+                      {/* Filtre Article avec Autocomplete */}
+                      <Grid item xs={12} sm={6} md={3}>
+                        <Autocomplete
+                          options={[...new Set(bonsCommande.flatMap((bon) => bon.lignes.map((ligne) => ligne.article.libelle)))]}
+                          value={filters.article || null}
+                          onChange={(event, newValue) => handleFilterChange("article", newValue || "")}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Article"
+                              variant="outlined"
+                              size="small"
+                              sx={{
+                                backgroundColor: 'white',
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: 2,
+                                }
+                              }}
+                            />
+                          )}
+                          sx={{ width: '100%' }}
+                        />
+                      </Grid>
+
+                      {/* Filtre Année avec Autocomplete */}
+                      <Grid item xs={12} sm={6} md={3}>
+                        <Autocomplete
+                          options={[...new Set(bonsCommande.map((bon) => new Date(bon.dateCommande).getFullYear().toString()))].sort((a, b) => b.localeCompare(a))}
+                          value={filters.year || null}
+                          onChange={(event, newValue) => handleFilterChange("year", newValue || "")}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Année"
+                              variant="outlined"
+                              size="small"
+                              sx={{
+                                backgroundColor: 'white',
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: 2,
+                                }
+                              }}
+                            />
+                          )}
+                          sx={{ width: '100%' }}
+                        />
+                      </Grid>
+
+                      {/* Filtre Mois avec Autocomplete */}
+                      <Grid item xs={12} sm={6} md={3}>
+                        <Autocomplete
+                          options={[
+                            { value: '1', label: 'Janvier' },
+                            { value: '2', label: 'Février' },
+                            { value: '3', label: 'Mars' },
+                            { value: '4', label: 'Avril' },
+                            { value: '5', label: 'Mai' },
+                            { value: '6', label: 'Juin' },
+                            { value: '7', label: 'Juillet' },
+                            { value: '8', label: 'Août' },
+                            { value: '9', label: 'Septembre' },
+                            { value: '10', label: 'Octobre' },
+                            { value: '11', label: 'Novembre' },
+                            { value: '12', label: 'Décembre' }
+                          ]}
+                          getOptionLabel={(option) => option.label}
+                          value={filters.month ? { value: filters.month, label: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'][parseInt(filters.month) - 1] } : null}
+                          onChange={(event, newValue) => handleFilterChange("month", newValue?.value || "")}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Mois"
+                              variant="outlined"
+                              size="small"
+                              sx={{
+                                backgroundColor: 'white',
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: 2,
+                                }
+                              }}
+                            />
+                          )}
+                          sx={{ width: '100%' }}
+                        />
+                      </Grid>
+                    </Grid>
+
+                    {/* Bouton pour réinitialiser les filtres */}
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+                      <Button
+                        onClick={resetFilters}
+                        startIcon={<Clear />}
+                        variant="outlined"
+                        sx={{
+                          borderRadius: 2,
+                          borderColor: '#2c3e50',
+                          color: '#2c3e50',
+                          fontWeight: 'bold',
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            borderColor: '#34495e',
+                            backgroundColor: 'rgba(52, 73, 94, 0.1)',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 12px rgba(52, 73, 94, 0.3)'
+                          }
+                        }}
+                      >
+                        Réinitialiser les filtres
+                      </Button>
+                    </Box>
+                  </Box>
+                </Collapse>
+                <TableContainer component={Paper} sx={{
+                  borderRadius: 2,
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                  overflow: 'hidden'
+                }}>
                   <Table>
-                    <TableHead>
-                      <TableRow sx={{ backgroundColor: '#e3f2fd' }}>
-                        <TableCell sx={{ fontWeight: 'bold', fontSize: '1rem' }}>Numéro de commande</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold', fontSize: '1rem' }}>Date de commande</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold', fontSize: '1rem' }}>Fournisseur</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold', fontSize: '1rem' }}>Total HT</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold', fontSize: '1rem' }}>Total TTC</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold', fontSize: '1rem' }}>Status</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold', fontSize: '1rem' }}>Actions</TableCell>
+                    <TableHead sx={{
+                      background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)'
+                    }}>
+                      <TableRow>
+                        <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                          Numéro 
+                        </TableCell>
+                        <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                          Date 
+                        </TableCell>
+                        <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem'}}>
+                          Fournisseur
+                        </TableCell>
+                        <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem'}}>
+                          Total HT
+                        </TableCell>
+                        <TableCell sx={{ color: 'white',fontWeight: 'bold', fontSize: '0.9rem' }}>
+                          Total TTC
+                        </TableCell>
+                        <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                          Status
+                        </TableCell>
+                        <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem'}}>
+                          Actions
+                        </TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {paginatedBonsCommande.map((bonCommande, index) => (
-                        <TableRow 
-                          key={index} 
-                          sx={{ 
-                            '&:hover': { 
-                              backgroundColor: '#f5f5f5',
-                              transition: 'background-color 0.2s'
-                            }
+                        <TableRow
+                          key={index}
+                          sx={{
+                            '&:nth-of-type(odd)': {
+                              backgroundColor: '#f8f9fa',
+                            },
+                            '&:hover': {
+                              backgroundColor: '#e3f2fd',
+                              transform: 'scale(1.01)',
+                              transition: 'all 0.2s ease'
+                            },
+                            transition: 'all 0.2s ease'
                           }}
                         >
-                          <TableCell sx={{ fontWeight: 'medium' }}>{bonCommande.numero_Bon}</TableCell>
-                          <TableCell>{new Date(bonCommande.dateCommande).toLocaleDateString()}</TableCell>
-                          <TableCell>{bonCommande.fournisseur ? bonCommande.fournisseur.raison_sociale : "Non spécifié"}</TableCell>
-                          <TableCell>{bonCommande.total_hors_Taxe.toFixed(2)} TND</TableCell>
-                          <TableCell>{bonCommande.total_ttc.toFixed(2)} TND</TableCell>
+                          <TableCell sx={{ fontWeight: 'medium', color: '#2c3e50' }}>
+                            {bonCommande.numero_Bon}
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 'medium' }}>
+                            <CalendarTodayIcon sx={{ fontSize: 16, mr: 1, color: '#2c3e50' }} />
+                            {new Date(bonCommande.dateCommande).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 'medium' }}>
+                            <BusinessIcon sx={{ fontSize: 16, mr: 1, color: '#2c3e50' }} />
+                            {bonCommande.fournisseur ? bonCommande.fournisseur.raison_sociale : "Non spécifié"}
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 'medium', color: '#95a5a6' }}>
+                            {bonCommande.total_hors_Taxe.toFixed(2)} TND
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 'medium', color: '#2c3e50' }}>
+                            {bonCommande.total_ttc.toFixed(2)} TND
+                          </TableCell>
                           <TableCell>
-                            <Chip 
-                              label={bonCommande.statut} 
-                              color={bonCommande.statut === "Livrée" ? "success" : 
-                                     bonCommande.statut === "Annulée" ? "error" : 
+                            <Chip
+                              label={bonCommande.statut}
+                              color={bonCommande.statut === "Livrée" ? "success" :
+                                     bonCommande.statut === "Annulée" ? "error" :
                                      bonCommande.statut === "En attente" ? "warning" : "info"}
-                              sx={{ 
+                              sx={{
                                 fontWeight: 'bold',
                                 fontSize: '0.9rem',
-                                borderRadius: '4px',
+                                borderRadius: 2,
                                 padding: '4px 8px'
                               }}
                             />
                           </TableCell>
                           <TableCell>
                             <Stack direction="row" spacing={1}>
-                              <IconButton
-                                onClick={() => handleOpenModal(bonCommande)}
-                                sx={{ 
-                                  color: '#1976d2',
-                                  '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.04)' }
-                                }}
-                              >
-                                <Visibility />
-                              </IconButton>
-                              <IconButton
-                                onClick={() => handleDeleteBonCommande(bonCommande._id)}
-                                sx={{ 
-                                  color: '#d32f2f',
-                                  '&:hover': { backgroundColor: 'rgba(211, 47, 47, 0.04)' }
-                                }}
-                              >
-                                <Delete />
-                              </IconButton>
-                              <IconButton
-                                onClick={() => navigate(`/ListeBonCommandeFournisseur/update/${bonCommande._id}`)}
-                                sx={{ 
-                                  color: '#2e7d32',
-                                  '&:hover': { backgroundColor: 'rgba(46, 125, 50, 0.04)' }
-                                }}
-                              >
-                                <Edit />
-                              </IconButton>
-                              <IconButton
-                                onClick={() => handleDownload(bonCommande)}
-                                sx={{ 
-                                  color: '#ed6c02',
-                                  '&:hover': { backgroundColor: 'rgba(237, 108, 2, 0.04)' }
-                                }}
-                              >
-                                <FileDownloadIcon />
-                              </IconButton>
+                              <Tooltip title="Voir les détails">
+                                <IconButton
+                                  onClick={() => handleOpenModal(bonCommande)}
+                                  sx={{
+                                    color: '#667eea',
+                                    '&:hover': {
+                                      backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                      transform: 'scale(1.1)'
+                                    },
+                                    transition: 'all 0.3s ease'
+                                  }}
+                                >
+                                  <Visibility />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Supprimer">
+                                <IconButton
+                                  onClick={() => handleDeleteBonCommande(bonCommande._id)}
+                                  sx={{
+                                    color: '#f44336',
+                                    '&:hover': {
+                                      backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                                      transform: 'scale(1.1)'
+                                    },
+                                    transition: 'all 0.3s ease'
+                                  }}
+                                >
+                                  <Delete />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Modifier">
+                                <IconButton
+                                  onClick={() => navigate(`/ListeBonCommandeFournisseur/update/${bonCommande._id}`)}
+                                  sx={{
+                                    color: '#4caf50',
+                                    '&:hover': {
+                                      backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                                      transform: 'scale(1.1)'
+                                    },
+                                    transition: 'all 0.3s ease'
+                                  }}
+                                >
+                                  <Edit />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Télécharger PDF">
+                                <IconButton
+                                  onClick={() => handleDownload(bonCommande)}
+                                  sx={{
+                                    color: '#ff9800',
+                                    '&:hover': {
+                                      backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                                      transform: 'scale(1.1)'
+                                    },
+                                    transition: 'all 0.3s ease'
+                                  }}
+                                >
+                                  <FileDownloadIcon />
+                                </IconButton>
+                              </Tooltip>
                             </Stack>
                           </TableCell>
                         </TableRow>
@@ -544,42 +783,76 @@ const getStatusChip = (statut) => {
                     </TableBody>
                   </Table>
                 </TableContainer>
-              </CardContent>
-            </Card>
 
-            {/* Pagination */}
-            <Box sx={{ display: "flex", justifyContent: "center", mt: 3, gap: 2 }}>
-              <Button
-                variant="contained"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(currentPage - 1)}
-                sx={{ 
-                  borderRadius: '8px',
-                  backgroundColor: '#1976d2',
-                  '&:hover': { backgroundColor: '#1565c0' }
-                }}
-              >
-                Précédent
-              </Button>
-              <Button
-                variant="contained"
-                disabled={currentPage * itemsPerPage >= filteredBonsCommande.length}
-                onClick={() => setCurrentPage(currentPage + 1)}
-                sx={{ 
-                  borderRadius: '8px',
-                  backgroundColor: '#1976d2',
-                  '&:hover': { backgroundColor: '#1565c0' }
-                }}
-              >
-                Suivant
-              </Button>
-            </Box>
-            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-              <Typography variant="body1" sx={{ color: '#666' }}>
+                {/* Divider entre tableau et pagination */}
+                <Divider sx={{ my: 3, background: 'linear-gradient(90deg, #95a5a6, #7f8c8d)' }} />
+
+                {/* Section Pagination intégrée */}
+                <Box sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  mt: 2
+                }}>
+              <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+                <Button
+                  variant="contained"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  sx={{
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                    fontWeight: 'bold',
+                    px: 3,
+                    '&:hover': {
+                    background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 8px 25px rgba(102, 126, 234, 0.4)'
+                    },
+                    '&:disabled': {
+                      background: '#e0e0e0',
+                      color: '#9e9e9e'
+                    },
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  Précédent
+                </Button>
+                <Button
+                  variant="contained"
+                  disabled={currentPage * itemsPerPage >= filteredBonsCommande.length}
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  sx={{
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                    fontWeight: 'bold',
+                    px: 3,
+                    '&:hover': {
+                    background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 8px 25px rgba(102, 126, 234, 0.4)'
+                    },
+                    '&:disabled': {
+                      background: '#e0e0e0',
+                      color: '#9e9e9e'
+                    },
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  Suivant
+                </Button>
+              </Box>
+              <Typography variant="body1" sx={{
+                color: '#667eea',
+                fontWeight: 'medium',
+                fontSize: '1.1rem'
+              }}>
                 Page {currentPage} sur {Math.ceil(filteredBonsCommande.length / itemsPerPage)}
               </Typography>
             </Box>
-          </Box>
+              </CardContent>
+            </Card>
+          </Fade>
         </Box>
       </Box>
 
@@ -789,6 +1062,21 @@ const getStatusChip = (statut) => {
           </Box>
         </Fade>
       </Modal>
+
+      {/* Modal de confirmation de suppression moderne */}
+       <ModernDeleteDialog
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+                onConfirm={confirmDelete}
+                title="Suppression de bon de commande"
+                message="Êtes-vous sûr de vouloir supprimer ce bon de commande ?"
+                itemDetails={bonCommandeToDelete ? {
+                  title: bonCommandeToDelete.numero_Bon,
+                }
+                  : null
+                }
+              />
+
     </>
   );
 }

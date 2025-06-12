@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-//schema Region 
+//schema Region
 const RegionSchema = new Schema({
     code: {
         type: Number,
@@ -17,6 +17,16 @@ const RegionSchema = new Schema({
         required: [true,],
         unique: true
     },
+    secteur: {
+        type: Schema.Types.ObjectId,
+        ref: 'secteur',
+        required: true
+    },
+    secteurInfo: {
+        code: Number,
+        codeSecteur: String,
+        libelle: String
+    }
     });
     const RegionModel = mongoose.model('region', RegionSchema);
     module.exports = RegionModel;

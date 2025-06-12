@@ -1,10 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Buffer } from "buffer";
-import Sidenav from "../../navbar/Sidenav";
-import Box from "@mui/material/Box";
-import { useNavigate } from "react-router-dom";
-import Navbar from "../../navbar/Navbar";
 import {
   Table,
   TableBody,
@@ -22,100 +18,182 @@ import {
   TextField,
   InputAdornment,
   Checkbox,
-  Modal,
-  Backdrop,
-  Fade,
+  Box,
+  Grid,
   Typography,
-  Card,
   CardContent,
-  Snackbar,
-  Alert,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  TablePagination,
-  Avatar,
+  Card,
+  Stack,
   Chip,
+  Avatar,
+  Tooltip,
   useMediaQuery,
   useTheme,
+  Divider,
+  Alert,
+  Snackbar,
+  LinearProgress
 } from "@mui/material";
-import { Visibility, Delete, Edit, Search, CheckCircle, Add, Inventory } from "@mui/icons-material";
+import {
+  Visibility,
+  Delete,
+  Edit,
+  Search,
+  Inventory,
+  Add,
+  Close,
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
+  Category,
+  LocalOffer,
+  AttachMoney
+} from "@mui/icons-material";
+import { styled } from '@mui/material/styles';
+import Navbar from "../../navbar/Navbar";
+import Sidenav from "../../navbar/Sidenav";
+import { useNavigate } from "react-router-dom";
+
+const ActionButton = styled(IconButton)(({ theme }) => ({
+  transition: 'all 0.2s ease',
+  '&:hover': {
+    transform: 'scale(1.1)',
+    backgroundColor: 'rgba(0, 0, 0, 0.04)'
+  }
+}));
+
+const ModernCard = styled(Card)(({ theme }) => ({
+  borderRadius: '16px',
+  boxShadow: '0 8px 32px rgba(0,0,0,0.05)',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+  }
+}));
 
 export default function Article() {
   const [articles, setArticles] = useState([]);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [selectedArticleId, setSelectedArticleId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedArticles, setSelectedArticles] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
-  
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  const itemsPerPage = 4;
+
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
+
+  // États pour les dialogs de suppression
+  const [deleteDialog, setDeleteDialog] = useState({
+    open: false,
+    article: null
+  });
+
+  const [deleteMultipleDialog, setDeleteMultipleDialog] = useState({
+    open: false
+  });
+
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({
+      open: true,
+      message,
+      severity
+    });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
 
   // Fetch articles from the backend
   const fetchArticles = async () => {
     try {
-      const [articlesResponse, famillesResponse] = await Promise.all([
-        axios.get("http://localhost:5000/article/articles"),
-      ]);
-      setArticles(articlesResponse.data);
+      setLoading(true);
+      const response = await axios.get("http://localhost:5000/article/articles");
+      setArticles(response.data);
     } catch (error) {
       console.error("Erreur lors de la récupération des données:", error);
+      showSnackbar('Erreur lors du chargement des articles', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Delete article by ID
-  const deleteArticle = async (id) => {
-    try {
-      await axios.delete(`http://localhost:5000/article/${id}`);
-      fetchArticles(); // Refresh list after deletion
-    } catch (error) {
-      console.error("Error deleting Article:", error);
-    }
+  // Gestion des dialogs de suppression
+  const handleOpenDeleteDialog = (article) => {
+    setDeleteDialog({
+      open: true,
+      article
+    });
   };
 
-  // Delete multiple articles by IDs
-  const deleteSelectedArticles = async () => {
-    try {
-      await Promise.all(selectedArticles.map((id) => axios.delete(`http://localhost:5000/article/${id}`)));
-      fetchArticles(); // Refresh list after deletion
-      setSelectedArticles([]); // Clear selected articles
-    } catch (error) {
-      console.error("Error deleting Articles:", error);
-    }
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialog({
+      open: false,
+      article: null
+    });
   };
 
-  // Open delete confirmation dialog
-  const handleOpenDialog = (id) => {
-    setSelectedArticleId(id);
-    setOpenDialog(true);
+  const handleOpenDeleteMultipleDialog = () => {
+    setDeleteMultipleDialog({ open: true });
   };
 
-  // Close the dialog
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-    setSelectedArticleId(null);
+  const handleCloseDeleteMultipleDialog = () => {
+    setDeleteMultipleDialog({ open: false });
   };
 
-  // Open details modal
+  // Gestion du modal de détails
   const handleOpenModal = (article) => {
     setSelectedArticle(article);
     setIsModalOpen(true);
   };
 
-  // Close details modal
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedArticle(null);
   };
 
-  // Effect to fetch data when component mounts
+  // Delete single article
+  const deleteArticle = async () => {
+    try {
+      setLoading(true);
+      await axios.delete(`http://localhost:5000/article/${deleteDialog.article._id}`);
+      setArticles(articles.filter(article => article._id !== deleteDialog.article._id));
+      showSnackbar('Article supprimé avec succès');
+      handleCloseDeleteDialog();
+    } catch (error) {
+      console.error("Error deleting article:", error);
+      showSnackbar('Erreur lors de la suppression', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Delete multiple articles
+  const deleteSelectedArticles = async () => {
+    try {
+      setLoading(true);
+      await Promise.all(selectedArticles.map((id) => axios.delete(`http://localhost:5000/article/${id}`)));
+      showSnackbar(`${selectedArticles.length} article(s) supprimé(s) avec succès`);
+      fetchArticles();
+      setSelectedArticles([]);
+      setCurrentPage(1);
+      handleCloseDeleteMultipleDialog();
+    } catch (error) {
+      console.error("Error deleting articles:", error);
+      showSnackbar('Erreur lors de la suppression', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchArticles();
   }, []);
@@ -125,13 +203,19 @@ export default function Article() {
     const searchTermLower = searchTerm.toLowerCase();
     const code = String(article.code || '');
     const designation = String(article.libelle || '');
-    
+
     const matchesSearch = code.toLowerCase().includes(searchTermLower) ||
                          designation.toLowerCase().includes(searchTermLower);
     return matchesSearch;
   });
 
-  // Handle checkbox selection
+  // Pagination
+  const totalPages = Math.ceil(filteredArticles.length / itemsPerPage);
+  const paginatedArticles = filteredArticles.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const handleSelectArticle = (id) => {
     if (selectedArticles.includes(id)) {
       setSelectedArticles(selectedArticles.filter((articleId) => articleId !== id));
@@ -140,522 +224,813 @@ export default function Article() {
     }
   };
 
-  // Handle select all checkboxes
   const handleSelectAll = () => {
     if (selectedArticles.length === filteredArticles.length) {
-      setSelectedArticles([]); // Deselect all
+      setSelectedArticles([]);
     } else {
-      setSelectedArticles(filteredArticles.map((article) => article._id)); // Select all
+      setSelectedArticles(filteredArticles.map((article) => article._id));
     }
   };
-
-  const handleDeleteClick = (article) => {
-    setSelectedArticle(article);
-    setOpenDialog(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    try {
-      await axios.delete(`http://localhost:5000/article/${selectedArticle._id}`);
-      setArticles(articles.filter(article => article._id !== selectedArticle._id));
-      setOpenDialog(false);
-      setOpenSnackbar(true);
-    } catch (error) {
-      console.error("Erreur lors de la suppression:", error);
-    }
-  };
-
-  const handleCloseSnackbar = () => {
-    setOpenSnackbar(false);
-  };
-
-  // Handle page change
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  // Handle rows per page change
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  // Empty rows for pagination
-  const emptyRows = rowsPerPage - Math.min(rowsPerPage, filteredArticles.length - page * rowsPerPage);
 
   return (
     <>
       <Navbar />
-      <Box height={70} />
-      <Box sx={{ display: "flex" }}>
+      <Box height={64} />
+      <Box sx={{
+        display: "flex",
+        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+        minHeight: "calc(100vh - 64px)",
+        overflow: "hidden"
+      }}>
         <Sidenav />
-        <Box component="main" sx={{ 
-          flexGrow: 1, 
-          p: isMobile ? 1 : 3, 
-          overflow: "auto", 
-          maxHeight: "100vh",
-          backgroundColor: '#f5f7fa'
+        <Box component="main" sx={{
+          flexGrow: 1,
+          p: 3,
+          overflow: "auto",
+          height: "calc(100vh - 64px)",
+          width:"1000px",
+          "&::-webkit-scrollbar": {
+            width: "8px",
+            backgroundColor: "rgba(0,0,0,0.1)"
+          },
+          "&::-webkit-scrollbar-thumb": {
+            borderRadius: "8px",
+            background: "linear-gradient(135deg, #495057 0%, #6c757d 100%)"
+          },
+          "&::-webkit-scrollbar-track": {
+            backgroundColor: "rgba(0,0,0,0.05)"
+          }
         }}>
-          <Card sx={{ 
-            mb: 3, 
-            boxShadow: 3, 
-            borderRadius: 2,
-            border: 'none',
-            backgroundColor: 'white'
-          }}>
-            <CardContent>
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center', 
-                mb: 3,
-                flexDirection: isMobile ? 'column' : 'row',
-                gap: isMobile ? 2 : 0
+        {/* Carte consolidée moderne unifiée */}
+        <ModernCard sx={{
+          borderRadius: 3,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+          background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+          border: '1px solid rgba(255,255,255,0.2)',
+          transition: 'all 0.3s ease-in-out',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
+          }
+        }}>
+          <CardContent sx={{ p: 3 }}>
+            {/* Header principal intégré */}
+            <Box sx={{
+              textAlign: 'center',
+              mb: 4,
+              p: 3,
+              background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+              borderRadius: 3,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+              color: 'white'
+            }}>
+              <Inventory sx={{ fontSize: 48, mb: 2 }} />
+              <Typography variant="h5" sx={{
+                fontWeight: 'bold',
+                textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                mb: 1
               }}>
-                <Typography variant="h5" component="h1" sx={{ 
-                  color: theme.palette.primary.main, 
+                Gestion des Articles
+              </Typography>
+              <Typography variant="h6" sx={{ opacity: 0.9 }}>
+                Gérez votre inventaire et catalogue produits
+              </Typography>
+            </Box>
+
+            {loading && (
+              <LinearProgress sx={{
+                mb: 3,
+                background: 'linear-gradient(90deg, #95a5a6, #7f8c8d)',
+                '& .MuiLinearProgress-bar': {
+                  background: 'linear-gradient(90deg, #2c3e50, #34495e)'
+                }
+              }} />
+            )}
+
+            {/* Bouton d'action moderne intégré */}
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
+              <Button
+                variant="contained"
+                size="large"
+                onClick={() => navigate('/createArticle')}
+                startIcon={<Add />}
+                sx={{
+                  background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                  color: 'white',
+                  px: 4,
+                  py: 2,
+                  width:"300px",
+                  height:"30px",
+                  left:"270px",
+                  borderRadius: 3,
+                  fontSize: '1.1rem',
                   fontWeight: 'bold',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}>
-                  <Inventory sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  Gestion des Articles
+                  boxShadow: '0 8px 25px rgba(52, 73, 94, 0.4)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 12px 35px rgba(52, 73, 94, 0.5)'
+                  },
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                Nouvel Article
+              </Button>
+            </Box>
+
+            {/* Section Actions sur sélection multiple */}
+            {selectedArticles.length > 0 && (
+              <Box sx={{
+                mb: 3,
+                p: 2,
+                background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+                borderRadius: 2,
+                border: '1px solid #2196f3'
+              }}>
+                <Typography variant="body1" sx={{ mb: 2, fontWeight: 'bold', color: '#1976d2' }}>
+                  {selectedArticles.length} article(s) sélectionné(s)
                 </Typography>
                 <Button
                   variant="contained"
-                  color="primary"
-                  onClick={() => navigate('/createArticle')}
-                  startIcon={<Add />}
-                  sx={{ 
-                    borderRadius: '8px',
+                  color="error"
+                  startIcon={<Delete />}
+                  onClick={handleOpenDeleteMultipleDialog}
+                  sx={{
+                    borderRadius: 2,
                     textTransform: 'none',
-                    fontWeight: '600',
-                    boxShadow: 'none',
-                    '&:hover': { 
-                      boxShadow: 'none',
-                      backgroundColor: theme.palette.primary.dark
-                    }
+                    fontWeight: 'bold'
                   }}
-                  size={isMobile ? 'small' : 'medium'}
                 >
-                  Nouvel Article
+                  Supprimer la sélection
                 </Button>
               </Box>
+            )}
 
-              {/* Search bar */}
-              <Card sx={{ 
-                mb: 3, 
-                backgroundColor: '#f8f9fa', 
-                boxShadow: 'none',
-                border: '1px solid #e0e0e0'
+            {/* Section Recherche intégrée */}
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+              <Search sx={{
+                fontSize: 32,
+                mr: 2,
+                background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                borderRadius: '50%',
+                p: 1,
+                color: 'white'
+              }} />
+              <Typography variant="h5" sx={{
+                fontWeight: 'bold',
+                background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
               }}>
-                <CardContent sx={{ 
-                  display: 'flex', 
-                  gap: 2,
-                  flexDirection: isMobile ? 'column' : 'row',
-                  alignItems: isMobile ? 'stretch' : 'center'
-                }}>
-                  <TextField
-                    fullWidth
-                    label="Rechercher un article"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Search color="primary" />
-                        </InputAdornment>
-                      ),
-                    }}
-                    sx={{ 
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: '8px',
-                        backgroundColor: '#fff',
-                      },
-                      '& .MuiInputLabel-root': {
-                        transform: 'translate(14px, 14px) scale(1)',
-                      },
-                      '& .MuiInputLabel-shrink': {
-                        transform: 'translate(14px, -6px) scale(0.75)',
-                      }
-                    }}
-                    size="small"
-                  />
-                </CardContent>
-              </Card>
+                Recherche d'Articles
+              </Typography>
+            </Box>
+            <Divider sx={{ mb: 3, background: 'linear-gradient(90deg, #2c3e50, #34495e)' }} />
 
-              {/* Articles table */}
-              <TableContainer component={Paper} sx={{ 
-                borderRadius: 2, 
-                boxShadow: 'none',
-                border: '1px solid #e0e0e0',
-                overflowX: 'auto'
+            {/* Search bar modernisé */}
+            <TextField
+              fullWidth
+              label="Rechercher un article (code ou désignation)"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search sx={{ color: '#2c3e50' }} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                mb: 4,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    boxShadow: '0 4px 12px rgba(52, 73, 94, 0.15)'
+                  },
+                  '&.Mui-focused': {
+                    boxShadow: '0 4px 12px rgba(52, 73, 94, 0.25)'
+                  }
+                }
+              }}
+              size="small"
+            />
+
+            {/* Section Liste des Articles */}
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+              <Inventory sx={{
+                fontSize: 32,
+                mr: 2,
+                background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                borderRadius: '50%',
+                p: 1,
+                color: 'white'
+              }} />
+              <Typography variant="h5" sx={{
+                fontWeight: 'bold',
+                background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
               }}>
-                <Table sx={{ minWidth: 650 }} size="small" aria-label="articles table">
-                  <TableHead sx={{ backgroundColor: theme.palette.primary.light }}>
+                Catalogue des Articles ({filteredArticles.length})
+              </Typography>
+            </Box>
+            <Divider sx={{ mb: 3, background: 'linear-gradient(90deg, #95a5a6, #7f8c8d)' }} />
+
+            {loading ? (
+              <LinearProgress sx={{
+                mb: 3,
+                background: 'linear-gradient(90deg, #95a5a6, #7f8c8d)',
+                '& .MuiLinearProgress-bar': {
+                  background: 'linear-gradient(90deg, #2c3e50, #34495e)'
+                }
+              }} />
+            ) : (
+              <TableContainer component={Paper} sx={{
+                borderRadius: 2,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                overflow: 'hidden'
+              }}>
+                <Table size={isMobile ? "small" : "medium"}>
+                  <TableHead sx={{
+                    background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)'
+                  }}>
                     <TableRow>
-                      <TableCell sx={{ 
-                        fontWeight: 'bold', 
-                        color: 'white',
-                        fontSize: '0.875rem'
-                      }}>Code</TableCell>
-                      <TableCell sx={{ 
-                        fontWeight: 'bold', 
-                        color: 'white',
-                        fontSize: '0.875rem'
-                      }}>Désignation</TableCell>
-                      <TableCell sx={{ 
-                        fontWeight: 'bold', 
-                        color: 'white',
-                        fontSize: '0.875rem'
-                      }}>Prix TTC</TableCell>
-                      <TableCell sx={{ 
-                        fontWeight: 'bold', 
-                        color: 'white',
-                        fontSize: '0.875rem'
-                      }}>Stock</TableCell>
-                      <TableCell sx={{ 
-                        fontWeight: 'bold', 
-                        color: 'white',
-                        fontSize: '0.875rem'
-                      }}>Image</TableCell>
-                      <TableCell sx={{ 
-                        fontWeight: 'bold', 
-                        color: 'white',
-                        fontSize: '0.875rem'
-                      }}>Actions</TableCell>
+                      <TableCell padding="checkbox" sx={{ color: 'white', fontWeight: 'bold' }}>
+                        <Checkbox
+                          checked={selectedArticles.length === filteredArticles.length && filteredArticles.length > 0}
+                          indeterminate={selectedArticles.length > 0 && selectedArticles.length < filteredArticles.length}
+                          onChange={handleSelectAll}
+                          size="small"
+                          sx={{ color: 'white' }}
+                        />
+                      </TableCell>
+                      {!isMobile && <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>Code</TableCell>}
+                      <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>Article</TableCell>
+                      <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>Prix</TableCell>
+                      <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>Stock</TableCell>
+                      {!isMobile && <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>Image</TableCell>}
+                      <TableCell align="right" sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {(rowsPerPage > 0
-                      ? filteredArticles.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                      : filteredArticles
-                    ).map((article) => (
-                      <TableRow 
-                        key={article._id} 
-                        hover
-                        sx={{ 
-                          '&:nth-of-type(even)': { 
-                            backgroundColor: '#f9f9f9' 
+                    {paginatedArticles.map((article) => (
+                      <TableRow
+                        key={article._id}
+                        sx={{
+                          '&:nth-of-type(odd)': {
+                            backgroundColor: '#f8f9fa',
                           },
-                          '&:last-child td, &:last-child th': { 
-                            border: 0 
+                          '&:hover': {
+                            backgroundColor: '#e3f2fd',
+                            transform: 'scale(1.01)',
+                            transition: 'all 0.2s ease'
+                          },
+                          transition: 'all 0.2s ease',
+                          '&:last-child td, &:last-child th': {
+                            border: 0
                           }
                         }}
                       >
-                        <TableCell sx={{ fontSize: '0.875rem' }}>{article.code}</TableCell>
-                        <TableCell sx={{ fontSize: '0.875rem' }}>{article.libelle}</TableCell>
-                        <TableCell sx={{ fontSize: '0.875rem' }}>
-                          <Chip 
-                            label={`${article.prix_totale_concre} TND`} 
-                            color="primary" 
+                        <TableCell padding="checkbox">
+                          <Checkbox
+                            checked={selectedArticles.includes(article._id)}
+                            onChange={() => handleSelectArticle(article._id)}
                             size="small"
-                            variant="outlined"
                           />
                         </TableCell>
-                        <TableCell sx={{ fontSize: '0.875rem' }}>
-                          <Chip 
-                            label={article.Nombre_unite} 
-                            color={article.Nombre_unite > 0 ? "success" : "error"} 
+                        {!isMobile && <TableCell>{article.code}</TableCell>}
+                        <TableCell>
+                          <Stack direction="row" alignItems="center" spacing={2}>
+                            {article.image_article ? (
+                              <Avatar
+                                src={`data:image/jpeg;base64,${Buffer.from(article.image_article).toString("base64")}`}
+                                sx={{
+                                  width: 40,
+                                  height: 40,
+                                  border: '2px solid #95a5a6'
+                                }}
+                                variant="rounded"
+                              />
+                            ) : (
+                              <Avatar sx={{
+                                background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                                color: 'white'
+                              }}>
+                                <Inventory />
+                              </Avatar>
+                            )}
+                            <Box>
+                              <Typography sx={{ fontWeight: 'bold', color: '#2c3e50' }}>
+                                {article.libelle}
+                              </Typography>
+                              {isMobile && article.code && (
+                                <Typography variant="caption" color="text.secondary">
+                                  Code: {article.code}
+                                </Typography>
+                              )}
+                            </Box>
+                          </Stack>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={`${article.prix_totale_concre} TND`}
+                            sx={{
+                              backgroundColor: '#e3f2fd',
+                              color: '#2c3e50',
+                              fontWeight: 'bold',
+                              borderRadius: 2
+                            }}
                             size="small"
                           />
                         </TableCell>
                         <TableCell>
-                          {article.image_article ? (
-                            <Avatar
-                              src={`data:image/jpeg;base64,${Buffer.from(article.image_article).toString("base64")}`}
-                              sx={{ width: 40, height: 40 }}
-                              variant="rounded"
-                            />
-                          ) : (
-                            <Avatar sx={{ width: 40, height: 40, bgcolor: theme.palette.grey[300] }}>
-                              <Inventory fontSize="small" />
-                            </Avatar>
-                          )}
+                          <Chip
+                            label={article.Nombre_unite}
+                            sx={{
+                              backgroundColor: article.Nombre_unite > 0 ? '#d4edda' : '#f8d7da',
+                              color: article.Nombre_unite > 0 ? '#155724' : '#721c24',
+                              fontWeight: 'bold',
+                              borderRadius: 2
+                            }}
+                            size="small"
+                          />
                         </TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', gap: 1 }}>
-                            <IconButton
-                              color="primary"
-                              onClick={() => handleOpenModal(article)}
-                              size="small"
-                              sx={{ 
-                                backgroundColor: theme.palette.action.hover,
+                        {!isMobile && (
+                          <TableCell>
+                            {article.image_article ? (
+                              <Avatar
+                                src={`data:image/jpeg;base64,${Buffer.from(article.image_article).toString("base64")}`}
+                                sx={{
+                                  width: 40,
+                                  height: 40,
+                                  border: '2px solid #95a5a6'
+                                }}
+                                variant="rounded"
+                              />
+                            ) : (
+                              <Avatar sx={{
+                                width: 40,
+                                height: 40,
+                                bgcolor: '#95a5a6',
+                                color: 'white'
+                              }}>
+                                <Inventory fontSize="small" />
+                              </Avatar>
+                            )}
+                          </TableCell>
+                        )}
+                        <TableCell align="right">
+                          <Tooltip title="Voir détails">
+                            <ActionButton
+                              onClick={() => {
+                                setSelectedArticle(article);
+                                setIsModalOpen(true);
+                              }}
+                              sx={{
+                                color: '#2c3e50',
                                 '&:hover': {
-                                  backgroundColor: theme.palette.primary.light,
-                                  color: 'white'
-                                }
+                                  backgroundColor: '#e3f2fd',
+                                  transform: 'scale(1.1)',
+                                  color: '#34495e'
+                                },
+                                transition: 'all 0.3s ease'
                               }}
                             >
-                              <Visibility fontSize="small" />
-                            </IconButton>
-                            <IconButton
-                              color="secondary"
+                              <Visibility />
+                            </ActionButton>
+                          </Tooltip>
+                          <Tooltip title="Modifier">
+                            <ActionButton
                               onClick={() => navigate(`/updateArticle/${article._id}`)}
-                              size="small"
-                              sx={{ 
-                                backgroundColor: theme.palette.action.hover,
+                              sx={{
+                                color: '#2c3e50',
                                 '&:hover': {
-                                  backgroundColor: theme.palette.secondary.light,
-                                  color: 'white'
-                                }
+                                  backgroundColor: '#e3f2fd',
+                                  transform: 'scale(1.1)',
+                                  color: '#34495e'
+                                },
+                                transition: 'all 0.3s ease'
                               }}
                             >
-                              <Edit fontSize="small" />
-                            </IconButton>
-                            <IconButton
-                              color="error"
-                              onClick={() => handleDeleteClick(article)}
-                              size="small"
-                              sx={{ 
-                                backgroundColor: theme.palette.action.hover,
+                              <Edit />
+                            </ActionButton>
+                          </Tooltip>
+                          <Tooltip title="Supprimer">
+                            <ActionButton
+                              onClick={() => handleOpenDeleteDialog(article)}
+                              sx={{
+                                color: '#e74c3c',
                                 '&:hover': {
-                                  backgroundColor: theme.palette.error.light,
-                                  color: 'white'
-                                }
+                                  backgroundColor: '#ffebee',
+                                  transform: 'scale(1.1)',
+                                  color: '#c0392b'
+                                },
+                                transition: 'all 0.3s ease'
                               }}
                             >
-                              <Delete fontSize="small" />
-                            </IconButton>
-                          </Box>
+                              <Delete />
+                            </ActionButton>
+                          </Tooltip>
                         </TableCell>
                       </TableRow>
                     ))}
-                    {emptyRows > 0 && (
-                      <TableRow style={{ height: 53 * emptyRows }}>
-                        <TableCell colSpan={6} />
-                      </TableRow>
-                    )}
                   </TableBody>
                 </Table>
-                <TablePagination
-                  rowsPerPageOptions={[5, 10, 25]}
-                  component="div"
-                  count={filteredArticles.length}
-                  rowsPerPage={rowsPerPage}
-                  page={page}
-                  onPageChange={handleChangePage}
-                  onRowsPerPageChange={handleChangeRowsPerPage}
-                  labelRowsPerPage="Articles par page:"
+              </TableContainer>
+            )}
+
+            {/* Pagination moderne */}
+            {totalPages > 1 && (
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                mt: 3,
+                gap: 2
+              }}>
+                <Button
+                  variant="outlined"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(prev => prev - 1)}
                   sx={{
-                    borderTop: '1px solid #e0e0e0',
-                    '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
-                      fontSize: '0.875rem'
+                    borderColor: '#2c3e50',
+                    color: '#2c3e50',
+                    '&:hover': {
+                      borderColor: '#34495e',
+                      backgroundColor: '#f8f9fa'
                     }
                   }}
-                />
-              </TableContainer>
-            </CardContent>
-          </Card>
+                >
+                  Précédent
+                </Button>
 
-          {/* Details modal */}
-          <Modal
-            open={isModalOpen}
-            onClose={handleCloseModal}
-            closeAfterTransition
-            BackdropComponent={Backdrop}
-            BackdropProps={{
-              timeout: 500,
-            }}
-          >
-            <Fade in={isModalOpen}>
-              <Box sx={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: isMobile ? '90%' : 400,
-                bgcolor: 'background.paper',
-                boxShadow: 24,
-                p: 3,
-                borderRadius: 2,
-                outline: 'none'
-              }}>
-                {selectedArticle && (
-                  <>
-                    <Typography variant="h6" component="h2" gutterBottom sx={{ 
-                      color: theme.palette.primary.main,
-                      fontWeight: 'bold',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1
-                    }}>
-                      <Inventory fontSize="inherit" />
-                      Détails de l'article
-                    </Typography>
-                    <Box sx={{ 
-                      display: 'flex', 
-                      flexDirection: 'column', 
-                      gap: 2,
-                      mt: 2
-                    }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Typography variant="body2" sx={{ 
-                          fontWeight: 'bold', 
-                          minWidth: 120,
-                          color: theme.palette.text.secondary
-                        }}>Code:</Typography>
-                        <Typography variant="body2">{selectedArticle.code}</Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Typography variant="body2" sx={{ 
-                          fontWeight: 'bold', 
-                          minWidth: 120,
-                          color: theme.palette.text.secondary
-                        }}>Désignation:</Typography>
-                        <Typography variant="body2">{selectedArticle.libelle}</Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Typography variant="body2" sx={{ 
-                          fontWeight: 'bold', 
-                          minWidth: 120,
-                          color: theme.palette.text.secondary
-                        }}>Prix d'achat:</Typography>
-                        <Typography variant="body2">{selectedArticle.prix_achat} TND</Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Typography variant="body2" sx={{ 
-                          fontWeight: 'bold', 
-                          minWidth: 120,
-                          color: theme.palette.text.secondary
-                        }}>Stock:</Typography>
-                        <Typography variant="body2">{selectedArticle.Nombre_unite}</Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Typography variant="body2" sx={{ 
-                          fontWeight: 'bold', 
-                          minWidth: 120,
-                          color: theme.palette.text.secondary
-                        }}>Famille:</Typography>
-                        <Typography variant="body2">{selectedArticle.libelleFamille}</Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Typography variant="body2" sx={{ 
-                          fontWeight: 'bold', 
-                          minWidth: 120,
-                          color: theme.palette.text.secondary
-                        }}>TVA:</Typography>
-                        <Typography variant="body2">{selectedArticle.tva}%</Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Typography variant="body2" sx={{ 
-                          fontWeight: 'bold', 
-                          minWidth: 120,
-                          color: theme.palette.text.secondary
-                        }}>Fodec:</Typography>
-                        <Typography variant="body2">{selectedArticle.fodec}%</Typography>
-                      </Box>
-                    </Box>
-                    <Box sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'flex-end', 
-                      mt: 3
-                    }}>
-                      <Button 
-                        onClick={handleCloseModal} 
-                        variant="outlined"
-                        size="small"
-                        sx={{
-                          textTransform: 'none',
-                          borderRadius: '8px'
-                        }}
-                      >
-                        Fermer
-                      </Button>
-                    </Box>
-                  </>
-                )}
+                <Typography variant="body2" sx={{
+                  px: 2,
+                  py: 1,
+                  backgroundColor: '#f8f9fa',
+                  borderRadius: 1,
+                  fontWeight: 'bold',
+                  color: '#2c3e50'
+                }}>
+                  Page {currentPage} sur {totalPages}
+                </Typography>
+
+                <Button
+                  variant="outlined"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(prev => prev + 1)}
+                  sx={{
+                    borderColor: '#2c3e50',
+                    color: '#2c3e50',
+                    '&:hover': {
+                      borderColor: '#34495e',
+                      backgroundColor: '#f8f9fa'
+                    }
+                  }}
+                >
+                  Suivant
+                </Button>
               </Box>
-            </Fade>
-          </Modal>
+            )}
+          </CardContent>
+        </ModernCard>
 
-          {/* Delete confirmation dialog */}
-          <Dialog
-            open={openDialog}
-            onClose={handleCloseDialog}
-            aria-labelledby="alert-dialog-title"
-            aria-describedby="alert-dialog-description"
-            PaperProps={{
-              sx: {
-                borderRadius: 2,
-                padding: 2,
-                minWidth: isMobile ? '90%' : 400
+        {/* Article Details Modal */}
+        <Dialog
+          open={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          maxWidth="md"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: 3,
+              width: isMobile ? '95vw' : '700px'
+            }
+          }}
+        >
+          <DialogTitle sx={{
+            fontWeight: '600',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+            color: 'white'
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Inventory />
+              Détails de l'Article
+            </Box>
+            <IconButton onClick={() => setIsModalOpen(false)} size="small" sx={{ color: 'white' }}>
+              <Close />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent dividers sx={{ p: 3 }}>
+            {selectedArticle && (
+              <Stack spacing={3}>
+                {/* En-tête avec image et infos principales */}
+                <Box sx={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+                  {selectedArticle.image_article ? (
+                    <Avatar
+                      src={`data:image/jpeg;base64,${Buffer.from(selectedArticle.image_article).toString("base64")}`}
+                      sx={{
+                        width: 100,
+                        height: 100,
+                        border: '3px solid #95a5a6',
+                        borderRadius: 2
+                      }}
+                      variant="rounded"
+                    />
+                  ) : (
+                    <Avatar sx={{
+                      width: 100,
+                      height: 100,
+                      background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                      color: 'white',
+                      borderRadius: 2
+                    }}>
+                      <Inventory sx={{ fontSize: 40 }} />
+                    </Avatar>
+                  )}
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#2c3e50', mb: 1 }}>
+                      {selectedArticle.libelle}
+                    </Typography>
+                    <Chip
+                      label={`Code: ${selectedArticle.code}`}
+                      sx={{
+                        backgroundColor: '#e3f2fd',
+                        color: '#2c3e50',
+                        fontWeight: 'bold'
+                      }}
+                    />
+                  </Box>
+                </Box>
+
+                <Divider />
+
+                {/* Informations détaillées */}
+                <Box sx={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  gap: 3
+                }}>
+                  <Box sx={{
+                    p: 2,
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)',
+                    border: '1px solid #4caf50'
+                  }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <AttachMoney sx={{ color: '#4caf50' }} />
+                      <Typography variant="subtitle2" color="#2e7d32" fontWeight="bold">
+                        Prix TTC
+                      </Typography>
+                    </Box>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#2e7d32' }}>
+                      {selectedArticle.prix_totale_concre} TND
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{
+                    p: 2,
+                    borderRadius: 2,
+                    background: selectedArticle.Nombre_unite > 0
+                      ? 'linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)'
+                      : 'linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)',
+                    border: `1px solid ${selectedArticle.Nombre_unite > 0 ? '#4caf50' : '#f44336'}`
+                  }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <Inventory sx={{ color: selectedArticle.Nombre_unite > 0 ? '#4caf50' : '#f44336' }} />
+                      <Typography variant="subtitle2"
+                        color={selectedArticle.Nombre_unite > 0 ? '#2e7d32' : '#c62828'}
+                        fontWeight="bold"
+                      >
+                        Stock
+                      </Typography>
+                    </Box>
+                    <Typography variant="h6" sx={{
+                      fontWeight: 'bold',
+                      color: selectedArticle.Nombre_unite > 0 ? '#2e7d32' : '#c62828'
+                    }}>
+                      {selectedArticle.Nombre_unite} unités
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{
+                    p: 2,
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+                    border: '1px solid #2196f3'
+                  }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <LocalOffer sx={{ color: '#2196f3' }} />
+                      <Typography variant="subtitle2" color="#1976d2" fontWeight="bold">
+                        Prix HT
+                      </Typography>
+                    </Box>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+                      {selectedArticle.prix_unitaire} TND
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{
+                    p: 2,
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, #fff3e0 0%, #ffcc02 100%)',
+                    border: '1px solid #ff9800'
+                  }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <Category sx={{ color: '#ff9800' }} />
+                      <Typography variant="subtitle2" color="#f57c00" fontWeight="bold">
+                        TVA
+                      </Typography>
+                    </Box>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#f57c00' }}>
+                      {selectedArticle.tva}%
+                    </Typography>
+                  </Box>
+                </Box>
+              </Stack>
+            )}
+          </DialogContent>
+          <DialogActions sx={{ p: 2, gap: 1 }}>
+            <Button
+              variant="outlined"
+              onClick={() => setIsModalOpen(false)}
+              sx={{
+                borderColor: '#95a5a6',
+                color: '#95a5a6',
+                '&:hover': {
+                  borderColor: '#7f8c8d',
+                  backgroundColor: '#f8f9fa'
+                }
+              }}
+            >
+              Fermer
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => navigate(`/updateArticle/${selectedArticle._id}`)}
+              sx={{
+                background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)'
+                }
+              }}
+            >
+              Modifier
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Delete Single Article Dialog */}
+        <Dialog
+          open={deleteDialog.open}
+          onClose={handleCloseDeleteDialog}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: { borderRadius: 3 }
+          }}
+        >
+          <DialogTitle sx={{
+            color: '#e74c3c',
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1
+          }}>
+            <Delete />
+            Confirmer la suppression
+          </DialogTitle>
+          <DialogContent>
+            <Typography variant="body1">
+              Êtes-vous sûr de vouloir supprimer l'article "{deleteDialog.article?.libelle}" ?
+              Cette action est irréversible.
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ p: 2, gap: 1 }}>
+            <Button
+              onClick={handleCloseDeleteDialog}
+              variant="outlined"
+              sx={{
+                borderColor: '#95a5a6',
+                color: '#95a5a6',
+                '&:hover': {
+                  borderColor: '#7f8c8d',
+                  backgroundColor: '#f8f9fa'
+                }
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={deleteArticle}
+              variant="contained"
+              color="error"
+              disabled={loading}
+              sx={{
+                background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #c0392b 0%, #e74c3c 100%)'
+                }
+              }}
+            >
+              {loading ? 'Suppression...' : 'Supprimer'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Delete Multiple Articles Dialog */}
+        <Dialog
+          open={deleteMultipleDialog.open}
+          onClose={handleCloseDeleteMultipleDialog}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: { borderRadius: 3 }
+          }}
+        >
+          <DialogTitle sx={{
+            color: '#e74c3c',
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1
+          }}>
+            <Delete />
+            Confirmer la suppression multiple
+          </DialogTitle>
+          <DialogContent>
+            <Typography variant="body1">
+              Êtes-vous sûr de vouloir supprimer {selectedArticles.length} article(s) sélectionné(s) ?
+              Cette action est irréversible.
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ p: 2, gap: 1 }}>
+            <Button
+              onClick={handleCloseDeleteMultipleDialog}
+              variant="outlined"
+              sx={{
+                borderColor: '#95a5a6',
+                color: '#95a5a6',
+                '&:hover': {
+                  borderColor: '#7f8c8d',
+                  backgroundColor: '#f8f9fa'
+                }
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={deleteSelectedArticles}
+              variant="contained"
+              color="error"
+              disabled={loading}
+              sx={{
+                background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #c0392b 0%, #e74c3c 100%)'
+                }
+              }}
+            >
+              {loading ? 'Suppression...' : `Supprimer ${selectedArticles.length} article(s)`}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Snackbar for notifications */}
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={4000}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        >
+          <Alert
+            onClose={handleCloseSnackbar}
+            severity={snackbar.severity}
+            variant="filled"
+            sx={{
+              borderRadius: 2,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+              '&.MuiAlert-filledSuccess': {
+                background: 'linear-gradient(135deg, #4caf50 0%, #45a049 100%)',
+              },
+              '&.MuiAlert-filledError': {
+                background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
               }
             }}
+            iconMapping={{
+              success: <CheckCircleIcon fontSize="inherit" />,
+              error: <CancelIcon fontSize="inherit" />
+            }}
           >
-            <DialogTitle id="alert-dialog-title" sx={{ 
-              fontWeight: 'bold',
-              color: theme.palette.error.main,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1
-            }}>
-              <Delete color="error" />
-              Confirmer la suppression
-            </DialogTitle>
-            <DialogContent>
-              <Typography variant="body1">
-                Êtes-vous sûr de vouloir supprimer cet article ?
-              </Typography>
-              {selectedArticle && (
-                <Typography variant="body2" sx={{ 
-                  mt: 1,
-                  fontStyle: 'italic',
-                  color: theme.palette.text.secondary
-                }}>
-                  Article: {selectedArticle.code} - {selectedArticle.libelle}
-                </Typography>
-              )}
-            </DialogContent>
-            <DialogActions sx={{ 
-              justifyContent: 'space-between',
-              padding: 2
-            }}>
-              <Button 
-                onClick={handleCloseDialog} 
-                variant="outlined"
-                sx={{
-                  borderRadius: '8px',
-                  textTransform: 'none'
-                }}
-              >
-                Annuler
-              </Button>
-              <Button 
-                onClick={handleDeleteConfirm} 
-                color="error" 
-                variant="contained"
-                sx={{
-                  borderRadius: '8px',
-                  textTransform: 'none',
-                  boxShadow: 'none',
-                  '&:hover': {
-                    boxShadow: 'none',
-                    backgroundColor: theme.palette.error.dark
-                  }
-                }}
-              >
-                Supprimer
-              </Button>
-            </DialogActions>
-          </Dialog>
-
-          {/* Success snackbar */}
-          <Snackbar
-            open={openSnackbar}
-            autoHideDuration={6000}
-            onClose={handleCloseSnackbar}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-          >
-            <Alert
-              onClose={handleCloseSnackbar}
-              severity="success"
-              variant="filled"
-              sx={{ width: '100%' }}
-            >
-              Article supprimé avec succès
-            </Alert>
-          </Snackbar>
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
         </Box>
       </Box>
     </>

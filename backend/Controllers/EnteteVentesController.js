@@ -110,7 +110,7 @@ const createDevis = async (req, res) => {
             tva: ligne.tva,
             prix_uTTC: ligne.prix_uTTC,
             total_ht: ligne.quantite * ligne.prix_unitaire,
-            total_ttc: total_ht * (1 + tva),
+            total_ttc: ligne.quantite * ligne.prix_unitaire * (1 + ligne.tva),
         }));
 
        // await LigneVentes.insertMany(lignesDevis);

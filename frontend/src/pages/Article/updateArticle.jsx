@@ -15,6 +15,7 @@ import {
   AccordionSummary,
   AccordionDetails,
   InputAdornment,
+  Divider,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Navbar from "../../navbar/Navbar";
@@ -137,25 +138,65 @@ export default function UpdateArticle() {
       <Box height={70} />
       <Box sx={{ display: "flex" }}>
         <Sidenav />
-        <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: "auto", maxHeight: "100vh" }}>
-          <Card sx={{ mb: 3, boxShadow: 3, borderRadius: 2 }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h4" component="h1" sx={{ color: '#1976d2', fontWeight: 'bold' }}>
-                  <Inventory sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  Modifier l'Article
-                </Typography>
+        <Box component="main" sx={{
+          flexGrow: 1,
+          p: 3,
+          overflow: "auto",
+          maxHeight: "100vh",
+          background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)'
+        }}>
+          {/* Header principal moderne */}
+          <Box sx={{
+            textAlign: 'center',
+            mb: 4,
+            p: 3,
+            background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+            borderRadius: 3,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+            color: 'white'
+          }}>
+            <Inventory sx={{ fontSize: 48, mb: 2 }} />
+            <Typography variant="h3" sx={{
+              fontWeight: 'bold',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+              mb: 1
+            }}>
+              Modifier l'Article
+            </Typography>
+            <Typography variant="h6" sx={{ opacity: 0.9 }}>
+              Mettez à jour les informations de votre article
+            </Typography>
+          </Box>
+
+          <Card sx={{
+            mb: 3,
+            borderRadius: 3,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+            background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            transition: 'all 0.3s ease-in-out',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
+            }
+          }}>
+            <CardContent sx={{ p: 3 }}>
+              {/* Bouton retour moderne */}
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
                 <Button
                   variant="outlined"
                   onClick={() => navigate('/article')}
-                  sx={{ 
-                    borderRadius: '8px',
-                    color: '#1976d2',
-                    borderColor: '#1976d2',
-                    '&:hover': { 
-                      borderColor: '#1565c0',
-                      backgroundColor: 'rgba(25, 118, 210, 0.04)'
-                    }
+                  sx={{
+                    borderRadius: 2,
+                    borderColor: '#95a5a6',
+                    color: '#95a5a6',
+                    '&:hover': {
+                      borderColor: '#7f8c8d',
+                      backgroundColor: 'rgba(149, 165, 166, 0.1)',
+                      transform: 'translateY(-1px)',
+                      boxShadow: '0 4px 12px rgba(149, 165, 166, 0.3)'
+                    },
+                    transition: 'all 0.3s ease'
                   }}
                 >
                   Retour
@@ -163,13 +204,39 @@ export default function UpdateArticle() {
               </Box>
 
               <form>
-                {/* Informations Générales */}
-                <Card sx={{ mb: 3, boxShadow: 2 }}>
-                  <CardContent>
-                    <Typography variant="h6" sx={{ mb: 3, color: '#1976d2' }}>
-                      <Category sx={{ mr: 1, verticalAlign: 'middle' }} />
-                      Informations Générales
-                    </Typography>
+                {/* Informations Générales modernisées */}
+                <Card sx={{
+                  mb: 3,
+                  borderRadius: 2,
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                  border: '1px solid rgba(149, 165, 166, 0.2)',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 8px 25px rgba(0,0,0,0.12)'
+                  }
+                }}>
+                  <CardContent sx={{ p: 3 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                      <Category sx={{
+                        fontSize: 32,
+                        mr: 2,
+                        background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                        borderRadius: '50%',
+                        p: 1,
+                        color: 'white'
+                      }} />
+                      <Typography variant="h5" sx={{
+                        fontWeight: 'bold',
+                        background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                        backgroundClip: 'text',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent'
+                      }}>
+                        Informations Générales
+                      </Typography>
+                    </Box>
+                    <Divider sx={{ mb: 3, background: 'linear-gradient(90deg, #2c3e50, #34495e)' }} />
                     <Grid container spacing={3}>
                       <Grid item xs={12} md={4}>
                         <TextField
@@ -833,21 +900,55 @@ export default function UpdateArticle() {
                   </CardContent>
                 </Card>
 
-                {/* Image */}
-                <Card sx={{ mb: 3, boxShadow: 2 }}>
-                  <CardContent>
-                    <Typography variant="h6" sx={{ mb: 3, color: '#1976d2' }}>
-                      <Image sx={{ mr: 1, verticalAlign: 'middle' }} />
-                      Image de l'Article
-                    </Typography>
+                {/* Image modernisée */}
+                <Card sx={{
+                  mb: 3,
+                  borderRadius: 2,
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                  border: '1px solid rgba(149, 165, 166, 0.2)',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 8px 25px rgba(0,0,0,0.12)'
+                  }
+                }}>
+                  <CardContent sx={{ p: 3 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                      <Image sx={{
+                        fontSize: 32,
+                        mr: 2,
+                        background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                        borderRadius: '50%',
+                        p: 1,
+                        color: 'white'
+                      }} />
+                      <Typography variant="h5" sx={{
+                        fontWeight: 'bold',
+                        background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                        backgroundClip: 'text',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent'
+                      }}>
+                        Image de l'Article
+                      </Typography>
+                    </Box>
+                    <Divider sx={{ mb: 3, background: 'linear-gradient(90deg, #95a5a6, #7f8c8d)' }} />
+
                     <Button
                       variant="contained"
                       component="label"
-                      sx={{ 
+                      sx={{
                         textTransform: "none",
-                        borderRadius: '8px',
-                        backgroundColor: '#1976d2',
-                        '&:hover': { backgroundColor: '#1565c0' }
+                        borderRadius: 2,
+                        background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                        color: 'white',
+                        boxShadow: '0 4px 15px rgba(149, 165, 166, 0.3)',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #7f8c8d 0%, #95a5a6 100%)',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 6px 20px rgba(149, 165, 166, 0.4)'
+                        },
+                        transition: 'all 0.3s ease'
                       }}
                     >
                       Choisir une image
@@ -888,14 +989,26 @@ export default function UpdateArticle() {
                   </CardContent>
                 </Card>
 
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
                   <Button
                     onClick={updateArticle}
                     variant="contained"
-                    sx={{ 
-                      borderRadius: '8px',
-                      backgroundColor: '#1976d2',
-                      '&:hover': { backgroundColor: '#1565c0' }
+                    size="large"
+                    sx={{
+                      borderRadius: 3,
+                      px: 6,
+                      py: 2,
+                      fontSize: '1.2rem',
+                      fontWeight: 'bold',
+                      background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                      color: 'white',
+                      boxShadow: '0 8px 25px rgba(52, 73, 94, 0.4)',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)',
+                        transform: 'translateY(-3px)',
+                        boxShadow: '0 12px 35px rgba(52, 73, 94, 0.5)'
+                      },
+                      transition: 'all 0.3s ease'
                     }}
                   >
                     Mettre à jour l'article

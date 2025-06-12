@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const LigneVentesSchema = new Schema({
     numeroEntete: {type: Schema.Types.ObjectId,ref: 'EnteteVentes',required: true},
-    article: {type: Schema.Types.ObjectId,ref: 'article',required: true},
+    article: {type: Schema.Types.ObjectId,ref: 'article'},
     quantite: {type: Number,required: true, min: 1 },
     prix_unitaire: {type: Number,required: true},
     prix_uTTC: {type: Number,required: true},

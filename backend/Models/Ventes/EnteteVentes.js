@@ -14,7 +14,6 @@ const EnteteVentesSchema = new Schema({
     factureReference:{type:String},
     anneeReference: { type: Number },
     client: { type: Schema.Types.ObjectId, ref: 'client', required: true },
-
     total_hors_Taxe:{type: Number,},
     total_ttc:{type: Number,},
     montantPaye: { type: Number, default: 0 },

@@ -13,6 +13,15 @@ const CategorieArticleSchema = new Schema({
         type: String,
         required: true,
     },
+     famillearticle: {
+        type: Schema.Types.ObjectId,
+        ref: 'familleArticle',
+        required: true
+    },
+    famillearticleInfo: {
+        code: Number,
+        designationFamille: String
+    }
     });
     const CategorieArticleModel = mongoose.model('categorieArticle', CategorieArticleSchema);
     module.exports = CategorieArticleModel;

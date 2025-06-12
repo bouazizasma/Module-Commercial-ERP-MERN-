@@ -24,15 +24,24 @@ import {
   IconButton,
   TablePagination,
   Divider,
+  Tooltip,
+  Chip,
+  Fade,
+  InputAdornment,
 } from "@mui/material";
-import { 
-  AccountBalance, 
-  Payment, 
-  KeyboardArrowDown, 
+import {
+  AccountBalance,
+  Payment,
+  KeyboardArrowDown,
   KeyboardArrowUp,
   Receipt,
   MonetizationOn,
   CheckCircle,
+  Business as BusinessIcon,
+  Search as SearchIcon,
+  Add as AddIcon,
+  CalendarToday as CalendarTodayIcon,
+  AccountBalanceWallet as WalletIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 
@@ -51,39 +60,98 @@ const Row = ({ reglement }) => {
 
   return (
     <>
-      <TableRow sx={{ '& > *': { borderBottom: 'unset' } }}>
-        <TableCell>
-          {new Date(reglement.dateCreation).toLocaleDateString()}
+      <TableRow sx={{
+        '& > *': { borderBottom: 'unset' },
+        '&:nth-of-type(odd)': {
+          backgroundColor: '#f8f9fa',
+        },
+        '&:hover': {
+          backgroundColor: '#e3f2fd',
+          transform: 'scale(1.01)',
+          transition: 'all 0.2s ease'
+        },
+        transition: 'all 0.2s ease'
+      }}>
+        <TableCell sx={{ fontWeight: 'medium' }}>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <CalendarTodayIcon sx={{ fontSize: 16, color: '#2c3e50' }} />
+            {new Date(reglement.dateCreation).toLocaleDateString()}
+          </Stack>
         </TableCell>
-        <TableCell>{reglement.clientId?.nom_prenom || '-'}</TableCell>
-        <TableCell>{reglement.montantPaye?.toFixed(2)} DT</TableCell>
-        <TableCell>{reglement.caisseId?.libelle || '-'}</TableCell>
+        <TableCell sx={{ fontWeight: 'bold', color: '#2c3e50' }}>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <BusinessIcon sx={{ fontSize: 16, color: '#2c3e50' }} />
+            {reglement.clientId?.nom_prenom || '-'}
+          </Stack>
+        </TableCell>
+        <TableCell sx={{ fontWeight: 'bold', color: '#95a5a6' }}>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            {reglement.montantPaye?.toFixed(2)} DT
+          </Stack>
+        </TableCell>
+        <TableCell sx={{ fontWeight: 'medium' }}>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <WalletIcon sx={{ fontSize: 16, color: '#2c3e50' }} />
+            {reglement.caisseId?.libelle || '-'}
+          </Stack>
+        </TableCell>
         <TableCell>
-          <IconButton
-            size="small"
-            onClick={() => setOpen(!open)}
-            sx={{ color: 'primary.main' }}
-          >
-            {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
-          </IconButton>
+          <Tooltip title={open ? "Masquer les détails" : "Voir les détails"}>
+            <IconButton
+              size="small"
+              onClick={() => setOpen(!open)}
+              sx={{
+                color: '#2c3e50',
+                '&:hover': {
+                  backgroundColor: '#e3f2fd',
+                  transform: 'scale(1.1)',
+                  color: '#34495e'
+                },
+                transition: 'all 0.3s ease'
+              }}
+            >
+              {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+            </IconButton>
+          </Tooltip>
         </TableCell>
       </TableRow>
       <TableRow>
         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={5}>
           <Collapse in={open} timeout="auto" unmountOnExit>
-            <Box sx={{ margin: 1 }}>
-              <Typography variant="h6" gutterBottom component="div">
+            <Box sx={{
+              margin: 1,
+              p: 2,
+              borderRadius: 2,
+              background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)'
+            }}>
+              <Typography variant="h6" gutterBottom component="div" sx={{
+                fontWeight: 'bold',
+                color: '#2c3e50',
+                mb: 3
+              }}>
                 Détails du règlement
               </Typography>
-              <Grid container spacing={2}>
+              <Grid container spacing={3}>
                 {/* Détails des chèques */}
                 {reglement.details?.cheques?.length > 0 && (
                   <Grid item xs={12} md={6}>
-                    <Card variant="outlined">
-                      <CardContent>
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                          <MonetizationOn color="primary" />
-                          <Typography variant="subtitle1">
+                    <Card sx={{
+                      borderRadius: 2,
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                      border: '1px solid rgba(149, 165, 166, 0.2)',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 8px 25px rgba(0,0,0,0.12)'
+                      }
+                    }}>
+                      <CardContent sx={{ p: 2 }}>
+                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+                          <MonetizationOn sx={{ color: '#95a5a6' }} />
+                          <Typography variant="subtitle1" sx={{
+                            fontWeight: 'bold',
+                            color: '#2c3e50'
+                          }}>
                             Paiements par chèque
                           </Typography>
                         </Stack>
@@ -104,11 +172,23 @@ const Row = ({ reglement }) => {
                 {/* Détails des effets */}
                 {reglement.details?.effets?.length > 0 && (
                   <Grid item xs={12} md={6}>
-                    <Card variant="outlined">
-                      <CardContent>
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                          <Receipt color="primary" />
-                          <Typography variant="subtitle1">
+                    <Card sx={{
+                      borderRadius: 2,
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                      border: '1px solid rgba(52, 73, 94, 0.2)',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 8px 25px rgba(0,0,0,0.12)'
+                      }
+                    }}>
+                      <CardContent sx={{ p: 2 }}>
+                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+                          <Receipt sx={{ color: '#2c3e50' }} />
+                          <Typography variant="subtitle1" sx={{
+                            fontWeight: 'bold',
+                            color: '#2c3e50'
+                          }}>
                             Paiements par effet
                           </Typography>
                         </Stack>
@@ -129,11 +209,23 @@ const Row = ({ reglement }) => {
                 {/* Détails des espèces */}
                 {reglement.details?.especes?.length > 0 && (
                   <Grid item xs={12} md={6}>
-                    <Card variant="outlined">
-                      <CardContent>
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                          <Payment color="primary" />
-                          <Typography variant="subtitle1">
+                    <Card sx={{
+                      borderRadius: 2,
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                      border: '1px solid rgba(76, 175, 80, 0.2)',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 8px 25px rgba(0,0,0,0.12)'
+                      }
+                    }}>
+                      <CardContent sx={{ p: 2 }}>
+                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+                          <Payment sx={{ color: '#4caf50' }} />
+                          <Typography variant="subtitle1" sx={{
+                            fontWeight: 'bold',
+                            color: '#2c3e50'
+                          }}>
                             Paiements en espèces
                           </Typography>
                         </Stack>
@@ -151,42 +243,55 @@ const Row = ({ reglement }) => {
 
                 {/* Factures concernées */}
                 <Grid item xs={12}>
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        <CheckCircle color="primary" />
-                        <Typography variant="subtitle1">
+                  <Card sx={{
+                    borderRadius: 2,
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                    border: '1px solid rgba(52, 73, 94, 0.2)',
+                    background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 8px 25px rgba(0,0,0,0.12)'
+                    }
+                  }}>
+                    <CardContent sx={{ p: 3 }}>
+                      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+                        <CheckCircle sx={{ color: '#4caf50' }} />
+                        <Typography variant="subtitle1" sx={{
+                          fontWeight: 'bold',
+                          color: '#2c3e50'
+                        }}>
                           Factures concernées
                         </Typography>
                       </Stack>
                       <Box sx={{ mt: 1 }}>
                         {reglement.facturesIds?.map((facture, idx) => (
-                          <Typography key={idx} variant="body2">
+                          <Typography key={idx} variant="body2" sx={{ mb: 0.5, color: '#666' }}>
                             • N° {facture.numero} ({facture.total_ttc?.toFixed(2)} DT)
                           </Typography>
                         ))}
-                        <Divider sx={{ my: 1 }} />
+                        <Divider sx={{ my: 2, background: 'linear-gradient(90deg, #95a5a6, #7f8c8d)' }} />
                         <Stack direction="row" justifyContent="space-between" sx={{ mt: 1 }}>
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography variant="body2" sx={{ color: '#666', fontWeight: 'medium' }}>
                             Montant Total:
                           </Typography>
-                          <Typography variant="body2" fontWeight="bold">
+                          <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#2c3e50' }}>
                             {montantTotal.toFixed(2)} DT
                           </Typography>
                         </Stack>
                         <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.5 }}>
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography variant="body2" sx={{ color: '#666', fontWeight: 'medium' }}>
                             Montant Payé:
                           </Typography>
-                          <Typography variant="body2" fontWeight="bold" color="success.main">
+                          <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#4caf50' }}>
                             {montantPaye.toFixed(2)} DT
                           </Typography>
                         </Stack>
                         <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.5 }}>
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography variant="body2" sx={{ color: '#666', fontWeight: 'medium' }}>
                             Montant Restant:
                           </Typography>
-                          <Typography variant="body2" fontWeight="bold" color="error.main">
+                          <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#e74c3c' }}>
                             {montantRestant.toFixed(2)} DT
                           </Typography>
                         </Stack>
@@ -276,57 +381,119 @@ export default function ListeRegelement() {
     <>
       <Navbar />
       <Box height={64} />
-      <Box sx={{ 
-        display: "flex", 
-        backgroundColor: "#f5f5f5",
+      <Box sx={{
+        display: "flex",
+        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
         minHeight: "calc(100vh - 64px)",
         overflow: "hidden"
       }}>
         <Sidenav />
-        <Box component="main" sx={{ 
-          flexGrow: 1, 
-          p: 3, 
+        <Box component="main" sx={{
+          flexGrow: 1,
+          p: 3,
           overflow: "auto",
           height: "calc(100vh - 64px)",
           "&::-webkit-scrollbar": {
             width: "8px",
-            backgroundColor: "#f5f5f5"
+            backgroundColor: "#f8f9fa"
           },
           "&::-webkit-scrollbar-thumb": {
             borderRadius: "4px",
-            backgroundColor: "#888"
+            backgroundColor: "#95a5a6"
           },
           "&::-webkit-scrollbar-track": {
-            backgroundColor: "#f5f5f5"
+            backgroundColor: "#f8f9fa"
           }
         }}>
           <Grid container spacing={3}>
+            {/* En-tête modernisé */}
             <Grid item xs={12}>
-              <Card sx={{ p: 2, borderRadius: 2 }}>
-                <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Payment sx={{ fontSize: 40, color: "#1976d2" }} />
-                    <Typography variant="h4" component="h1" sx={{ fontWeight: "bold" }}>
+              <Fade in={true} timeout={800}>
+                <Card sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                  background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  transition: 'all 0.3s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
+                  }
+                }}>
+                  {/* Header principal moderne */}
+                  <Box sx={{
+                    textAlign: 'center',
+                    mb: 4,
+                    p: 3,
+                    background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                    borderRadius: 3,
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                    color: 'white'
+                  }}>
+                    <Payment sx={{ fontSize: 48, mb: 2 }} />
+                    <Typography variant="h3" sx={{
+                      fontWeight: 'bold',
+                      textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                      mb: 1
+                    }}>
                       Liste des Règlements Clients
                     </Typography>
-                  </Stack>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<Payment />}
-                    onClick={handleNouveauReglement}
-                    sx={{ 
-                      borderRadius: 2,
-                      textTransform: 'none',
-                      px: 3
-                    }}
-                  >
-                    Effectuer un Règlement
-                  </Button>
-                </Stack>
+                    <Typography variant="h6" sx={{ opacity: 0.9 }}>
+                      Consultez et gérez tous vos règlements clients
+                    </Typography>
+                  </Box>
 
-                {/* Sélection du client */}
-                <FormControl fullWidth sx={{ mb: 3 }}>
+                  {/* Bouton d'action moderne */}
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+                    <Button
+                      variant="contained"
+                      size="large"
+                      startIcon={<AddIcon />}
+                      onClick={handleNouveauReglement}
+                      sx={{
+                        background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                        color: 'white',
+                        px: 4,
+                        py: 2,
+                        borderRadius: 3,
+                        fontSize: '1.1rem',
+                        fontWeight: 'bold',
+                        boxShadow: '0 8px 25px rgba(149, 165, 166, 0.4)',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #7f8c8d 0%, #95a5a6 100%)',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 12px 35px rgba(149, 165, 166, 0.5)'
+                        },
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      Effectuer un Règlement
+                    </Button>
+                  </Box>
+
+                  {/* Section Filtres modernisée */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                    <SearchIcon sx={{
+                      fontSize: 32,
+                      mr: 2,
+                      background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                      borderRadius: '50%',
+                      p: 1,
+                      color: 'white'
+                    }} />
+                    <Typography variant="h5" sx={{
+                      fontWeight: 'bold',
+                      background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent'
+                    }}>
+                      Filtres de Recherche
+                    </Typography>
+                  </Box>
+
+                  {/* Sélection du client modernisée */}
                   <Autocomplete
                     options={clients}
                     getOptionLabel={(option) => option.nom_prenom}
@@ -340,50 +507,132 @@ export default function ListeRegelement() {
                         label="Filtrer par client"
                         placeholder="Sélectionner un client pour filtrer"
                         variant="outlined"
+                        sx={{
+                          backgroundColor: 'white',
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 2,
+                            '&:hover': {
+                              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
+                            }
+                          }
+                        }}
+                        InputProps={{
+                          ...params.InputProps,
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <BusinessIcon sx={{ color: '#2c3e50', fontSize: 20 }} />
+                            </InputAdornment>
+                          ),
+                        }}
                       />
                     )}
                   />
-                </FormControl>
-              </Card>
+                </Card>
+              </Fade>
             </Grid>
 
-            {/* Tableau des règlements */}
+            {/* Tableau des règlements modernisé */}
             <Grid item xs={12}>
-              <Card sx={{ p: 2, borderRadius: 2 }}>
-                <TableContainer component={Paper}>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Date</TableCell>
-                        <TableCell>Client</TableCell>
-                        <TableCell>Montant</TableCell>
-                        <TableCell>Caisse</TableCell>
-                        <TableCell>Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {reglementsAAfficher
-                        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                        .map((reglement, index) => (
-                          <Row key={index} reglement={reglement} />
-                        ))}
-                    </TableBody>
-                  </Table>
-                  <TablePagination
-                    rowsPerPageOptions={[5, 10, 25]}
-                    component="div"
-                    count={reglementsAAfficher.length}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
-                    onPageChange={handleChangePage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                  />
-                </TableContainer>
-              </Card>
+              <Fade in={true} timeout={1000}>
+                <Card sx={{
+                  borderRadius: 3,
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                  background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  transition: 'all 0.3s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
+                  }
+                }}>
+                  <CardContent sx={{ p: 3 }}>
+                    <Typography variant="h5" sx={{
+                      fontWeight: 'bold',
+                      color: '#2c3e50',
+                      mb: 3,
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}>
+                      <Receipt sx={{ mr: 2, color: '#95a5a6' }} />
+                      Historique des Règlements ({reglementsAAfficher.length})
+                    </Typography>
+
+                    <TableContainer component={Paper} sx={{
+                      borderRadius: 2,
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                      overflow: 'hidden'
+                    }}>
+                      <Table>
+                        <TableHead sx={{
+                          background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)'
+                        }}>
+                          <TableRow>
+                            <TableCell sx={{
+                              color: 'white',
+                              fontWeight: 'bold',
+                              fontSize: '1rem'
+                            }}>
+                              Date
+                            </TableCell>
+                            <TableCell sx={{
+                              color: 'white',
+                              fontWeight: 'bold',
+                              fontSize: '1rem'
+                            }}>
+                              Client
+                            </TableCell>
+                            <TableCell sx={{
+                              color: 'white',
+                              fontWeight: 'bold',
+                              fontSize: '1rem'
+                            }}>
+                              Montant
+                            </TableCell>
+                            <TableCell sx={{
+                              color: 'white',
+                              fontWeight: 'bold',
+                              fontSize: '1rem'
+                            }}>
+                              Caisse
+                            </TableCell>
+                            <TableCell sx={{
+                              color: 'white',
+                              fontWeight: 'bold',
+                              fontSize: '1rem'
+                            }}>
+                              Actions
+                            </TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {reglementsAAfficher
+                            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                            .map((reglement, index) => (
+                              <Row key={index} reglement={reglement} />
+                            ))}
+                        </TableBody>
+                      </Table>
+                      <TablePagination
+                        rowsPerPageOptions={[5, 10, 25]}
+                        component="div"
+                        count={reglementsAAfficher.length}
+                        rowsPerPage={rowsPerPage}
+                        page={page}
+                        onPageChange={handleChangePage}
+                        onRowsPerPageChange={handleChangeRowsPerPage}
+                        sx={{
+                          borderTop: '1px solid #e0e0e0',
+                          backgroundColor: '#f8f9fa'
+                        }}
+                      />
+                    </TableContainer>
+                  </CardContent>
+                </Card>
+              </Fade>
             </Grid>
           </Grid>
         </Box>
       </Box>
     </>
   );
-} 
+}

@@ -31,4 +31,4 @@ const checkStockLevels = async (req, res, next) => {
     }
 };
 
-module.exports = checkStockLevels;
+module.exports = { checkStockLevels };

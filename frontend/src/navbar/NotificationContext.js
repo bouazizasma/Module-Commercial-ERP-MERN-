@@ -10,11 +10,15 @@ export const NotificationProvider = ({ children }) => {
 
     const fetchNotifications = async () => {
         try {
+            console.log("Tentative de récupération des notifications...");
             const response = await axios.get('http://localhost:5000/notifications');
+            console.log("Notifications reçues:", response.data);
             setNotifications(response.data);
             setUnreadCount(response.data.filter(n => !n.read).length);
+            console.log("Nombre de notifications non lues:", response.data.filter(n => !n.read).length);
         } catch (error) {
             console.error("Erreur lors de la récupération des notifications:", error);
+            console.error("Détails de l'erreur:", error.response?.data || error.message);
         }
     };
 

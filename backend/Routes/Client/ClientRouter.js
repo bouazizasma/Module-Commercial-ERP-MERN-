@@ -1,6 +1,6 @@
 const express =require ("express");
 const router = express.Router();
-const { getClients, getClientByID, createClient, updateClient, deleteClient, addBankAccount,removeBankAccount,getBanqueParClient,getComptesParBanqueClient} = require('../../Controllers/ClientController');
+const { getClients, getClientByID, createClient, updateClient, deleteClient, addBankAccount,removeBankAccount,getBanqueParClient,getComptesParBanqueClient,getRegionsBySecteur} = require('../../Controllers/ClientController');
 
 /**
  * @route   
@@ -37,6 +37,8 @@ router.get('/:clientId/banques', getBanqueParClient);
 
 
 router.get('/:clientId/banque/:banqueId/comptes', getComptesParBanqueClient);
+
+router.get('/secteur/:secteurId/regions', getRegionsBySecteur);
 
 
 

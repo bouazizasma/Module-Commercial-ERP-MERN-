@@ -3,10 +3,69 @@ import axios from "axios";
 import Sidenav from "../../navbar/Sidenav";
 import Box from "@mui/material/Box";
 import Navbar from "../../navbar/Navbar";
-import {Card, CardContent, Typography, Grid, TextField, Button, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Autocomplete, Stack, Divider, Radio, RadioGroup, FormControlLabel, FormLabel, FormControl, Alert, Snackbar, Dialog, DialogTitle, DialogContent, DialogActions} from "@mui/material";
-import { Add as AddIcon, Delete as DeleteIcon, Print as PrintIcon, Download as DownloadIcon, Mode } from "@mui/icons-material";
+import {
+  Card,
+  CardContent,
+  Typography,
+  Grid,
+  TextField,
+  Button,
+  IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Autocomplete,
+  Stack,
+  Divider,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  FormLabel,
+  FormControl,
+  Alert,
+  Snackbar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Tooltip,
+  Chip,
+  InputAdornment
+} from "@mui/material";
+import {
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  Print as PrintIcon,
+  Download as DownloadIcon,
+  LocalShipping as LocalShippingIcon,
+  Person as PersonIcon,
+  Inventory as InventoryIcon,
+  CalendarToday as CalendarTodayIcon,
+  LocationOn as LocationOnIcon,
+  Badge as BadgeIcon,
+  Phone as PhoneIcon,
+  Business as BusinessIcon,
+  AttachMoney as AttachMoneyIcon,
+  Percent as PercentIcon,
+  AddCircleOutline as AddCircleOutlineIcon,
+  ShoppingCart as ShoppingCartIcon,
+  DirectionsCar as DirectionsCarIcon,
+  Person4 as Person4Icon,
+  Note as NoteIcon
+} from "@mui/icons-material";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+
+// Composant moderne de carte
+const ModernCard = ({ children, sx, ...props }) => (
+  <Card sx={{ ...sx }} {...props}>
+    {children}
+  </Card>
+);
 
 export default function SaisieBonLivraisonClient() {
   const [clients, setClients] = useState([]);
@@ -431,314 +490,733 @@ export default function SaisieBonLivraisonClient() {
   return (
     <>
       <Navbar />
-      <Box height={150} />
-      <Box sx={{ overflow: "auto", flexGrow: 1, p: 3, display: "flex", backgroundColor: "#FFFFFF" }}>
+      <Box height={64} />
+      <Box sx={{
+        display: "flex",
+        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+        minHeight: "100vh"
+      }}>
         <Sidenav />
-        <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: "auto", backgroundColor: "#FFFFFF", maxWidth: "none", maxHeight: "100vh", width: "100%" }}>
-          <Box sx={{ flexGrow: 1, p: 3 }}>
-            <Typography variant="h4" sx={{ mb: 3, color: '#1976d2', fontWeight: 'bold', textAlign: 'center' }}>
-              Saisie Bon de Livraison Client
-            </Typography>
-            <form onSubmit={handleSubmit}>
-              <Grid container spacing={3}>
-           {/* Section Données Générales et Articles (Gauche) */}
-<Grid item xs={12} md={8}>
-  <Card sx={{ mb: 3 }}>
-    <CardContent>
-      <Typography variant="h6" sx={{ color: '#1976d2', fontWeight: 'bold', mb: 2 }}>
-        Données Générales
-      </Typography>
-      <Grid container spacing={2}>
-        <Grid item xs={12} sm={4}>
-          <TextField 
-            label="Date" 
-            type="date" 
-            value={dateFacture} 
-            onChange={e => setDateFacture(e.target.value)} 
-            fullWidth 
-            InputLabelProps={{ shrink: true }}
-          />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <Autocomplete
-            options={clients}
-            getOptionLabel={option => option.nom_prenom || ""}
-            value={selectedClient}
-            onChange={handleClientChange}
-            renderInput={params => <TextField {...params} label="Client" fullWidth />}
-          />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <Autocomplete
-            options={depots}
-            getOptionLabel={option => option.libelle || ""}
-            value={selectedDepot}
-            onChange={handleDepotChange}
-            renderInput={params => <TextField {...params} label="Dépôt" fullWidth />}
-          />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <TextField
-            label="Adresse"
-            value={adresse}
-            fullWidth
-            InputProps={{ readOnly: true }}
-          />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <TextField
-            label="Matricule Fiscale"
-            value={matriculeFiscale}
-            fullWidth
-            InputProps={{ readOnly: true }}
-          />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <TextField
-            label="Téléphone"
-            value={telephone}
-            fullWidth
-            InputProps={{ readOnly: true }}
-          />
-        </Grid>
-      </Grid>
-    </CardContent>
-  </Card>
+        <Box component="main" sx={{
+          flexGrow: 1,
+          p: 3,
+          overflow: "auto",
+          maxHeight: "100vh",
+          "&::-webkit-scrollbar": {
+            width: "8px",
+            backgroundColor: "rgba(0,0,0,0.1)"
+          },
+          "&::-webkit-scrollbar-thumb": {
+            borderRadius: "8px",
+            background: "linear-gradient(135deg, #495057 0%, #6c757d 100%)"
+          },
+          "&::-webkit-scrollbar-track": {
+            backgroundColor: "rgba(0,0,0,0.05)"
+          }
+        }}>
+        {/* Header principal moderne */}
+        <Box sx={{
+          textAlign: 'center',
+          mb: 3,
+          p: 3,
+          background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+          borderRadius: 3,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+          color: 'white'
+        }}>
+          <LocalShippingIcon sx={{ fontSize: 48, mb: 2 }} />
+          <Typography variant="h5" sx={{
+            fontWeight: 'bold',
+            textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+            mb: 1
+          }}>
+            Bon de Livraison Client
+          </Typography>
+          <Typography variant="h6" sx={{ opacity: 0.9 }}>
+            Créez et gérez vos livraisons clients facilement
+          </Typography>
+        </Box>
 
-  {/* Section Articles - Maintenant sous les données générales */}
-  <Card sx={{ mb: 3 }}>
-    <CardContent>
-      <Typography variant="h6" sx={{ color: '#1976d2', fontWeight: 'bold', mb: 2 }}>
-        Articles
-      </Typography>
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={3}>
-          <Autocomplete
-            options={articles}
-            getOptionLabel={option => option.libelle || ""}
-            value={selectedArticle}
-            onChange={handleArticleChange}
-            renderInput={params => <TextField {...params} label="Article" fullWidth />}
-          />
-        </Grid>
-        <Grid item xs={12} sm={2}>
-          <TextField
-            label="Quantité"
-            type="number"
-            value={quantite}
-            onChange={e => setQuantite(Number(e.target.value))}
-            fullWidth
-          />
-        </Grid>
-        <Grid item xs={12} sm={2}>
-          <TextField
-            label="Prix Unitaire"
-            type="number"
-            value={prixUnitaire}
-            onChange={e => setPrixUnitaire(Number(e.target.value))}
-            fullWidth
-          />
-        </Grid>
-        <Grid item xs={12} sm={2}>
-          <TextField
-            label="TVA %"
-            type="number"
-            value={tva}
-            onChange={e => setTva(Number(e.target.value))}
-            fullWidth
-          />
-        </Grid>
-        <Grid item xs={12} sm={2}>
-          <TextField
-            label="Remise %"
-            type="number"
-            value={remise}
-            onChange={e => setRemise(Number(e.target.value))}
-            fullWidth
-          />
-        </Grid>
-        <Grid item xs={12} sm={1}>
-          <IconButton 
-            color="primary" 
-            onClick={handleAddLigne}
-            sx={{ mt: 1 }}
-          >
-            <AddIcon />
-          </IconButton>
-        </Grid>
-      </Grid>
-
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Article</TableCell>
-              <TableCell>Quantité</TableCell>
-              <TableCell>Prix Unitaire</TableCell>
-              <TableCell>TVA %</TableCell>
-              <TableCell>Remise %</TableCell>
-              <TableCell>Total</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {lignes.map((ligne, index) => (
-              <TableRow key={index}>
-                <TableCell>{ligne.libelle}</TableCell>
-                <TableCell>{ligne.quantite}</TableCell>
-                <TableCell>{ligne.prix_unitaire}</TableCell>
-                <TableCell>{ligne.tva}</TableCell>
-                <TableCell>{ligne.remise}</TableCell>
-                <TableCell>{ligne.total}</TableCell>
-                <TableCell>
-                  <IconButton color="error" onClick={() => handleRemoveLigne(index)}>
-                    <DeleteIcon />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </CardContent>
-  </Card>
-</Grid>
-
-{/* Section Véhicule, Secteur et Paiement (Droite) */}
-<Grid item xs={12} md={4}>
-  <Card sx={{ mb: 3 }}>
-    <CardContent>
-      <Typography variant="h6" sx={{ color: '#1976d2', fontWeight: 'bold', mb: 2 }}>
-        Véhicule et Paiement
-      </Typography>
-      <Grid container spacing={2}>
-        <Grid item xs={12}>
-          <Autocomplete
-            options={vehicules}
-            getOptionLabel={option => option.matricule || ""}
-            value={selectedVehicule}
-            onChange={handleVehiculeChange}
-            renderInput={params => <TextField {...params} label="Véhicule" fullWidth />}
-          />
-        </Grid>
-        <Grid item xs={12}>
-          <Autocomplete
-            options={secteurs}
-            getOptionLabel={option => option.libelle || ""}
-            value={selectedSecteur}
-            onChange={handleSecteurChange}
-            renderInput={params => <TextField {...params} label="Secteur" fullWidth />}
-          />
-        </Grid>
-        <Grid item xs={12}>
-          <FormControl component="fieldset" sx={{ width: '90%' }}>
-            <FormLabel component="legend">Type de Paiement</FormLabel>
-            <RadioGroup
-              value={typePaiement}
-              onChange={handleTypePaiementChange}
-              sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-around' }}
-            >
-              <FormControlLabel value="Espèce" control={<Radio />} label="Espèce" />
-              <FormControlLabel value="Chèque" control={<Radio />} label="Chèque" />
-              <FormControlLabel value="Effet" control={<Radio />} label="Effet" />
-            </RadioGroup>
-          </FormControl>
-        </Grid>
-      </Grid>
-    </CardContent>
-  </Card>
-
-  {/* Section Totaux - Déplacée à droite */}
-  <Card sx={{ mb: 3 }}>
-    <CardContent>
-      <Typography variant="h6" sx={{ color: '#1976d2', fontWeight: 'bold', mb: 2 }}>
-        Totaux
-      </Typography>
-      <Grid container spacing={2}>
-        {/*<Grid item xs={12}>
-          <TextField
-            label="Total HT"
-            value={totalHT}
-            fullWidth
-            InputProps={{ readOnly: true }}
-          />
-        </Grid> */}
-        <Grid item xs={12}>
-          <TextField
-            label="Total TTC"
-            value={totalTTC}
-            fullWidth
-            InputProps={{ readOnly: true }}
-          />
-        </Grid>
-        <Grid item xs={12}>
-          <TextField
-            label="Timbre"
-            value={timbre}
-            onChange={handleTimbreChange}
-            fullWidth
-          />
-        </Grid>
-        <Grid item xs={12}>
-          <TextField 
-            label="Net à Payer" 
-            value={(totalTTC + parseFloat(timbre)).toFixed(3)} 
-            InputProps={{ readOnly: true }} 
-            fullWidth 
-          />
-        </Grid>
-      </Grid>
-    </CardContent>
-  </Card>
-</Grid>
-
-               {/* Section Signature */}
-<Grid item xs={12}>
-  <Card>
-    <CardContent>
-      <Typography variant="h6" sx={{ color: '#1976d2', fontWeight: 'bold', mb: 2 }}>
-        Signature
-      </Typography>
-      <Grid container spacing={2}>
-        <Grid item xs={12} sm={6}>
-          <TextField
-            label="Notation"
-            value={notation}
-            onChange={(e) => setNotation(e.target.value)}
-            fullWidth
-            multiline
-            rows={2}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <TextField
-            label="Chauffeur"
-            value={chauffeur}
-            onChange={(e) => setChauffeur(e.target.value)}
-            fullWidth
-          />
-        </Grid>
-      </Grid>
-    </CardContent>
-  </Card>
-</Grid>
-
-                {/* Bouton Enregistrer */}
-                <Grid item xs={12}>
-                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                    <Button 
-                      variant="contained" 
-                      color="primary" 
-                      type="submit"
-                      size="large"
-                    >
-                      Enregistrer le bon de Livraison
-                    </Button>
-                  </Box>
+        <form onSubmit={handleSubmit}>
+          {/* Section Client et Livraison */}
+          <ModernCard sx={{
+              mb: 3,
+              borderRadius: 3,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+              background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              transition: 'all 0.3s ease-in-out',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
+              }
+            }}>
+              <CardContent sx={{ p: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                  <PersonIcon sx={{
+                    fontSize: 32,
+                    mr: 2,
+                    background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                    borderRadius: '50%',
+                    p: 1,
+                    color: 'white'
+                  }} />
+                  <Typography variant="h5" sx={{
+                    fontWeight: 'bold',
+                    background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent'
+                  }}>
+                    Informations Client et Livraison
+                  </Typography>
+                </Box>
+                <Divider sx={{ mb: 3, background: 'linear-gradient(90deg, #2c3e50, #34495e)' }} />
+                <Grid container spacing={3} alignItems="center">
+                  <Grid item xs={12} sm={6} md={3}>
+                    <TextField
+                      fullWidth
+                      label="Date de livraison"
+                      type="date"
+                      value={dateFacture}
+                      onChange={(e) => setDateFacture(e.target.value)}
+                      InputLabelProps={{ shrink: true }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <CalendarTodayIcon sx={{ color: '#2c3e50' }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 2,
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            boxShadow: '0 4px 12px rgba(52, 73, 94, 0.15)'
+                          },
+                          '&.Mui-focused': {
+                            boxShadow: '0 4px 12px rgba(52, 73, 94, 0.25)'
+                          }
+                        }
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Autocomplete
+                      options={clients}
+                      getOptionLabel={(option) => option.nom_prenom}
+                      value={selectedClient}
+                      onChange={handleClientChange}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Client"
+                          fullWidth
+                          required
+                          InputProps={{
+                            ...params.InputProps,
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <PersonIcon sx={{ color: '#2c3e50' }} />
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 2,
+                              transition: 'all 0.3s ease',
+                              '&:hover': {
+                                boxShadow: '0 4px 12px rgba(52, 73, 94, 0.15)'
+                              },
+                              '&.Mui-focused': {
+                                boxShadow: '0 4px 12px rgba(52, 73, 94, 0.25)'
+                              }
+                            }
+                          }}
+                        />
+                      )}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <TextField
+                      fullWidth
+                      label="Adresse"
+                      value={adresse}
+                      disabled
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <LocationOnIcon color="primary" />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{ backgroundColor: "white" }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <TextField
+                      fullWidth
+                      label="Matricule Fiscale"
+                      value={matriculeFiscale}
+                      disabled
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <BadgeIcon color="primary" />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{ backgroundColor: "white" }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <TextField
+                      fullWidth
+                      label="Téléphone"
+                      value={telephone}
+                      disabled
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <PhoneIcon color="primary" />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{ backgroundColor: "white" }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Autocomplete
+                      options={depots}
+                      getOptionLabel={(option) => option.libelle}
+                      value={selectedDepot}
+                      onChange={(event, newValue) => setSelectedDepot(newValue)}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Dépôt"
+                          fullWidth
+                          required
+                          InputProps={{
+                            ...params.InputProps,
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <BusinessIcon color="primary" />
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{ backgroundColor: "white" }}
+                        />
+                      )}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Autocomplete
+                      options={secteurs}
+                      getOptionLabel={(option) => option.libelle}
+                      value={selectedSecteur}
+                      onChange={handleSecteurChange}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Secteur"
+                          fullWidth
+                          InputProps={{
+                            ...params.InputProps,
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <LocationOnIcon color="primary" />
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{ backgroundColor: "white" }}
+                        />
+                      )}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Autocomplete
+                      options={vehicules}
+                      getOptionLabel={(option) => option.matricule}
+                      value={selectedVehicule}
+                      onChange={handleVehiculeChange}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Véhicule"
+                          fullWidth
+                          InputProps={{
+                            ...params.InputProps,
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <DirectionsCarIcon color="primary" />
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{ backgroundColor: "white" }}
+                        />
+                      )}
+                    />
+                  </Grid>
                 </Grid>
-              </Grid>
-            </form>
+              </CardContent>
+            </ModernCard>
+
+          {/* Section Articles */}
+            <ModernCard sx={{
+              mb: 3,
+              borderRadius: 3,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+              background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              transition: 'all 0.3s ease-in-out',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
+              }
+            }}>
+              <CardContent sx={{ p: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                  <InventoryIcon sx={{
+                    fontSize: 32,
+                    mr: 2,
+                    background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                    borderRadius: '50%',
+                    p: 1,
+                    color: 'white'
+                  }} />
+                  <Typography variant="h5" sx={{
+                    fontWeight: 'bold',
+                    background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent'
+                  }}>
+                    Sélection d'Articles
+                  </Typography>
+                </Box>
+                <Divider sx={{ mb: 3, background: 'linear-gradient(90deg, #95a5a6, #7f8c8d)' }} />
+                <Grid container spacing={3} alignItems="center">
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Autocomplete
+                      options={articles}
+                      getOptionLabel={(option) => option.libelle}
+                      value={selectedArticle}
+                      onChange={handleArticleChange}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Article"
+                          fullWidth
+                          InputProps={{
+                            ...params.InputProps,
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <InventoryIcon sx={{ color: '#95a5a6' }} />
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 2,
+                              transition: 'all 0.3s ease',
+                              '&:hover': {
+                                boxShadow: '0 4px 12px rgba(149, 165, 166, 0.15)'
+                              },
+                              '&.Mui-focused': {
+                                boxShadow: '0 4px 12px rgba(149, 165, 166, 0.25)'
+                              }
+                            }
+                          }}
+                        />
+                      )}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={2}>
+                    <TextField
+                      fullWidth
+                      label="Quantité"
+                      type="number"
+                      value={quantite}
+                      onChange={(e) => setQuantite(parseInt(e.target.value) || 0)}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <AttachMoneyIcon color="primary" />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{ backgroundColor: "white" }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={2}>
+                    <TextField
+                      fullWidth
+                      label="Prix Unitaire"
+                      value={prixUnitaire}
+                      disabled
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <AttachMoneyIcon color="primary" />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{ backgroundColor: "white" }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={2}>
+                    <TextField
+                      fullWidth
+                      label="TVA"
+                      value={tva}
+                      disabled
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <PercentIcon color="primary" />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{ backgroundColor: "white" }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={2}>
+                    <TextField
+                      fullWidth
+                      label="Prix TTC"
+                      value={prix_uTTC}
+                      disabled
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <AttachMoneyIcon color="primary" />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{ backgroundColor: "white" }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={1}>
+                    <Tooltip title="Ajouter cette ligne à la livraison">
+                      <IconButton
+                        sx={{
+                          background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                          color: 'white',
+                          '&:hover': {
+                            background: 'linear-gradient(135deg, #7f8c8d 0%, #95a5a6 100%)',
+                            transform: 'scale(1.1)'
+                          },
+                          transition: 'all 0.3s ease'
+                        }}
+                        onClick={handleAddLigne}
+                      >
+                        <AddCircleOutlineIcon fontSize="large" />
+                      </IconButton>
+                    </Tooltip>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </ModernCard>
+
+          {/* Section Tableau des Lignes */}
+          {lignes.length > 0 && (
+              <ModernCard sx={{
+                mb: 3,
+                borderRadius: 3,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                transition: 'all 0.3s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
+                }
+              }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                    <ShoppingCartIcon sx={{
+                      fontSize: 32,
+                      mr: 2,
+                      background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                      borderRadius: '50%',
+                      p: 1,
+                      color: 'white'
+                    }} />
+                    <Typography variant="h5" sx={{
+                      fontWeight: 'bold',
+                      background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent'
+                    }}>
+                      Lignes de Livraison ({lignes.length})
+                    </Typography>
+                  </Box>
+                  <Divider sx={{ mb: 3, background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)' }} />
+
+                  <TableContainer component={Paper} sx={{
+                    borderRadius: 2,
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                    overflow: 'hidden'
+                  }}>
+                    <Table>
+                      <TableHead sx={{
+                        background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)'
+                      }}>
+                        <TableRow>
+                          <TableCell sx={{
+                            color: 'white',
+                            fontWeight: 'bold',
+                            fontSize: '1rem'
+                          }}>
+                            Article
+                          </TableCell>
+                          <TableCell sx={{
+                            color: 'white',
+                            fontWeight: 'bold',
+                            fontSize: '1rem'
+                          }}>
+                            Quantité
+                          </TableCell>
+                          <TableCell sx={{
+                            color: 'white',
+                            fontWeight: 'bold',
+                            fontSize: '1rem'
+                          }}>
+                            Prix Unitaire
+                          </TableCell>
+                          <TableCell sx={{
+                            color: 'white',
+                            fontWeight: 'bold',
+                            fontSize: '1rem'
+                          }}>
+                            Prix TTC
+                          </TableCell>
+                          <TableCell sx={{
+                            color: 'white',
+                            fontWeight: 'bold',
+                            fontSize: '1rem'
+                          }}>
+                            Total
+                          </TableCell>
+                          <TableCell sx={{
+                            color: 'white',
+                            fontWeight: 'bold',
+                            fontSize: '1rem'
+                          }}>
+                            Action
+                          </TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {lignes.map((ligne, index) => (
+                          <TableRow
+                            key={index}
+                            sx={{
+                              '&:nth-of-type(odd)': {
+                                backgroundColor: '#f8f9fa',
+                              },
+                              '&:hover': {
+                                backgroundColor: '#e3f2fd',
+                                transform: 'scale(1.01)',
+                                transition: 'all 0.2s ease'
+                              },
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            <TableCell sx={{ fontWeight: 'medium' }}>
+                              {ligne.libelle}
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                label={ligne.quantite}
+                                size="small"
+                                sx={{
+                                  background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                                  color: 'white',
+                                  fontWeight: 'bold'
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell sx={{ fontWeight: 'medium' }}>
+                              {ligne.prix_unitaire.toFixed(2)} DT
+                            </TableCell>
+                            <TableCell sx={{ fontWeight: 'medium' }}>
+                              {ligne.prix_uTTC.toFixed(2)} DT
+                            </TableCell>
+                            <TableCell sx={{
+                              fontWeight: 'bold',
+                              color: '#667eea'
+                            }}>
+                              {ligne.total.toFixed(2)} DT
+                            </TableCell>
+                            <TableCell>
+                              <Tooltip title="Supprimer cette ligne">
+                                <IconButton
+                                  sx={{
+                                    color: '#f44336',
+                                    '&:hover': {
+                                      backgroundColor: '#ffebee',
+                                      transform: 'scale(1.1)'
+                                    },
+                                    transition: 'all 0.3s ease'
+                                  }}
+                                  onClick={() => handleRemoveLigne(index)}
+                                >
+                                  <DeleteIcon />
+                                </IconButton>
+                              </Tooltip>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </CardContent>
+              </ModernCard>
+          )}
+
+          {/* Section Informations Supplémentaires */}
+            <ModernCard sx={{
+              mb: 3,
+              borderRadius: 3,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+              background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              transition: 'all 0.3s ease-in-out',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
+              }
+            }}>
+              <CardContent sx={{ p: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                  <LocalShippingIcon sx={{
+                    fontSize: 32,
+                    mr: 2,
+                    background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                    borderRadius: '50%',
+                    p: 1,
+                    color: 'white'
+                  }} />
+                  <Typography variant="h5" sx={{
+                    fontWeight: 'bold',
+                    background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent'
+                  }}>
+                    Informations Supplémentaires
+                  </Typography>
+                </Box>
+                <Divider sx={{ mb: 3, background: 'linear-gradient(90deg, #2c3e50, #34495e)' }} />
+                <Grid container spacing={3}>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <TextField
+                      fullWidth
+                      label="Chauffeur"
+                      value={chauffeur}
+                      onChange={(e) => setChauffeur(e.target.value)}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Person4Icon color="primary" />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{ backgroundColor: "white" }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <TextField
+                      fullWidth
+                      label="Notation"
+                      value={notation}
+                      onChange={(e) => setNotation(e.target.value)}
+                      multiline
+                      rows={2}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <NoteIcon color="primary" />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{ backgroundColor: "white" }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <TextField
+                      fullWidth
+                      label="Timbre"
+                      type="number"
+                      value={timbre}
+                      onChange={handleTimbreChange}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <AttachMoneyIcon color="primary" />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{ backgroundColor: "white" }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <TextField
+                      fullWidth
+                      label="Net à Payer"
+                      value={(totalTTC + parseFloat(timbre || 0)).toFixed(3)}
+                      disabled
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <AttachMoneyIcon color="primary" />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{ backgroundColor: "white" }}
+                    />
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </ModernCard>
+
+          {/* Bouton de soumission moderne */}
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            mt: 4,
+            mb: 2
+          }}>
+            <Button
+              type="submit"
+              variant="contained"
+              size="large"
+              sx={{
+                px: 6,
+                py: 2,
+                borderRadius: 3,
+                background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                textTransform: 'none',
+                boxShadow: '0 8px 25px rgba(44, 62, 80, 0.3)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)',
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 12px 35px rgba(44, 62, 80, 0.4)'
+                },
+                transition: 'all 0.3s ease'
+              }}
+            >
+              <LocalShippingIcon sx={{ mr: 2 }} />
+              Enregistrer le Bon de Livraison
+            </Button>
           </Box>
+        </form>
         </Box>
       </Box>
       <Dialog

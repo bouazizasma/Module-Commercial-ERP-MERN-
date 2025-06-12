@@ -18,8 +18,17 @@ const ClientSchema = new Schema({
         ref: 'secteur',       
     },
     libelleSecteur :{
-         type: String, 
-        ref: 'secteur',       
+         type: String,
+        ref: 'secteur',
+
+    },
+    codeRegion :{
+        type: String,
+        ref: 'region',
+    },
+    libelleRegion :{
+         type: String,
+        ref: 'region',
 
     },
     matricule_fiscale: {
@@ -33,16 +42,14 @@ const ClientSchema = new Schema({
         banque: {
             type: Schema.Types.ObjectId,
             ref: 'BanqueClient',
-            required: true
+            
         },
         numeroCompte: {  
             type: String,
-            required: true
         },
         RIB: {
             type: String,
             required: true,
-            unique: true
         },
         adresseBanque: {
             type: String

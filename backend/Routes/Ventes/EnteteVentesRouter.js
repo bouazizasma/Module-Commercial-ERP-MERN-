@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const {createDevis,getDevis, deleteDevis,updateDevis,getDevisByID,generateBonCommandeClient, getAllBonCommandes, generateBonLivraisonClient,getAllBonLivraisons, createBCC,getBCCByID, deleteBCC , createBL,generateFactureClient,getAllFacture,deleteFacture,getFacturesParClient,getBonLivraisonNonFactures,getBonLivraisonNonFacturesAll,generateFacturesClientsGroupes} = require('../../Controllers/EnteteVentesController');
+const { checkStockLevels } = require('../../Middlewares/StockCheckMiddleware');
 
 ////////////////////
 //DEVIS
@@ -37,8 +38,8 @@ router.delete("/BCC/:id", deleteBCC);
 // générer un bon de livraison client à partir d'un devis ou bon commande 
 
 router.post("/:docId/generate-bon-livraison",generateBonLivraisonClient);
-//creation de BL d'apres saisie 
-router.post ("/BL/create", createBL);
+//creation de BL d'apres saisie
+router.post ("/BL/create", checkStockLevels, createBL);
 
 //all bon de livraison 
 router.get("/bons-Livraison", getAllBonLivraisons); 

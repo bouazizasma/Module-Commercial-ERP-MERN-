@@ -9,207 +9,40 @@ import { useNavigate } from "react-router-dom";
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import {
   Card, CardContent, Typography, Grid, Button, TextField, MenuItem, Select, FormControl, InputLabel, IconButton, Drawer, Modal, Backdrop, Fade, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
-  Dialog, DialogTitle, DialogContent, DialogActions, Checkbox, Autocomplete
+  Dialog, DialogTitle, DialogContent, DialogActions, Checkbox, Autocomplete, Divider, Tooltip, Chip as MuiChip, Collapse
 } from "@mui/material";
-import { Stack } from "@mui/material";
-import { FilterList, Search, Clear } from "@mui/icons-material";
+import { Stack, Box as MuiBox } from "@mui/material";
+import { FilterList, Search, Clear, Business as BusinessIcon, CalendarToday as CalendarTodayIcon, Assessment as AssessmentIcon, ExpandMore, ExpandLess } from "@mui/icons-material";
 import ReceiptIcon from '@mui/icons-material/Receipt';
+import SaveIcon from '@mui/icons-material/Save';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import PreviewIcon from '@mui/icons-material/Preview';
+import DownloadIcon from '@mui/icons-material/Download';
 import { InputAdornment } from "@mui/material";
 import jsPDF from "jspdf";
 import 'jspdf-autotable';
 import { Document, Page } from "react-pdf";
 
-// Composant FiltresDeRecherche intégré dans la même page
-const FiltresDeRecherche = ({ fournisseurs, applyFilters, handleGroupedFacturation }) => {
-  const [filters, setFilters] = useState({
-    fournisseur: "",
-    startDate: "",
-    endDate: "",
-  });
-  const [error, setError] = useState("");
 
-  // Gestion du changement de filtre
-  const handleFilterChange = (field, value) => {
-    setFilters((prevFilters) => ({
-      ...prevFilters,
-      [field]: value,
-    }));
-
-    // Validation des dates
-    if (field === "startDate" || field === "endDate") {
-      validateDates(field, value);
-    }
-  };
-
-  // Validation des dates
-  const validateDates = (field, value) => {
-    if (filters.startDate && filters.endDate) {
-      const startDate = new Date(filters.startDate);
-      const endDate = new Date(filters.endDate);
-
-      if (endDate <= startDate) {
-        setError("La date de fin doit être postérieure à la date de début.");
-      } else {
-        setError("");
-      }
-    } else {
-      setError("");
-    }
-  };
-
-  // Appliquer les filtres
-  const handleApplyFilters = () => {
-    if (error) {
-      alert(error); // Afficher un message d'erreur
-      return;
-    }
-    applyFilters(filters);
-  };
-
-  return (
-    <Card sx={{ p: 3, mb: 3, boxShadow: 3, borderRadius: 2, backgroundColor: '#f8f9fa' }}>
-      <CardContent>
-        <Typography variant="h6" sx={{ mb: 3, color: '#1976d2', fontWeight: 'bold' }}>
-          Filtres de Recherche
-        </Typography>
-        <Grid container spacing={2} alignItems="center">
-          {/* Fournisseur */}
-          <Grid item xs={12} sm={6} md={4}>
-            <Autocomplete
-              options={fournisseurs}
-              getOptionLabel={(option) => option.raison_sociale || ""}
-              value={fournisseurs.find(f => f.raison_sociale === filters.fournisseur) || null}
-              onChange={(event, newValue) => {
-                handleFilterChange("fournisseur", newValue ? newValue.raison_sociale : "");
-              }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Fournisseur"
-                  placeholder="Sélectionner un fournisseur"
-                  sx={{
-                    mb: 2,
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2
-                    }
-                  }}
-                />
-              )}
-              renderOption={(props, option) => (
-                <li {...props}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                    <Typography variant="body1">{option.raison_sociale}</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {option.adresse || "Adresse non spécifiée"}
-                    </Typography>
-                  </Box>
-                </li>
-              )}
-              isOptionEqualToValue={(option, value) => option.raison_sociale === value.raison_sociale}
-              noOptionsText="Aucun fournisseur trouvé"
-              loadingText="Chargement..."
-              sx={{ mb: 2 }}
-            />
-          </Grid>
-
-          {/* Date de début */}
-          <Grid item xs={12} sm={6} md={4}>
-            <TextField
-              label="Date de début"
-              type="date"
-              InputLabelProps={{ shrink: true }}
-              value={filters.startDate}
-              onChange={(e) => handleFilterChange("startDate", e.target.value)}
-              fullWidth
-              sx={{ backgroundColor: 'white' }}
-            />
-          </Grid>
-
-          {/* Date de fin */}
-          <Grid item xs={12} sm={6} md={4}>
-            <TextField
-              label="Date de fin"
-              type="date"
-              InputLabelProps={{ shrink: true }}
-              value={filters.endDate}
-              onChange={(e) => handleFilterChange("endDate", e.target.value)}
-              fullWidth
-              sx={{ backgroundColor: 'white' }}
-              error={!!error} // Afficher une erreur si la date de fin est invalide
-              helperText={error} // Afficher le message d'erreur
-              inputProps={{
-                min: filters.startDate, // Désactiver les dates antérieures à la date de début
-              }}
-            />
-          </Grid>
-
-          {/* Bouton CHERCHER */}
-          <Grid item xs={6} sm={6} md={4}>
-            <Button
-              variant="contained"
-              onClick={handleApplyFilters}
-              sx={{
-                backgroundColor: '#1976d2',
-                '&:hover': { backgroundColor: '#1565c0' },
-                height: '56px',
-                borderRadius: '8px',
-                textTransform: 'none',
-                fontWeight: 'bold',
-                width: '100%'
-              }}
-            >
-              CHERCHER
-            </Button>
-          </Grid>
-
-          {/* Bouton FACTURE */}
-          <Grid item xs={6} sm={6} md={4}>
-            <Button
-              variant="contained"
-              onClick={handleGroupedFacturation}
-              sx={{
-                backgroundColor: '#1976d2',
-                '&:hover': { backgroundColor: '#1565c0' },
-                height: '56px',
-                borderRadius: '8px',
-                textTransform: 'none',
-                fontWeight: 'bold',
-                width: '100%'
-              }}
-            >
-              FACTURE
-            </Button>
-          </Grid>
-        </Grid>
-      </CardContent>
-    </Card>
-  );
-};
 
 // Composant principal FactureParFournisseur
 export default function FactureParFournisseur() {
   const [bonsReception, setBonsReception] = useState([]);
   const [filteredBonsReception, setFilteredBonsReception] = useState([]);
-  const [showResults, setShowResults] = useState(false);
-  const [editLignes, setEditLignes] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     fournisseur: "",
     startDate: "",
     endDate: "",
-    numeroFacture: "",
-    timbre: "1.000",
   });
+  const [filterError, setFilterError] = useState("");
   const [pdfUrl, setPdfUrl] = useState("");
   const [openPreviewModal, setOpenPreviewModal] = useState(false);
   const [error, setError] = useState(null);
-  const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
   const [selectedBonReception, setSelectedBonReception] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
-  const [editBon, setEditBonReception] = useState(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const itemsPerPage = 6;
   const [fournisseurs, setFournisseurs] = useState([]);
   const [articles, setArticles] = useState([]);
   const [depots, setDepots] = useState([]);
@@ -256,8 +89,41 @@ export default function FactureParFournisseur() {
     fetchData();
   }, []);
 
+  // Gestion des filtres
+  const handleFilterChange = (filterName, value) => {
+    setFilters((prevFilters) => ({ ...prevFilters, [filterName]: value }));
+
+    // Validation des dates
+    if (filterName === "startDate" || filterName === "endDate") {
+      validateDates(filterName, value);
+    }
+    setCurrentPage(1);
+  };
+
+  // Validation des dates
+  const validateDates = (field, value) => {
+    const newFilters = { ...filters, [field]: value };
+    if (newFilters.startDate && newFilters.endDate) {
+      const startDate = new Date(newFilters.startDate);
+      const endDate = new Date(newFilters.endDate);
+
+      if (endDate <= startDate) {
+        setFilterError("La date de fin doit être postérieure à la date de début.");
+      } else {
+        setFilterError("");
+      }
+    } else {
+      setFilterError("");
+    }
+  };
+
   // Fonction pour appliquer le filtrage
-  const applyFilters = (filters) => {
+  const applyFilters = () => {
+    if (filterError) {
+      alert(filterError);
+      return;
+    }
+
     const filtered = bonsReception.filter((bonReception) => {
       const matchesFournisseur =
         !filters.fournisseur || (bonReception.fournisseur && bonReception.fournisseur.raison_sociale === filters.fournisseur);
@@ -275,7 +141,19 @@ export default function FactureParFournisseur() {
 
     setFilteredBonsReception(filtered);
     setCurrentPage(1);
-    setShowResults(true);
+  };
+
+  // Réinitialisation des filtres
+  const resetFilters = () => {
+    setFilters({
+      fournisseur: "",
+      startDate: "",
+      endDate: "",
+    });
+    setFilterError("");
+    setFilteredBonsReception([]);
+    setCurrentPage(1);
+    setSelectedBons([]);
   };
 
   // Fonction pour gérer la facturation groupée
@@ -361,20 +239,7 @@ export default function FactureParFournisseur() {
     return filteredBonsReception.slice(startIndex, endIndex);
   }, [filteredBonsReception, currentPage]);
 
-  // Réinitialisation des filtres
-  const resetFilters = () => {
-    setFilters({
-      fournisseur: "",
-      startDate: "",
-      endDate: "",
-      numeroFacture: "",
-      timbre: "1.000",
-    });
-    setFilteredBonsReception([]);
-    setCurrentPage(1);
-    setShowResults(false);
-    setSelectedBons([]);
-  };
+
 
   // Ouverture de la modal de détails
   const handleOpenModal = (bonReception) => {
@@ -443,7 +308,6 @@ export default function FactureParFournisseur() {
       alert("Facture groupée créée avec succès");
       setIsGroupedFacturationModalOpen(false);
       setSelectedBons([]);
-      setShowResults(false);
     } catch (error) {
       console.error("Erreur lors de la création de la facture groupée:", error);
       alert("Erreur lors de la création de la facture groupée");
@@ -453,7 +317,7 @@ export default function FactureParFournisseur() {
   return (
     <>
       <Navbar />
-      <Box height={20} />
+      <Box height={85} />
       <Box sx={{ display: "flex" }}>
         <Sidenav />
         <Box
@@ -462,135 +326,453 @@ export default function FactureParFournisseur() {
             flexGrow: 1,
             p: 3,
             overflow: "auto",
-            backgroundColor: "#FFFFFF",
+            background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+            minHeight: '100vh',
             maxWidth: "none",
             maxHeight: "100vh",
             width: "100%",
           }}
         >
           <Box sx={{ flexGrow: 1, p: 3 }}>
-            <Typography variant="h4" sx={{ mb: 3, color: '#1976d2', fontWeight: 'bold' }}>
-              Facturation par Fournisseur
-            </Typography>
-            <Box height={70} />
+            {/* Header principal moderne */}
+            <Box sx={{
+              textAlign: 'center',
+              mb: 2,
+              p: 1,
+              background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+              borderRadius: 3,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+              color: 'white'
+            }}>
+              <ReceiptIcon sx={{ fontSize: 48, mb: 2 }} />
+              <Typography variant="h5" sx={{
+                fontWeight: 'bold',
+                textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                mb: 1
+              }}>
+                Facturation par Fournisseur
+              </Typography>
+              <Typography variant="h6" sx={{ opacity: 0.9 }}>
+                Gérez et générez vos factures facilement
+              </Typography>
+            </Box>
 
-            {/* Utilisation du composant FiltresDeRecherche */}
-            <FiltresDeRecherche
-              fournisseurs={fournisseurs}
-              applyFilters={applyFilters}
-              handleGroupedFacturation={handleGroupedFacturation}
-            />
+            {/* Section consolidée avec filtres, liste et pagination */}
+            <Card sx={{
+              p: 2,
+              mb: 2,
+              borderRadius: 3,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+              background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              transition: 'all 0.3s ease-in-out',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
+              }
+            }}>
+              <CardContent>
+                {/* Section Liste des Bons de Réception */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <AssessmentIcon sx={{
+                      fontSize: 32,
+                      mr: 2,
+                      background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                      borderRadius: '50%',
+                      p: 1,
+                      color: 'white'
+                    }} />
+                    <Typography variant="h5" sx={{
+                      fontWeight: 'bold',
+                      background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent'
+                    }}>
+                      Facturation par Fournisseur ({filteredBonsReception.length})
+                    </Typography>
+                  </Box>
+                </Box>
+                <Divider sx={{ mb: 3, background: 'linear-gradient(90deg, #95a5a6, #7f8c8d)' }} />
 
-            {/* Tableau des bons de réception */}
-            {showResults && (
-              <Card sx={{ p: 3, mb: 3, boxShadow: 3, borderRadius: 2, backgroundColor: '#f8f9fa' }}>
-                <CardContent>
-                  <Typography variant="h6" sx={{ mb: 3, color: '#1976d2', fontWeight: 'bold' }}>
-                    Liste des Bons de Réception
-                  </Typography>
-                  <TableContainer component={Paper} sx={{ boxShadow: 2 }}>
-                    <Table>
-                      <TableHead>
-                        <TableRow sx={{ backgroundColor: '#e3f2fd' }}>
-                          <TableCell sx={{ fontWeight: 'bold' }}>
-                            <Checkbox
-                              checked={selectedBons.length === paginatedBonsReception.length}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedBons(paginatedBonsReception.map(bon => bon._id));
-                                } else {
-                                  setSelectedBons([]);
+                {/* Barre de recherche avec bouton filtrer */}
+                <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center', justifyContent: 'center' }}>
+                  <Button
+                    variant="contained"
+                    startIcon={<FilterList />}
+                    onClick={() => setShowFilters(!showFilters)}
+                    sx={{
+                      height: '35px',
+                      minWidth: '120px',
+                      borderRadius: 3,
+                      background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                      fontWeight: 'bold',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)',
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 8px 25px rgba(44, 62, 80, 0.4)'
+                      }
+                    }}
+                  >
+                    Filtrer
+                    {showFilters ? <ExpandLess sx={{ ml: 1 }} /> : <ExpandMore sx={{ ml: 1 }} />}
+                  </Button>
+                </Box>
+
+                {/* Section des filtres avec animation */}
+                <Collapse in={showFilters} timeout={300}>
+                  <Box sx={{
+                    p: 3,
+                    backgroundColor: '#f8f9fa',
+                    borderRadius: 2,
+                    border: '1px solid #e9ecef',
+                    mb: 2
+                  }}>
+                    <Typography variant="h6" sx={{
+                      mb: 3,
+                      color: '#2c3e50',
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}>
+                      <FilterList sx={{ mr: 1 }} />
+                      Filtres de recherche
+                    </Typography>
+
+                    {/* Première ligne: Fournisseur, Date de début, Date de fin */}
+                    <Grid container spacing={3} sx={{ mb: 3 }}>
+                      {/* Fournisseur */}
+                      <Grid item xs={12} sm={4} md={4}>
+                        <Autocomplete
+                          options={fournisseurs}
+                          getOptionLabel={(option) => option.raison_sociale || ""}
+                          value={fournisseurs.find(f => f.raison_sociale === filters.fournisseur) || null}
+                          onChange={(event, newValue) => {
+                            handleFilterChange("fournisseur", newValue ? newValue.raison_sociale : "");
+                          }}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Fournisseur"
+                              placeholder="Sélectionner un fournisseur"
+                              variant="outlined"
+                              size="small"
+                              sx={{
+                                backgroundColor: 'white',
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: 2,
                                 }
                               }}
                             />
-                          </TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Numéro de réception</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Date de réception</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Fournisseur</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Total HT</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Total TTC</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {paginatedBonsReception.map((bonReception, index) => (
-                          <TableRow key={index} sx={{ '&:hover': { backgroundColor: '#f5f5f5' } }}>
-                            <TableCell>
-                              <Checkbox
-                                checked={selectedBons.includes(bonReception._id)}
-                                onChange={() => handleSelectBon(bonReception._id)}
-                                disabled={bonReception.statut === "Facturé"}
-                              />
-                            </TableCell>
-                            <TableCell>{bonReception.numero_Bon}</TableCell>
-                            <TableCell>{new Date(bonReception.dateReception).toLocaleDateString()}</TableCell>
-                            <TableCell>{bonReception.fournisseur ? bonReception.fournisseur.raison_sociale : "Non spécifié"}</TableCell>
-                            <TableCell>{bonReception.total_hors_Taxe.toFixed(2)} TND</TableCell>
-                            <TableCell>{bonReception.total_ttc.toFixed(2)} TND</TableCell>
-                            <TableCell>
-                              <Chip 
-                                label={bonReception.statut} 
-                                color={bonReception.statut === "Facturé" ? "error" : "success"}
-                                sx={{ fontWeight: 'bold' }}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <IconButton
-                                onClick={() => handleOpenModal(bonReception)}
-                                sx={{ color: '#1976d2' }}
-                              >
-                                <Visibility />
-                              </IconButton>
-                              <IconButton
-                                onClick={() => handleDownload(bonReception)}
-                                sx={{ color: '#1976d2' }}
-                              >
-                                <FileDownloadIcon />
-                              </IconButton>
-                              <IconButton
-                                onClick={() => handleOpenFactureModal(bonReception)}
-                                sx={{ color: '#1976d2' }}
-                              >
-                                <ReceiptIcon />
-                              </IconButton>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </CardContent>
-              </Card>
-            )}
+                          )}
+                          renderOption={(props, option) => (
+                            <li {...props}>
+                              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                <Typography variant="body1">{option.raison_sociale}</Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {option.adresse || "Adresse non spécifiée"}
+                                </Typography>
+                              </Box>
+                            </li>
+                          )}
+                          isOptionEqualToValue={(option, value) => option.raison_sociale === value.raison_sociale}
+                          noOptionsText="Aucun fournisseur trouvé"
+                          loadingText="Chargement..."
+                          sx={{ width: '100%' }}
+                        />
+                      </Grid>
 
-            {/* Pagination */}
-            {showResults && (
-              <>
-                <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-                  <Button
-                    variant="contained"
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    sx={{ mr: 2 }}
-                  >
-                    Précédent
-                  </Button>
-                  <Button
-                    variant="contained"
-                    disabled={currentPage * itemsPerPage >= filteredBonsReception.length}
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                  >
-                    Suivant
-                  </Button>
-                </Box>
-                <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                  <Typography variant="body1">
-                    Page {currentPage} sur {Math.ceil(filteredBonsReception.length / itemsPerPage)}
-                  </Typography>
-                </Box>
-              </>
-            )}
+                      {/* Date de début */}
+                      <Grid item xs={12} sm={4} md={4}>
+                        <TextField
+                          label="Date de début"
+                          type="date"
+                          InputLabelProps={{ shrink: true }}
+                          value={filters.startDate}
+                          onChange={(e) => handleFilterChange("startDate", e.target.value)}
+                          fullWidth
+                          variant="outlined"
+                          size="small"
+                          sx={{
+                            backgroundColor: 'white',
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 2,
+                            }
+                          }}
+                        />
+                      </Grid>
+
+                      {/* Date de fin */}
+                      <Grid item xs={12} sm={4} md={4}>
+                        <TextField
+                          label="Date de fin"
+                          type="date"
+                          InputLabelProps={{ shrink: true }}
+                          value={filters.endDate}
+                          onChange={(e) => handleFilterChange("endDate", e.target.value)}
+                          fullWidth
+                          error={!!filterError}
+                          helperText={filterError}
+                          variant="outlined"
+                          size="small"
+                          inputProps={{
+                            min: filters.startDate,
+                          }}
+                          sx={{
+                            backgroundColor: 'white',
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 2,
+                            }
+                          }}
+                        />
+                      </Grid>
+                    </Grid>
+
+                    {/* Deuxième ligne: Boutons centrés */}
+                    <Grid container spacing={3} justifyContent="center" alignItems="center" sx={{ mb: 2 }}>
+                      {/* Bouton CHERCHER */}
+                      <Grid item xs={12} sm={6} md={3}>
+                        <Button
+                          variant="contained"
+                          onClick={applyFilters}
+                          startIcon={<Search />}
+                          sx={{
+                            background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                            color: 'white',
+                            height: '40px',
+                            borderRadius: 2,
+                            textTransform: 'none',
+                            fontWeight: 'bold',
+                            width: '100%',
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                              background: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)',
+                              transform: 'translateY(-2px)',
+                              boxShadow: '0 6px 20px rgba(52, 73, 94, 0.4)'
+                            }
+                          }}
+                        >
+                          CHERCHER
+                        </Button>
+                      </Grid>
+
+                      {/* Bouton FACTURE */}
+                      <Grid item xs={12} sm={6} md={3}>
+                        <Button
+                          variant="contained"
+                          onClick={handleGroupedFacturation}
+                          startIcon={<ReceiptIcon />}
+                          sx={{
+                            background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                            color: 'white',
+                            height: '40px',
+                            borderRadius: 2,
+                            textTransform: 'none',
+                            fontWeight: 'bold',
+                            width: '100%',
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                              background: 'linear-gradient(135deg, #7f8c8d 0%, #95a5a6 100%)',
+                              transform: 'translateY(-2px)',
+                              boxShadow: '0 6px 20px rgba(149, 165, 166, 0.4)'
+                            }
+                          }}
+                        >
+                          FACTURE
+                        </Button>
+                      </Grid>
+                    </Grid>
+
+                    {/* Bouton pour réinitialiser les filtres */}
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                      <Button
+                        onClick={resetFilters}
+                        startIcon={<Clear />}
+                        variant="outlined"
+                        sx={{
+                          borderRadius: 2,
+                          borderColor: '#2c3e50',
+                          color: '#2c3e50',
+                          fontWeight: 'bold',
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            borderColor: '#34495e',
+                            backgroundColor: 'rgba(52, 73, 94, 0.1)',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 12px rgba(52, 73, 94, 0.3)'
+                          }
+                        }}
+                      >
+                        Réinitialiser les filtres
+                      </Button>
+                    </Box>
+                  </Box>
+                </Collapse>
+
+                {/* Tableau des bons de réception */}
+                {filteredBonsReception.length > 0 && (
+                  <>
+                    <TableContainer component={Paper} sx={{
+                      borderRadius: 2,
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                      overflow: 'hidden'
+                    }}>
+                      <Table>
+                        <TableHead sx={{
+                          background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)'
+                        }}>
+                          <TableRow>
+                            <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                              <Checkbox
+                                checked={selectedBons.length === paginatedBonsReception.length && paginatedBonsReception.length > 0}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedBons(paginatedBonsReception.map(bon => bon._id));
+                                  } else {
+                                    setSelectedBons([]);
+                                  }
+                                }}
+                                sx={{
+                                  color: 'white',
+                                  '&.Mui-checked': {
+                                    color: 'white',
+                                  },
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>Numéro de réception</TableCell>
+                            <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>Date de réception</TableCell>
+                            <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>Fournisseur</TableCell>
+                            <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>Total HT</TableCell>
+                            <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>Total TTC</TableCell>
+                            <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>Status</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {paginatedBonsReception.map((bonReception, index) => (
+                            <TableRow
+                              key={index}
+                              sx={{
+                                '&:nth-of-type(odd)': {
+                                  backgroundColor: '#f8f9fa',
+                                },
+                                '&:hover': {
+                                  backgroundColor: '#e3f2fd',
+                                  transform: 'scale(1.01)',
+                                  transition: 'all 0.2s ease'
+                                },
+                                transition: 'all 0.2s ease'
+                              }}
+                            >
+                              <TableCell>
+                                <Checkbox
+                                  checked={selectedBons.includes(bonReception._id)}
+                                  onChange={() => handleSelectBon(bonReception._id)}
+                                  disabled={bonReception.statut === "Facturé"}
+                                  sx={{
+                                    color: '#2c3e50',
+                                    '&.Mui-checked': {
+                                      color: '#2c3e50',
+                                    },
+                                  }}
+                                />
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 'medium', color: '#2c3e50' }}>{bonReception.numero_Bon}</TableCell>
+                              <TableCell sx={{ fontWeight: 'medium' }}>{new Date(bonReception.dateReception).toLocaleDateString()}</TableCell>
+                              <TableCell sx={{ fontWeight: 'medium' }}>{bonReception.fournisseur ? bonReception.fournisseur.raison_sociale : "Non spécifié"}</TableCell>
+                              <TableCell sx={{ fontWeight: 'medium', color: '#95a5a6' }}>{bonReception.total_hors_Taxe.toFixed(2)} TND</TableCell>
+                              <TableCell sx={{ fontWeight: 'medium', color: '#2c3e50' }}>{bonReception.total_ttc.toFixed(2)} TND</TableCell>
+                              <TableCell>
+                                <Chip
+                                  label={bonReception.statut}
+                                  color={bonReception.statut === "Facturé" ? "error" : "success"}
+                                  sx={{
+                                    fontWeight: 'bold',
+                                    fontSize: '0.9rem',
+                                    borderRadius: 2,
+                                    padding: '4px 8px'
+                                  }}
+                                />
+                              </TableCell>
+                             
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+
+                    {/* Divider entre tableau et pagination */}
+                    <Divider sx={{ my: 3, background: 'linear-gradient(90deg, #95a5a6, #7f8c8d)' }} />
+
+                    {/* Section Pagination intégrée */}
+                    <Box sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      mt: 2
+                    }}>
+                      <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+                        <Button
+                          variant="contained"
+                          disabled={currentPage === 1}
+                          onClick={() => setCurrentPage(currentPage - 1)}
+                          sx={{
+                            borderRadius: 2,
+                            background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                            fontWeight: 'bold',
+                            px: 3,
+                            '&:hover': {
+                              background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                              transform: 'translateY(-2px)',
+                              boxShadow: '0 8px 25px rgba(44, 62, 80, 0.4)'
+                            },
+                            '&:disabled': {
+                              background: '#e0e0e0',
+                              color: '#9e9e9e'
+                            },
+                            transition: 'all 0.3s ease'
+                          }}
+                        >
+                          Précédent
+                        </Button>
+                        <Button
+                          variant="contained"
+                          disabled={currentPage * itemsPerPage >= filteredBonsReception.length}
+                          onClick={() => setCurrentPage(currentPage + 1)}
+                          sx={{
+                            borderRadius: 2,
+                            background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                            fontWeight: 'bold',
+                            px: 3,
+                            '&:hover': {
+                              background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                              transform: 'translateY(-2px)',
+                              boxShadow: '0 8px 25px rgba(44, 62, 80, 0.4)'
+                            },
+                            '&:disabled': {
+                              background: '#e0e0e0',
+                              color: '#9e9e9e'
+                            },
+                            transition: 'all 0.3s ease'
+                          }}
+                        >
+                          Suivant
+                        </Button>
+                      </Box>
+                      <Typography variant="body1" sx={{
+                        color: '#2c3e50',
+                        fontWeight: 'medium',
+                        fontSize: '1.1rem'
+                      }}>
+                        Page {currentPage} sur {Math.ceil(filteredBonsReception.length / itemsPerPage)}
+                      </Typography>
+                    </Box>
+                  </>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Modal de facturation groupée */}
             <Dialog

@@ -2,6 +2,7 @@ const Client = require("../Models/Client/Client");
 const CounterModel=require ("../Models/counters");
 const mongoose = require('mongoose');
 const SecteurModel = require ("../Models/Client/Secteur");
+const RegionModel = require ("../Models/Client/Region");
 const BanqueClient  =require("../Models/Client/BanqueClient");
 
 const getClients = async (req, res) => { 
@@ -59,11 +60,11 @@ const getClients = async (req, res) => {
 
 */
 const createClient = async (req, res) => {
-  const { 
-      nom_prenom, matricule_fiscale, adresse, telephone, register_commerce, 
-      solde_initial, montant_rapprochement, code_rapprochement, rapBl, 
-      solde_initial_bl, montant_reglement_bl, taux_retenu, 
-      codeSecteur, libelleSecteur, bankAccounts } = req.body;
+  const {
+      nom_prenom, matricule_fiscale, adresse, telephone, register_commerce,
+      solde_initial, montant_rapprochement, code_rapprochement, rapBl,
+      solde_initial_bl, montant_reglement_bl, taux_retenu,
+      codeSecteur, libelleSecteur, codeRegion, libelleRegion, bankAccounts  } = req.body;
 
   try {
       console.log("Données reçues :", req.body);
@@ -120,7 +121,9 @@ const createClient = async (req, res) => {
           taux_retenu,
           codeSecteur,
           libelleSecteur,
-          bankAccounts: bankAccounts || [] 
+          codeRegion,
+          libelleRegion,
+          bankAccounts: bankAccounts || []
       });
 
       console.log("Client créé avec succès :", newClient);
@@ -183,10 +186,11 @@ const getClientByID = async (req, res) => {
   try {
       // 1. Trouver le client avec population des banques et du secteur
       const client = await Client.findById(req.params.id)
-          .populate({
-              path: 'bankAccounts.banque',
-              select: 'libelle' // On ne récupère que le libellé
-          });
+            .populate({
+    path: 'bankAccounts.banque',
+    select: 'libelle',
+    options: { lean: true }
+  });
       
       if (!client) {
           return res.status(404).json({ message: "Client non trouvé" });
@@ -335,7 +339,7 @@ const getClientByID = async (req, res) => {
 
   const updateClient = async (req, res) => {
     const { id } = req.params;
-    const { 
+    const {
       nom_prenom,
       matricule_fiscale,
       adresse,
@@ -350,6 +354,8 @@ const getClientByID = async (req, res) => {
       taux_retenu,
       codeSecteur,
       libelleSecteur,
+      codeRegion,
+      libelleRegion,
       bankAccounts
 
     } = req.body;
@@ -395,6 +401,8 @@ const getClientByID = async (req, res) => {
           taux_retenu,
           codeSecteur,
           libelleSecteur,
+          codeRegion,
+          libelleRegion,
           bankAccounts: bankAccounts || [] // Handle case where no accounts are provided
 
 
@@ -618,4 +626,31 @@ const getBanqueParClient = async (req, res) => {
     }
   };
 
-module.exports={getClients, getClientByID, createClient, updateClient, deleteClient, addBankAccount,removeBankAccount,getBanqueParClient,getComptesParBanqueClient};
+//Get regions par secteur
+const getRegionsBySecteur = async (req, res) => {
+    try {
+      const { secteurId } = req.params;
+
+      if (!secteurId) {
+        return res.status(400).json({ message: "L'ID du secteur est requis" });
+      }
+
+      // Récupérer les régions pour le secteur spécifié
+      const regions = await RegionModel.find({ secteur: secteurId })
+        .populate('secteur', 'codeSecteur libelle')
+        .lean();
+
+      if (!regions || regions.length === 0) {
+        return res.status(404).json({ message: "Aucune région trouvée pour ce secteur" });
+      }
+
+      res.status(200).json(regions);
+    } catch (error) {
+      res.status(500).json({
+        message: "Erreur lors de la récupération des régions du secteur",
+        error: error.message
+      });
+    }
+  };
+
+module.exports={getClients, getClientByID, createClient, updateClient, deleteClient, addBankAccount,removeBankAccount,getBanqueParClient,getComptesParBanqueClient,getRegionsBySecteur};

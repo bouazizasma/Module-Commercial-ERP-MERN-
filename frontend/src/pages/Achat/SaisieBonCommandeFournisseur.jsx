@@ -4,7 +4,7 @@ import Sidenav from "../../navbar/Sidenav";
 import Box from "@mui/material/Box";
 import Navbar from "../../navbar/Navbar";
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Paper, Grid, TextField, IconButton, Card, CardContent, Typography, Dialog, DialogTitle, DialogContent, DialogActions,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Paper, Grid, TextField, IconButton, Card, CardContent, Typography, Dialog, DialogTitle, DialogContent, DialogActions, Fade, Slide, Chip, Divider, Stack, Alert, Snackbar, Tooltip, InputAdornment,
 } from "@mui/material";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -18,8 +18,32 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
+// Nouvelles icônes pour un design moderne
+import BusinessIcon from '@mui/icons-material/Business';
+import InventoryIcon from '@mui/icons-material/Inventory';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import BadgeIcon from '@mui/icons-material/Badge';
+import EuroIcon from '@mui/icons-material/Euro';
+import SaveIcon from '@mui/icons-material/Save';
+import PreviewIcon from '@mui/icons-material/Preview';
+import DownloadIcon from '@mui/icons-material/Download';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { styled } from '@mui/material/styles';
+
 // Configurez le worker avec un CDN
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+
+// Styled components pour le design moderne unifié
+const ModernCard = styled(Card)(({ theme }) => ({
+  borderRadius: '16px',
+  boxShadow: '0 8px 32px rgba(0,0,0,0.05)',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+  }
+}));
 export default function BonCommandeFournisseur() {
   const navigate = useNavigate();
   const [fournisseurs, setFournisseurs] = useState([]);
@@ -278,7 +302,6 @@ const generatePDF = (bonCommande) => {
     head: [['Article', 'Quantité', 'Prix Unitaire', 'Total']],
     body: bonCommande.lignes.map(ligne => [
       ligne.article.libelle,
-      'DT',
       ligne.quantite,
       `${ligne.prix_unitaire.toFixed(2)} DT`,
       `${(ligne.quantite * ligne.prix_unitaire).toFixed(2)} DT`
@@ -307,110 +330,328 @@ const generatePDF = (bonCommande) => {
   return (
     <>
       <Navbar />
-      <Box height={80} />
-      <Box sx={{ display: "flex" }}>
+      <Box height={64} />
+      <Box sx={{
+        display: "flex",
+        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+        minHeight: "calc(100vh - 64px)",
+        overflow: "hidden"
+      }}>
         <Sidenav />
-        <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: "auto", maxHeight: "100vh" }}>
-          <Typography variant="h4" sx={{ mb: 3 }}>Créer un bon de commande fournisseur</Typography>
-          {/* Fournisseur*/}
-        {/* Fournisseur */}
-        <Card sx={{ mb: 3}}>
-     <CardContent>
-    <Typography variant="h6" sx={{ textAlign: 'left' }}>Informations Fournisseur</Typography>
-    <Grid container spacing={2} alignItems="center">
-      {/* Champ Fournisseur */}
-      <Grid item xs={12} sm={5} md={4}>
-        <Grid container spacing={1} alignItems="center">
-          <Grid item xs={10} sm={10} md={10}>
-            <Autocomplete
-              options={fournisseurs}
-              getOptionLabel={(option) => option.raison_sociale}
-              value={fournisseurs.find(f => f._id === selectedFournisseur) || null}
-              onChange={(e, newValue) => {
-                if (newValue) {
-                  setSelectedFournisseur(newValue._id);
-                  setAdresse(newValue.adresse || '');
-                  setMatriculeFiscale(newValue.matricule_fiscale || '');
-                } else {
-                  setSelectedFournisseur('');
-                  setAdresse('');
-                  setMatriculeFiscale('');
-                }
-              }}
-              renderInput={(params) => (
-                <TextField {...params} label="Fournisseur" fullWidth required />
-              )}
-            />
-          </Grid>
-          {/* Bouton Ajouter Fournisseur */}
-          <Grid item xs={2} sm={2} md={2}>
-            <IconButton color="primary" onClick={() => navigate("/createFournisseur")}>
-              <AddCircleOutlineIcon fontSize="large" />
-            </IconButton>
-          </Grid>
-        </Grid>
-      </Grid>
+        <Box component="main" sx={{
+          flexGrow: 1,
+          p: 3,
+          overflow: "auto",
+          height: "calc(100vh - 64px)",
+          width:"1000px",
+          "&::-webkit-scrollbar": {
+            width: "8px",
+            backgroundColor: "rgba(0,0,0,0.1)"
+          },
+          "&::-webkit-scrollbar-thumb": {
+            borderRadius: "8px",
+            background: "linear-gradient(135deg, #495057 0%, #6c757d 100%)"
+          },
+          "&::-webkit-scrollbar-track": {
+            backgroundColor: "rgba(0,0,0,0.05)"
+          }
+        }}>
+        {/* Carte consolidée moderne unifiée */}
+        <ModernCard sx={{
+          borderRadius: 3,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+          background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+          border: '1px solid rgba(255,255,255,0.2)',
+          transition: 'all 0.3s ease-in-out',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
+          }
+        }}>
+          <CardContent sx={{ p: 3 }}>
+            {/* Header principal intégré */}
+            <Box sx={{
+              textAlign: 'center',
+              mb: 4,
+              p: 3,
+              background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+              borderRadius: 3,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+              color: 'white'
+            }}>
+              <ShoppingCartIcon sx={{ fontSize: 48, mb: 2 }} />
+              <Typography variant="h5" sx={{
+                fontWeight: 'bold',
+                textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                mb: 1
+              }}>
+                Bon de Commande Fournisseur
+              </Typography>
+              <Typography variant="h6" sx={{ opacity: 0.9 }}>
+                Créez et gérez vos commandes facilement
+              </Typography>
+            </Box>
 
-      {/* Champ Adresse */}
-      <Grid item xs={12} sm={3} md={3}>
-        <TextField label="Adresse" value={adresse} fullWidth disabled />
-      </Grid>
+            {/* Section Fournisseur intégrée */}
+            <Fade in={true} timeout={800}>
+              <Box sx={{ mb: 4 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                  <BusinessIcon sx={{
+                    fontSize: 32,
+                    mr: 2,
+                    background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                    borderRadius: '50%',
+                    p: 1,
+                    color: 'white'
+                  }} />
+                  <Typography variant="h5" sx={{
+                    fontWeight: 'bold',
+                    background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent'
+                  }}>
+                    Informations Fournisseur
+                  </Typography>
+                </Box>
+                <Divider sx={{ mb: 3, background: 'linear-gradient(90deg, #2c3e50, #34495e)' }} />
+                <Grid container spacing={3} alignItems="center">
+                  {/* Champ Fournisseur */}
+                  <Grid item xs={12} sm={5} md={4}>
+                    <Grid container spacing={1} alignItems="center">
+                      <Grid item xs={10} sm={10} md={10}>
+                        <Autocomplete
+                          options={fournisseurs}
+                          getOptionLabel={(option) => option.raison_sociale}
+                          value={fournisseurs.find(f => f._id === selectedFournisseur) || null}
+                          onChange={(e, newValue) => {
+                            if (newValue) {
+                              setSelectedFournisseur(newValue._id);
+                              setAdresse(newValue.adresse || '');
+                              setMatriculeFiscale(newValue.matricule_fiscale || '');
+                            } else {
+                              setSelectedFournisseur('');
+                              setAdresse('');
+                              setMatriculeFiscale('');
+                            }
+                          }}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Fournisseur"
+                              fullWidth
+                              required
+                              InputProps={{
+                                ...params.InputProps,
+                                startAdornment: (
+                                  <InputAdornment position="start">
+                                    <BusinessIcon sx={{ color: '#2c3e50' }} />
+                                  </InputAdornment>
+                                ),
+                              }}
+                              sx={{
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: 2,
+                                  transition: 'all 0.3s ease',
+                                  '&:hover': {
+                                    boxShadow: '0 4px 12px rgba(52, 73, 94, 0.15)'
+                                  },
+                                  '&.Mui-focused': {
+                                    boxShadow: '0 4px 12px rgba(52, 73, 94, 0.25)'
+                                  }
+                                }
+                              }}
+                            />
+                          )}
+                        />
+                      </Grid>
+                      {/* Bouton Ajouter Fournisseur */}
+                      <Grid item xs={2} sm={2} md={2}>
+                        <Tooltip title="Ajouter un nouveau fournisseur">
+                          <IconButton
+                            sx={{
+                              background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                              color: 'white',
+                              '&:hover': {
+                                background: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)',
+                                transform: 'scale(1.1)'
+                              },
+                              transition: 'all 0.3s ease'
+                            }}
+                            onClick={() => navigate("/createFournisseur")}
+                          >
+                            <AddCircleOutlineIcon fontSize="large" />
+                          </IconButton>
+                        </Tooltip>
+                      </Grid>
+                    </Grid>
+                  </Grid>
 
-      {/* Champ Matricule Fiscale */}
-      <Grid item xs={12} sm={2} md={2}>
-        <TextField label="Matricule Fiscale" value={matriculeFiscale} fullWidth disabled />
-      </Grid>
+                  {/* Champ Adresse */}
+                  <Grid item xs={12} sm={3} md={3}>
+                    <TextField
+                      label="Adresse"
+                      value={adresse}
+                      fullWidth
+                      disabled
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <LocationOnIcon sx={{ color: '#2c3e50' }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 2,
+                          backgroundColor: '#f8f9fa'
+                        }
+                      }}
+                    />
+                  </Grid>
 
-      {/* Champ Date de commande */}
-      <Grid item xs={12} sm={2} md={3}>
-        <LocalizationProvider dateAdapter={AdapterDateFns}>
-          <DatePicker
-            label="Date de commande"
-            value={dateCommande}
-            onChange={(newValue) => setDateCommande(newValue)}
-            renderInput={(params) => <TextField {...params} fullWidth />}
-          />
-        </LocalizationProvider>
-      </Grid>
-    </Grid>
-  </CardContent>
-</Card>
+                  {/* Champ Matricule Fiscale */}
+                  <Grid item xs={12} sm={2} md={2}>
+                    <TextField
+                      label="Matricule Fiscale"
+                      value={matriculeFiscale}
+                      fullWidth
+                      disabled
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <BadgeIcon sx={{ color: '#2c3e50' }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 2,
+                          backgroundColor: '#f8f9fa'
+                        }
+                      }}
+                    />
+                  </Grid>
 
-          {/*article */}
-          <Card sx={{ p: 3, mb: 3 }}>
-            <CardContent>
-              <Typography variant="h6" sx={{ textAlign: 'left' }}>Informations Articles</Typography>
-              <Grid container spacing={2} alignItems="center">
-                {/*select article */}
-                <Grid item xs={12} sm={6} md={2}>
-                  <Autocomplete
-                    options={articles}
-                    getOptionLabel={(option) => option.libelle}
-                    value={articles.find(a => a._id === selectedArticle) || null}
-                    onChange={(e, newValue) => {
-                      if (newValue) {
-                        setSelectedArticle(newValue._id);
-                        setPrixUnitaire(newValue.prixht || 0);
-                        setPrix_uTTC(newValue.prix_totale_concre || 0);
-                        setTva(newValue.tva || 0);
-                        setFodec(newValue.fodec || 0);
-                        setDc(newValue.dc || 0);
-                        setRemise(newValue.remise || 0); 
-                      } else {
-                        setSelectedArticle('');
-                        setPrixUnitaire(0);
-                        setPrix_uTTC(0);
-                        setTva(0);
-                        setFodec(0);
-                        setDc(0);
-                        setRemise(0); 
-                      }
-                    }}
-                    renderInput={(params) => (
-                      <TextField {...params} label="Article" fullWidth required />
-                    )}
-                  />
+                  {/* Champ Date de commande */}
+                  <Grid item xs={12} sm={2} md={3}>
+                    <LocalizationProvider dateAdapter={AdapterDateFns}>
+                      <DatePicker
+                        label="Date de commande"
+                        value={dateCommande}
+                        onChange={(newValue) => setDateCommande(newValue)}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            fullWidth
+                            InputProps={{
+                              ...params.InputProps,
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <CalendarTodayIcon sx={{ color: '#2c3e50' }} />
+                                </InputAdornment>
+                              ),
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 2,
+                                transition: 'all 0.3s ease',
+                                '&:hover': {
+                                  boxShadow: '0 4px 12px rgba(52, 73, 94, 0.15)'
+                                },
+                                '&.Mui-focused': {
+                                  boxShadow: '0 4px 12px rgba(52, 73, 94, 0.25)'
+                                }
+                              }
+                            }}
+                          />
+                        )}
+                      />
+                    </LocalizationProvider>
+                  </Grid>
                 </Grid>
+              </Box>
+            </Fade>
+
+            {/* Section Articles intégrée */}
+            <Fade in={true} timeout={1000}>
+              <Box sx={{ mb: 4 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                  <InventoryIcon sx={{
+                    fontSize: 32,
+                    mr: 2,
+                    background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                    borderRadius: '50%',
+                    p: 1,
+                    color: 'white'
+                  }} />
+                  <Typography variant="h5" sx={{
+                    fontWeight: 'bold',
+                    background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent'
+                  }}>
+                    Informations Articles
+                  </Typography>
+                </Box>
+                <Divider sx={{ mb: 3, background: 'linear-gradient(90deg, #95a5a6, #7f8c8d)' }} />
+                <Grid container spacing={3} alignItems="center">
+                  {/* Sélection Article */}
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Autocomplete
+                      options={articles}
+                      getOptionLabel={(option) => option.libelle}
+                      value={articles.find(a => a._id === selectedArticle) || null}
+                      onChange={(e, newValue) => {
+                        if (newValue) {
+                          setSelectedArticle(newValue._id);
+                          setPrixUnitaire(newValue.prixht || 0);
+                          setPrix_uTTC(newValue.prix_totale_concre || 0);
+                          setTva(newValue.tva || 0);
+                          setFodec(newValue.fodec || 0);
+                          setDc(newValue.dc || 0);
+                          setRemise(newValue.remise || 0);
+                        } else {
+                          setSelectedArticle('');
+                          setPrixUnitaire(0);
+                          setPrix_uTTC(0);
+                          setTva(0);
+                          setFodec(0);
+                          setDc(0);
+                          setRemise(0);
+                        }
+                      }}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Article"
+                          fullWidth
+                          required
+                          InputProps={{
+                            ...params.InputProps,
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <InventoryIcon sx={{ color: '#95a5a6' }} />
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 2,
+                              transition: 'all 0.3s ease',
+                              '&:hover': {
+                                boxShadow: '0 4px 12px rgba(149, 165, 166, 0.15)'
+                              },
+                              '&.Mui-focused': {
+                                boxShadow: '0 4px 12px rgba(149, 165, 166, 0.25)'
+                              }
+                            }
+                          }}
+                        />
+                      )}
+                    />
+                  </Grid>
             {/* prix unitaire ht*/ }
               <Grid item xs={12} sm={6} md={2}>
                   <TextField
@@ -478,108 +719,327 @@ const generatePDF = (bonCommande) => {
                   />
                 </Grid>
 
-                {/* quantité*/}
-                <Grid item xs={12} sm={6} md={2}>
-                  <TextField
-                    label="Quantité"
-                    type="number"
-                    value={quantite}
-                    onChange={(e) => setQuantite(parseInt(e.target.value))}
-                    fullWidth
-                    required
-                  />
-                </Grid>
-               
-                {/* select depot */}
-                <Grid item xs={12} sm={6} md={3}>
-                  <Autocomplete
-                    options={depots}
-                    getOptionLabel={(option) => option.libelle}
-                    value={depots.find(d => d._id === selectedDepot) || null}
-                    onChange={(e, newValue) => {
-                      if (newValue) {
-                        setSelectedDepot(newValue._id);
-                      } else {
-                        setSelectedDepot('');
-                      }
-                    }}
-                    renderInput={(params) => (
-                      <TextField {...params} label="Dépôt" fullWidth required />
-                    )}
-                  />
-                </Grid>
-                {/* add ligne */}
-                <Grid item xs={12} sm={6} md={1}>
-                  <IconButton color="primary" onClick={handleAddLigne}>
-                    <AddCircleOutlineIcon fontSize="large" />
-                  </IconButton>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
+                  {/* Quantité */}
+                  <Grid item xs={12} sm={6} md={2}>
+                    <TextField
+                      label="Quantité"
+                      type="number"
+                      value={quantite}
+                      onChange={(e) => setQuantite(parseInt(e.target.value))}
+                      fullWidth
+                      required
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 2,
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            boxShadow: '0 4px 12px rgba(149, 165, 166, 0.15)'
+                          },
+                          '&.Mui-focused': {
+                            boxShadow: '0 4px 12px rgba(149, 165, 166, 0.25)'
+                          }
+                        }
+                      }}
+                    />
+                  </Grid>
 
-          {/*lignes */}
-          {lignes.length > 0 && (
-            <Card sx={{ p: 3, mb: 3 }}>
-              <CardContent>
-                <TableContainer component={Paper}>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Article</TableCell>
-                        <TableCell>Quantité</TableCell>
-                        <TableCell>Prix Unitaire TTC</TableCell>
-                        <TableCell>Total</TableCell>
-                        <TableCell>Action</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {lignes.map((ligne, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{ligne.libelle}</TableCell>
-                          <TableCell>{ligne.quantite}</TableCell>
-                          <TableCell>{ligne.prix_uTTC} TND</TableCell>
-                          <TableCell>{(ligne.quantite * ligne.prix_uTTC).toFixed(2)} TND</TableCell>
-                          <TableCell>
-                            <IconButton color="error" onClick={() => handleRemoveLigne(index)}>
-                              <DeleteIcon />
-                            </IconButton>
+                  {/* Sélection Dépôt */}
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Autocomplete
+                      options={depots}
+                      getOptionLabel={(option) => option.libelle}
+                      value={depots.find(d => d._id === selectedDepot) || null}
+                      onChange={(e, newValue) => {
+                        if (newValue) {
+                          setSelectedDepot(newValue._id);
+                        } else {
+                          setSelectedDepot('');
+                        }
+                      }}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Dépôt"
+                          fullWidth
+                          required
+                          InputProps={{
+                            ...params.InputProps,
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <LocationOnIcon sx={{ color: '#95a5a6' }} />
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 2,
+                              transition: 'all 0.3s ease',
+                              '&:hover': {
+                                boxShadow: '0 4px 12px rgba(149, 165, 166, 0.15)'
+                              },
+                              '&.Mui-focused': {
+                                boxShadow: '0 4px 12px rgba(149, 165, 166, 0.25)'
+                              }
+                            }
+                          }}
+                        />
+                      )}
+                    />
+                  </Grid>
+
+                  {/* Bouton Ajouter Ligne */}
+                  <Grid item xs={12} sm={6} md={1}>
+                    <Tooltip title="Ajouter cette ligne à la commande">
+                      <IconButton
+                        sx={{
+                          background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                          color: 'white',
+                          '&:hover': {
+                            background: 'linear-gradient(135deg, #7f8c8d 0%, #95a5a6 100%)',
+                            transform: 'scale(1.1)'
+                          },
+                          transition: 'all 0.3s ease'
+                        }}
+                        onClick={handleAddLigne}
+                      >
+                        <AddCircleOutlineIcon fontSize="large" />
+                      </IconButton>
+                    </Tooltip>
+                  </Grid>
+                </Grid>
+              </Box>
+            </Fade>
+
+            {/* Section Tableau des Lignes intégrée */}
+            {lignes.length > 0 && (
+              <Fade in={true} timeout={1200}>
+                <Box sx={{ mb: 4 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                    <ShoppingCartIcon sx={{
+                      fontSize: 32,
+                      mr: 2,
+                      background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                      borderRadius: '50%',
+                      p: 1,
+                      color: 'white'
+                    }} />
+                    <Typography variant="h5" sx={{
+                      fontWeight: 'bold',
+                      background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent'
+                    }}>
+                      Lignes de Commande ({lignes.length})
+                    </Typography>
+                  </Box>
+                  <Divider sx={{ mb: 3, background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)' }} />
+
+                  <TableContainer component={Paper} sx={{
+                    borderRadius: 2,
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                    overflow: 'hidden'
+                  }}>
+                    <Table>
+                      <TableHead sx={{
+                      background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)' 
+                      }}>
+                        <TableRow>
+                          <TableCell sx={{
+                            color: 'white',
+                            fontWeight: 'bold',
+                            fontSize: '1rem'
+                          }}>
+                            Article
+                          </TableCell>
+                          <TableCell sx={{
+                            color: 'white',
+                            fontWeight: 'bold',
+                            fontSize: '1rem'
+                          }}>
+                            Quantité
+                          </TableCell>
+                          <TableCell sx={{
+                            color: 'white',
+                            fontWeight: 'bold',
+                            fontSize: '1rem'
+                          }}>
+                            Prix Unitaire TTC
+                          </TableCell>
+                          <TableCell sx={{
+                            color: 'white',
+                            fontWeight: 'bold',
+                            fontSize: '1rem'
+                          }}>
+                            Total
+                          </TableCell>
+                          <TableCell sx={{
+                            color: 'white',
+                            fontWeight: 'bold',
+                            fontSize: '1rem'
+                          }}>
+                            Action
                           </TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Partie fixe dans le footer */}
-          <Box
-            sx={{
-              position: 'fixed',
-              bottom: 0,
-              left: 300,
-              right: 0,
-              width: '70%',
-              backgroundColor: 'background.paper',
-              boxShadow: 3,
-              zIndex: 1000,
-              p: 2,
-            }}
-          >
-            <Grid container alignItems="center" justifyContent="space-between">
-              {/* Totaux HT et TTC au centre */}
-              <Grid item>
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <Typography variant="h6">Total HT: {totalHT.toFixed(2)} TND</Typography>
-                  <Typography variant="h6">Total TTC: {totalTTC.toFixed(2)} TND</Typography>
+                      </TableHead>
+                      <TableBody>
+                        {lignes.map((ligne, index) => (
+                          <TableRow
+                            key={index}
+                            sx={{
+                              '&:nth-of-type(odd)': {
+                                backgroundColor: '#f8f9fa',
+                              },
+                              '&:hover': {
+                                backgroundColor: '#e3f2fd',
+                                transform: 'scale(1.01)',
+                                transition: 'all 0.2s ease'
+                              },
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            <TableCell sx={{ fontWeight: 'medium' }}>
+                              {ligne.libelle}
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                label={ligne.quantite}
+                                size="small"
+                                sx={{
+                                 background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)' ,
+                                  color: 'white',
+                                  fontWeight: 'bold'
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell sx={{ fontWeight: 'medium' }}>
+                              {ligne.prix_uTTC} TND
+                            </TableCell>
+                            <TableCell sx={{
+                              fontWeight: 'bold',
+                              color: '#667eea'
+                            }}>
+                              {(ligne.quantite * ligne.prix_uTTC).toFixed(2)} TND
+                            </TableCell>
+                            <TableCell>
+                              <Tooltip title="Supprimer cette ligne">
+                                <IconButton
+                                  sx={{
+                                    color: '#f44336',
+                                    '&:hover': {
+                                      backgroundColor: '#ffebee',
+                                      transform: 'scale(1.1)'
+                                    },
+                                    transition: 'all 0.3s ease'
+                                  }}
+                                  onClick={() => handleRemoveLigne(index)}
+                                >
+                                  <DeleteIcon />
+                                </IconButton>
+                              </Tooltip>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
                 </Box>
+              </Fade>
+            )}
+          </CardContent>
+        </ModernCard>
+
+        {/* Footer moderne avec totaux et bouton */}
+        <Box
+          sx={{
+            position: 'fixed',
+            bottom: 2,
+            left: 300,
+            right: 0,
+            width: '70%',
+            height: '14%',
+            //background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+            boxShadow: '-8px -8px 32px rgba(0,0,0,0.15)',
+            zIndex: 1000,
+            p: 0.5,
+         //   borderTop: '3px solid',
+           // borderImage: 'linear-gradient(90deg,rgb(255, 253, 253),rgb(255, 245, 245)) 1',
+          }}
+        >
+            <Grid container alignItems="center" justifyContent="space-between">
+              {/* Totaux HT et TTC modernisés */}
+              <Grid item>
+                <Stack direction="row" spacing={3}>
+                  <Box sx={{
+                    textAlign: 'center',
+                    p: 2,
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                    color: 'white',
+                    boxShadow: '0 4px 20px rgba(149, 165, 166, 0.3)'
+                  }}>
+                    <Typography variant="body2" sx={{ opacity: 0.9, fontWeight: 'medium' }}>
+                      Total HT
+                    </Typography>
+                    <Typography variant="h5" sx={{
+                      fontWeight: 'bold',
+                      color: 'white'
+                    }}>
+                      {totalHT.toFixed(2)} TND
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{
+                    textAlign: 'center',
+                    p: 2,
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                    color: 'white',
+                    boxShadow: '0 4px 20px rgba(52, 73, 94, 0.3)'
+                  }}>
+                    <Typography variant="body2" sx={{ opacity: 0.9, fontWeight: 'medium' }}>
+                      Total TTC
+                    </Typography>
+                    <Typography variant="h5" sx={{
+                      fontWeight: 'bold'
+                    }}>
+                      {totalTTC.toFixed(2)} TND
+                    </Typography>
+                  </Box>
+                </Stack>
               </Grid>
 
-              {/* Bouton à droite */}
+              {/* Bouton de soumission modernisé */}
               <Grid item>
-                <Button type="submit" variant="contained" color="primary" onClick={handleSubmit}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  size="large"
+                  onClick={handleSubmit}
+                  startIcon={<SaveIcon />}
+                  sx={{
+                    background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                    color: 'white',
+                    px: 4,
+                    py: 2,
+                    borderRadius: 3,
+                    fontSize: '1.1rem',
+                    fontWeight: 'bold',
+                    boxShadow: '0 8px 25px rgba(52, 73, 94, 0.4)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 12px 35px rgba(52, 73, 94, 0.5)'
+                    },
+                    transition: 'all 0.3s ease'
+                  }}
+                >
                   Créer le bon de commande
                 </Button>
               </Grid>
@@ -587,35 +1047,150 @@ const generatePDF = (bonCommande) => {
           </Box>
         </Box>
       </Box>
-      <Dialog open={openSuccessModal} onClose={handleSuccessModalClose}>
-  <DialogTitle>Succès</DialogTitle>
-  <DialogContent>
-    <Typography>Le bon de commande a été créé avec succès.</Typography>
-  </DialogContent>
-  <DialogActions>
-    <Button onClick={handleSuccessModalClose} color="primary">
-      OK
-    </Button>
-  </DialogActions>
-</Dialog>
+      {/* Modal de succès modernisée */}
+      <Dialog
+        open={openSuccessModal}
+        onClose={handleSuccessModalClose}
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
+          }
+        }}
+      >
+        <DialogTitle sx={{
+          textAlign: 'center',
+          background: 'linear-gradient(135deg, #4caf50 0%, #45a049 100%)',
+          color: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 2
+        }}>
+          <CheckCircleIcon sx={{ fontSize: 32 }} />
+          <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+            Succès !
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ p: 4, textAlign: 'center' }}>
+          <Typography variant="h6" sx={{ mb: 2, color: '#2e7d32' }}>
+            Le bon de commande a été créé avec succès.
+          </Typography>
+          <Typography variant="body1" sx={{ color: '#666' }}>
+            Vous pouvez maintenant prévisualiser et télécharger le document.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, justifyContent: 'center' }}>
+          <Button
+            onClick={handleSuccessModalClose}
+            variant="contained"
+            size="large"
+            sx={{
+              background: 'linear-gradient(135deg, #4caf50 0%, #45a049 100%)',
+              color: 'white',
+              px: 4,
+              py: 1.5,
+              borderRadius: 2,
+              fontWeight: 'bold',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #45a049 0%, #4caf50 100%)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 8px 25px rgba(76, 175, 80, 0.4)'
+              },
+              transition: 'all 0.3s ease'
+            }}
+          >
+            Continuer
+          </Button>
+        </DialogActions>
+      </Dialog>
 
-      {/* Modal pour afficher le PDF */}
-      <Dialog open={openModal} onClose={handleCloseModal} maxWidth="md" fullWidth>
-  <DialogTitle>Prévisualisation du Bon de Commande</DialogTitle>
-  <DialogContent>
-    <iframe
-      src={pdfUrl}
-      width="100%"
-      height="500px" // Ajustez la hauteur selon vos besoins
-      style={{ border: "none" }}
-      title="Prévisualisation du PDF"
-    />
-  </DialogContent>
-  <DialogActions>
-    <Button onClick={handleCloseModal}>Fermer</Button>
-    <Button onClick={handleDownload} color="primary">Télécharger</Button>
-  </DialogActions>
-</Dialog>
+      {/* Modal de prévisualisation PDF modernisée */}
+      <Dialog
+        open={openModal}
+        onClose={handleCloseModal}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+            minHeight: '80vh'
+          }
+        }}
+      >
+        <DialogTitle sx={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2
+        }}>
+          <PreviewIcon sx={{ fontSize: 28 }} />
+          <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+            Prévisualisation du Bon de Commande
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          <iframe
+            src={pdfUrl}
+            width="100%"
+            height="600px"
+            style={{ border: "none", borderRadius: '0 0 12px 12px' }}
+            title="Prévisualisation du PDF"
+          />
+        </DialogContent>
+        <DialogActions sx={{
+          p: 3,
+          background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+          gap: 2
+        }}>
+          <Button
+            onClick={handleCloseModal}
+            variant="outlined"
+            size="large"
+            sx={{
+              borderColor: '#667eea',
+              color: '#667eea',
+              px: 3,
+              py: 1.5,
+              borderRadius: 2,
+              fontWeight: 'bold',
+              '&:hover': {
+                borderColor: '#764ba2',
+                color: '#764ba2',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)'
+              }
+            }}
+          >
+            Fermer
+          </Button>
+          <Button
+            onClick={handleDownload}
+            variant="contained"
+            size="large"
+            startIcon={<DownloadIcon />}
+            sx={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
+              px: 4,
+              py: 1.5,
+              borderRadius: 2,
+              fontWeight: 'bold',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 8px 25px rgba(102, 126, 234, 0.4)'
+              },
+              transition: 'all 0.3s ease'
+            }}
+          >
+            Télécharger
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

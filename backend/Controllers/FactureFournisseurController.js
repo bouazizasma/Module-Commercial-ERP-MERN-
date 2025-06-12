@@ -136,15 +136,21 @@ const downloadFacture = async (req, res) => {
       return res.status(404).json({ message: "Facture non trouvée" });
     }
 
+    // Vérifier si la facture a un fichier PDF
+    if (!facture.fichierPdf) {
+      return res.status(404).json({ message: "Fichier PDF non trouvé pour cette facture" });
+    }
+
     // Définir les en-têtes de la réponse
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=facture_${facture.numero_facture}.pdf`);
+    res.setHeader('Content-Length', facture.fichierPdf.length);
 
     // Envoyer le fichier PDF
     res.send(facture.fichierPdf);
   } catch (error) {
     console.error("Erreur lors du téléchargement de la facture :", error);
-    res.status(500).json({ message: "Erreur serveur" });
+    res.status(500).json({ message: "Erreur lors du téléchargement de la facture" });
   }
 };
 
@@ -477,65 +483,56 @@ const getFacturesParFournisseur = async (req, res) => {
 // Endpoint pour extraire les articles d'une facture
 const getArticles = async (req, res) => {
   try {
-    const facture = await FactureF.findById(req.params.id);
-    if (!facture || !facture.pdf_path) {
-      return res.status(404).json({ message: "Facture ou PDF non trouvé" });
+    const factureId = req.params.id;
+
+    // Récupérer la facture avec les bons de réception populés
+    const facture = await FactureFournisseur.findById(factureId)
+      .populate({
+        path: 'bonsReception',
+        populate: {
+          path: 'lignes',
+          populate: {
+            path: 'article',
+            model: 'article'
+          }
+        }
+      });
+
+    if (!facture) {
+      return res.status(404).json({ message: "Facture non trouvée" });
     }
 
-    const pdfPath = path.join(__dirname, '..', facture.pdf_path);
-    const dataBuffer = fs.readFileSync(pdfPath);
-
-    const data = await pdf(dataBuffer);
-    const text = data.text;
-
-    // Recherche de la section des articles dans le texte
+    // Extraire tous les articles des bons de réception
     const articles = [];
-    const lines = text.split('\n');
-    let isArticleSection = false;
-    let currentArticle = {};
 
-    for (const line of lines) {
-      // Logique pour détecter le début de la section des articles
-      if (line.includes('Désignation') && line.includes('Quantité')) {
-        isArticleSection = true;
-        continue;
-      }
-
-      // Logique pour détecter la fin de la section des articles
-      if (isArticleSection && (line.includes('Total') || line.includes('Montant'))) {
-        isArticleSection = false;
-        continue;
-      }
-
-      // Extraction des données des articles
-      if (isArticleSection && line.trim()) {
-        const parts = line.split(/\s+/);
-        if (parts.length >= 6) {
-          articles.push({
-            designation: parts.slice(0, -5).join(' '),
-            quantite: parseFloat(parts[parts.length - 5]),
-            prix_unitaire: parseFloat(parts[parts.length - 4]),
-            total_ht: parseFloat(parts[parts.length - 3]),
-            tva: parseFloat(parts[parts.length - 2]),
-            total_ttc: parseFloat(parts[parts.length - 1])
+    if (facture.bonsReception && facture.bonsReception.length > 0) {
+      facture.bonsReception.forEach(bonReception => {
+        if (bonReception.lignes && bonReception.lignes.length > 0) {
+          bonReception.lignes.forEach(ligne => {
+            if (ligne.article) {
+              articles.push({
+                libelle: ligne.article.libelle || ligne.article.designation || 'Article inconnu',
+                quantite: ligne.quantite || 0,
+                prix_unitaire: ligne.prix_unitaire || 0,
+                total_ht: ligne.total_ht || (ligne.quantite * ligne.prix_unitaire),
+                tva: ligne.tva || ligne.article.tva || 0,
+                total_ttc: ligne.total_ttc || ligne.total_ht * (1 + (ligne.tva || 0) / 100)
+              });
+            }
           });
         }
-      }
+      });
     }
 
-    // Si aucun article n'est trouvé, utiliser les articles stockés dans la base de données
-    if (articles.length === 0 && facture.articles) {
-      return res.json(facture.articles);
+    // Si aucun article trouvé dans les bons de réception, retourner un tableau vide
+    if (articles.length === 0) {
+      return res.json([]);
     }
 
     res.json(articles);
-
   } catch (error) {
-    console.error('Erreur lors de l\'extraction des articles:', error);
-    res.status(500).json({ 
-      message: "Erreur lors de l'extraction des articles",
-      error: error.message 
-    });
+    console.error("Erreur lors de la récupération des articles :", error);
+    res.status(500).json({ message: "Erreur lors de la récupération des articles" });
   }
 };
 

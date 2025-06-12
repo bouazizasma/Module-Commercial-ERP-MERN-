@@ -24,6 +24,7 @@ const BanqueClient =require('./Routes/Client/BanqueClientRouter');
 const RegionRouter=require('./Routes/Client/RegionRouter');
 const ReglementClient =require('./Routes/Ventes/reglementCRouter');
 const stockRouter = require('./Routes/stock/stockRoutes');
+const NotificationsRouter = require('./Routes/NotificationsRouter');
 require('dotenv').config();
 require('./Models/db');
 const PORT = process.env.PORT || 5000;
@@ -60,6 +61,7 @@ app.use('/banqueClient', BanqueClient);
 app.use('/region', RegionRouter);
 app.use('/ReglementClient', ReglementClient);
 app.use('/stockRouter', stockRouter);
+app.use('/notifications', NotificationsRouter);
 
 
 
