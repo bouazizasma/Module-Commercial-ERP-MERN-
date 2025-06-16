@@ -646,41 +646,6 @@ export default function Vehicule() {
             <Stack spacing={3}>
               <TextField
                 fullWidth
-                label="Code"
-                type="number"
-                value={formData.code}
-                onChange={(e) => handleFieldChange('code', e.target.value)}
-                error={!!errors.code}
-                helperText={errors.code}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    '&:hover': {
-                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.15)'
-                    }
-                  }
-                }}
-              />
-
-              <TextField
-                fullWidth
-                label="Code Véhicule"
-                value={formData.codeVehicule}
-                onChange={(e) => handleFieldChange('codeVehicule', e.target.value)}
-                error={!!errors.codeVehicule}
-                helperText={errors.codeVehicule}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    '&:hover': {
-                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.15)'
-                    }
-                  }
-                }}
-              />
-
-              <TextField
-                fullWidth
                 label="Libellé"
                 value={formData.libelle}
                 onChange={(e) => handleFieldChange('libelle', e.target.value)}

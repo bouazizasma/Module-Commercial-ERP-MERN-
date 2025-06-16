@@ -13,19 +13,14 @@ const createBonCommande = async (req, res) => {
         if (!fournisseur || !depot || !lignes || lignes.length === 0 || !dateCommande) {
             return res.status(400).json({ message: "Fournisseur, dépôt, lignes de commande et date de commande sont requis." });
         }
-
-        // Convertir la date de commande en objet Date
         const dateCommandeObj = new Date(dateCommande);
 
-        // Vérifier si la date est valide
         if (isNaN(dateCommandeObj.getTime())) {
             return res.status(400).json({ message: "Date de commande invalide." });
         }
 
-        // Extraire l'année de référence à partir de la date
         const year = dateCommandeObj.getFullYear();
 
-        // Vérifier que l'année de référence est valide
         if (!year || year < 2000 || year > 2100) {
             return res.status(400).json({ message: "L'année de référence est invalide." });
         }
@@ -37,10 +32,8 @@ const createBonCommande = async (req, res) => {
         }
         const codeDepot = foundDepot.codeDepot;
 
-        // Extraire les deux derniers chiffres de l'année de référence
         const yearShort = year.toString().slice(-2);
 
-        // Trouver ou créer un compteur pour l'année de référence
         let counter;
         try {
             counter = await CounterModel.findOneAndUpdate(
@@ -51,10 +44,8 @@ const createBonCommande = async (req, res) => {
         } catch (error) {
             console.error("Erreur lors de la création ou de la mise à jour du compteur:", error);
             if (error.code === 11000) {
-                // Si l'erreur est une duplication de clé, récupérez le compteur existant
                 counter = await CounterModel.findOne({ model: 'bonCommande', year: year });
                 if (!counter) {
-                    // Si aucun compteur existant n'est trouvé, créez-en un nouveau
                     counter = new CounterModel({ model: 'bonCommande', year: year, seq: 1 });
                     await counter.save();
                 }
@@ -67,18 +58,15 @@ const createBonCommande = async (req, res) => {
             return res.status(500).json({ message: "Erreur lors de la création du compteur." });
         }
 
-        // Formater la séquence sur 5 chiffres
         const sequence = String(counter.seq).padStart(5, '0');
 
-        // Générer le numéro de commande
         const numero_Bon = `BC ${codeDepot} ${yearShort} ${sequence}`;
 
         // Calcul du total HT et TTC
         const total_hors_Taxe = lignes.reduce((acc, ligne) => acc + (ligne.quantite * ligne.prix_unitaire), 0);
-       // Calcul du total TTC en tenant compte de la TVA pour chaque ligne
         const total_ttc = lignes.reduce((acc, ligne) => {
         const totalLigneHT = ligne.quantite * ligne.prix_unitaire;
-        const totalLigneTTC = totalLigneHT * (1 + ligne.tva / 100); // Supposons que la TVA est en pourcentage
+        const totalLigneTTC = totalLigneHT * (1 + ligne.tva / 100); 
         return acc + totalLigneTTC;
         }, 0);
 
@@ -89,7 +77,7 @@ const createBonCommande = async (req, res) => {
             type: "BonCommande",
             dateCommande: dateCommandeObj,
             depot,
-            anneeReference: year, // Utiliser `year` au lieu de `anneeReference`
+            anneeReference: year, 
             total_hors_Taxe,
             total_ttc,
             lignes: [],
@@ -98,7 +86,6 @@ const createBonCommande = async (req, res) => {
         // Sauvegarder le bon de commande
         const savedBonCommande = await bonCommande.save();
 
-        // Enregistrement des lignes de commande
         const lignesCommande = lignes.map(ligne => ({
             bon: savedBonCommande._id,
             article: ligne.article,
@@ -113,7 +100,7 @@ const createBonCommande = async (req, res) => {
             total_ttc: ligne.quantite * ligne.prix_unitaire * ligne.tva,
         }));
 
-     //   await LigneAchat.insertMany(lignesCommande);
+     // await LigneAchat.insertMany(lignesCommande);
      const savedLignes = await LigneAchat.insertMany(lignesCommande);
      savedBonCommande.lignes = savedLignes.map(ligne => ligne._id);
      await savedBonCommande.save();
@@ -125,13 +112,10 @@ const createBonCommande = async (req, res) => {
             { new: true }
         );
     }
-        // Populate the fournisseur field after saving
         const populatedBonCommande = await BonFournisseur.findById(savedBonCommande._id).populate('fournisseur').populate({
             path: 'lignes',
             populate: { path: 'article' , model : 'article' } // Peupler les articles dans les lignes
         });
-
-
 
         res.status(201).json({ bonCommande: populatedBonCommande, lignes: lignesCommande });
         console.log("Populated BonCommande:", populatedBonCommande);
@@ -554,82 +538,6 @@ const getBonReceptionByID = async (req, res) => {
     }
 };
 
-//update BEF
-const updateBEF = async (req, res) => {
-    const { id } = req.params;
-    const { lignes, ...bonReception } = req.body;
-  
-    try {
-      // Vérifier si le bon de commande existe
-      const bonReceptionF = await BonFournisseur.findById(id);
-      if (!bonReceptionF) {
-        return res.status(404).json({ message: "Bon de Réception non trouvé" });
-      }
-  
-      // Mettre à jour les informations de base
-      if (bonReception.dateReception) {
-        bonReceptionF.dateReception = new Date(bonReception.dateReception);
-      }
-      if (bonReception.fournisseur) {
-        bonReceptionF.fournisseur = bonReception.fournisseur;
-      }
-      if (bonReception.depot) {
-        bonReceptionF.depot = bonReception.depot;
-      }
-      if (bonReception.statut) {
-        bonReceptionF.statut = bonReception.statut;
-      }
-  
-      // Si des lignes sont fournies, les mettre à jour
-      let nouvellesLignes = [];
-      if (lignes && Array.isArray(lignes)) {
-        // Supprimer les anciennes lignes associées à ce bon de reception
-        await LigneAchat.deleteMany({ bon: id });
-  
-        // Calculer les nouveaux totaux
-        let total_hors_Taxe = 0;
-        let total_ttc = 0;
-  
-        // Créer les nouvelles lignes de commande
-        nouvellesLignes = lignes.map(ligne => {
-          const total_ht = ligne.quantite * ligne.prix_unitaire;
-          const total_ligne_ttc = total_ht * 1.2; // TVA 20%
-          total_hors_Taxe += total_ht;
-          total_ttc += total_ligne_ttc;
-  
-          return {
-            bon: id,
-            article: ligne.article,
-            quantite: ligne.quantite,
-            prix_unitaire: ligne.prix_unitaire,
-            remise: ligne.remise,
-            dc: ligne.dc,
-            tva: ligne.tva,
-            fodec: ligne.fodec,
-            prix_uTTC: ligne.prix_uTTC,
-            total_ht,
-            total_ttc: total_ligne_ttc
-          };
-        });
-  
-        // Enregistrer les nouvelles lignes de commande
-        await LigneAchat.insertMany(nouvellesLignes);
-  
-        // Mettre à jour les totaux dans le bon de commande
-        bonReceptionF.total_hors_Taxe = total_hors_Taxe;
-        bonReceptionF.total_ttc = total_ttc;
-      }
-  
-      // Enregistrer le bon de commande mis à jour
-      const updatedBonReception = await bonReceptionF.save();
-  
-      // Renvoyer une réponse JSON valide
-      res.status(200).json({ bonReception: updatedBonReception, lignes: nouvellesLignes });
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour du bon de Reception:", error);
-      res.status(500).json({ message: error.message });
-    }
-  };
 
 //delete BEF
 const deleteBEF = async (req, res) => {

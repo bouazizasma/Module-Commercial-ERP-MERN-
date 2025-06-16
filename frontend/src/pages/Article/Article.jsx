@@ -772,87 +772,198 @@ export default function Article() {
                 <Divider />
 
                 {/* Informations détaillées */}
-                <Box sx={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                  gap: 3
-                }}>
-                  <Box sx={{
-                    p: 2,
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)',
-                    border: '1px solid #4caf50'
-                  }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <AttachMoney sx={{ color: '#4caf50' }} />
-                      <Typography variant="subtitle2" color="#2e7d32" fontWeight="bold">
-                        Prix TTC
-                      </Typography>
-                    </Box>
-                    <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#2e7d32' }}>
-                      {selectedArticle.prix_totale_concre} TND
-                    </Typography>
-                  </Box>
+            <Box sx={{
+  display: 'grid',
+  gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
+  gap: 3,
+  mb: 3
+}}>
+  {/* Carte Prix TTC */}
+  <Card sx={{
+    borderRadius: '12px',
+    background: 'rgba(76, 175, 80, 0.08)',
+    border: '1px solid rgba(76, 175, 80, 0.2)',
+    backdropFilter: 'blur(5px)',
+    boxShadow: '0 4px 20px rgba(76, 175, 80, 0.1)',
+    transition: 'all 0.3s ease',
+    '&:hover': {
+      transform: 'translateY(-5px)',
+      boxShadow: '0 8px 25px rgba(76, 175, 80, 0.2)'
+    }
+  }}>
+    <CardContent>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1.5 }}>
+        <Avatar sx={{ 
+          bgcolor: 'rgba(76, 175, 80, 0.1)', 
+          color: '#4caf50',
+          width: 40,
+          height: 40
+        }}>
+          <AttachMoney fontSize="small" />
+        </Avatar>
+        <Typography variant="subtitle1" sx={{ 
+          fontWeight: '600', 
+          color: '#2e7d32',
+          letterSpacing: '0.5px'
+        }}>
+          Prix TTC
+        </Typography>
+      </Box>
+      <Typography variant="h5" sx={{ 
+        fontWeight: '700', 
+        color: '#1b5e20',
+        display: 'flex',
+        alignItems: 'baseline',
+        gap: 1
+      }}>
+        {selectedArticle.prix_totale_concre}
+        <Typography variant="body2" component="span" sx={{ 
+          color: '#388e3c',
+          fontWeight: '500'
+        }}>
+          TND
+        </Typography>
+      </Typography>
+      <Typography variant="caption" sx={{ 
+        display: 'block',
+        mt: 0.5,
+        color: '#4caf50',
+        fontStyle: 'italic'
+      }}>
+        Toutes taxes comprises
+      </Typography>
+    </CardContent>
+  </Card>
 
-                  <Box sx={{
-                    p: 2,
-                    borderRadius: 2,
-                    background: selectedArticle.Nombre_unite > 0
-                      ? 'linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)'
-                      : 'linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)',
-                    border: `1px solid ${selectedArticle.Nombre_unite > 0 ? '#4caf50' : '#f44336'}`
-                  }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <Inventory sx={{ color: selectedArticle.Nombre_unite > 0 ? '#4caf50' : '#f44336' }} />
-                      <Typography variant="subtitle2"
-                        color={selectedArticle.Nombre_unite > 0 ? '#2e7d32' : '#c62828'}
-                        fontWeight="bold"
-                      >
-                        Stock
-                      </Typography>
-                    </Box>
-                    <Typography variant="h6" sx={{
-                      fontWeight: 'bold',
-                      color: selectedArticle.Nombre_unite > 0 ? '#2e7d32' : '#c62828'
-                    }}>
-                      {selectedArticle.Nombre_unite} unités
-                    </Typography>
-                  </Box>
+  {/* Carte Stock */}
+  <Card sx={{
+    borderRadius: '12px',
+    background: selectedArticle.Nombre_unite > 0 
+      ? 'rgba(76, 175, 80, 0.08)' 
+      : 'rgba(244, 67, 54, 0.08)',
+    border: selectedArticle.Nombre_unite > 0 
+      ? '1px solid rgba(76, 175, 80, 0.2)' 
+      : '1px solid rgba(244, 67, 54, 0.2)',
+    backdropFilter: 'blur(5px)',
+    boxShadow: selectedArticle.Nombre_unite > 0 
+      ? '0 4px 20px rgba(76, 175, 80, 0.1)' 
+      : '0 4px 20px rgba(244, 67, 54, 0.1)',
+    transition: 'all 0.3s ease',
+    '&:hover': {
+      transform: 'translateY(-5px)',
+      boxShadow: selectedArticle.Nombre_unite > 0 
+        ? '0 8px 25px rgba(76, 175, 80, 0.2)' 
+        : '0 8px 25px rgba(244, 67, 54, 0.2)'
+    }
+  }}>
+    <CardContent>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1.5 }}>
+        <Avatar sx={{ 
+          bgcolor: selectedArticle.Nombre_unite > 0 
+            ? 'rgba(76, 175, 80, 0.1)' 
+            : 'rgba(244, 67, 54, 0.1)',
+          color: selectedArticle.Nombre_unite > 0 ? '#4caf50' : '#f44336',
+          width: 40,
+          height: 40
+        }}>
+          <Inventory fontSize="small" />
+        </Avatar>
+        <Typography variant="subtitle1" sx={{ 
+          fontWeight: '600', 
+          color: selectedArticle.Nombre_unite > 0 ? '#2e7d32' : '#c62828',
+          letterSpacing: '0.5px'
+        }}>
+          Stock
+        </Typography>
+      </Box>
+      <Typography variant="h5" sx={{ 
+        fontWeight: '700', 
+        color: selectedArticle.Nombre_unite > 0 ? '#1b5e20' : '#b71c1c'
+      }}>
+        {selectedArticle.Nombre_unite} unités
+      </Typography>
+      {selectedArticle.Nombre_unite <= 0 && (
+        <Typography variant="caption" sx={{ 
+          display: 'block',
+          mt: 0.5,
+          color: '#f44336',
+          fontStyle: 'italic'
+        }}>
+          Rupture de stock
+        </Typography>
+      )}
+      {selectedArticle.Nombre_unite > 0 && selectedArticle.Nombre_unite < 10 && (
+        <Typography variant="caption" sx={{ 
+          display: 'block',
+          mt: 0.5,
+          color: '#fb8c00',
+          fontStyle: 'italic'
+        }}>
+          Stock faible
+        </Typography>
+      )}
+    </CardContent>
+  </Card>
 
-                  <Box sx={{
-                    p: 2,
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
-                    border: '1px solid #2196f3'
-                  }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <LocalOffer sx={{ color: '#2196f3' }} />
-                      <Typography variant="subtitle2" color="#1976d2" fontWeight="bold">
-                        Prix HT
-                      </Typography>
-                    </Box>
-                    <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-                      {selectedArticle.prix_unitaire} TND
-                    </Typography>
-                  </Box>
+  
 
-                  <Box sx={{
-                    p: 2,
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #fff3e0 0%, #ffcc02 100%)',
-                    border: '1px solid #ff9800'
-                  }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <Category sx={{ color: '#ff9800' }} />
-                      <Typography variant="subtitle2" color="#f57c00" fontWeight="bold">
-                        TVA
-                      </Typography>
-                    </Box>
-                    <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#f57c00' }}>
-                      {selectedArticle.tva}%
-                    </Typography>
-                  </Box>
-                </Box>
+  {/* Carte TVA */}
+  <Card sx={{
+    borderRadius: '12px',
+    background: 'rgba(255, 152, 0, 0.08)',
+    border: '1px solid rgba(255, 152, 0, 0.2)',
+    backdropFilter: 'blur(5px)',
+    boxShadow: '0 4px 20px rgba(255, 152, 0, 0.1)',
+    transition: 'all 0.3s ease',
+    '&:hover': {
+      transform: 'translateY(-5px)',
+      boxShadow: '0 8px 25px rgba(255, 152, 0, 0.2)'
+    }
+  }}>
+    <CardContent>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1.5 }}>
+        <Avatar sx={{ 
+          bgcolor: 'rgba(255, 152, 0, 0.1)', 
+          color: '#ff9800',
+          width: 40,
+          height: 40
+        }}>
+          <Category fontSize="small" />
+        </Avatar>
+        <Typography variant="subtitle1" sx={{ 
+          fontWeight: '600', 
+          color: '#e65100',
+          letterSpacing: '0.5px'
+        }}>
+          TVA
+        </Typography>
+      </Box>
+      <Typography variant="h5" sx={{ 
+        fontWeight: '700', 
+        color: '#bf360c',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1
+      }}>
+        {selectedArticle.tva}%
+        <Typography variant="body2" component="span" sx={{ 
+          color: '#ef6c00',
+          fontWeight: '500'
+        }}>
+          Taux appliqué
+        </Typography>
+      </Typography>
+      <Typography variant="caption" sx={{ 
+        display: 'block',
+        mt: 0.5,
+        color: '#ff9800',
+        fontStyle: 'italic'
+      }}>
+        Taxe sur la valeur ajoutée
+      </Typography>
+    </CardContent>
+  </Card>
+</Box>
               </Stack>
             )}
           </DialogContent>

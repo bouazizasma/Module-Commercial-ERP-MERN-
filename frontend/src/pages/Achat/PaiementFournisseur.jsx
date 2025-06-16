@@ -79,7 +79,9 @@ export default function PaiementFournisseur() {
   const [montantRestant, setMontantRestant] = useState(0);
   const [paiementsEnAttente, setPaiementsEnAttente] = useState([]);
   const [banques, setBanques] = useState([]); // Pour stocker la liste des banques
-  const [selectedBanque, setSelectedBanque] = useState(""); // Pour stocker la banque sélectionnée
+  const [selectedBanqueeffet, setSelectedBanqueeffet] = useState(""); 
+  const [selectedBanquecheque, setSelectedBanquecheque] = useState(""); 
+
   const [caisses, setCaisses] = useState([]); // Pour stocker la liste des caisses
   const [selectedCaisse, setSelectedCaisse] = useState(""); // Pour stocker la caisse sélectionnée
   const [loading, setLoading] = useState(false);
@@ -293,16 +295,30 @@ export default function PaiementFournisseur() {
     });
   };
   //banques 
-  const handleBanqueChange = (event) => {
+  //banque cheque 
+  const handleBanquechequeChange = (event) => {
     const banqueId = event.target.value;
-    const selectedBanque = banques.find((banque) => banque._id === banqueId);
-    setSelectedBanque(banqueId);
+    const selectedBanquecheque = banques.find((banque) => banque._id === banqueId);
+    setSelectedBanquecheque(banqueId);
   
     // Mettre à jour les champs automatiquement
     setPaiementDetails({
       ...paiementDetails,
-      numeroCompte: selectedBanque.numero_Compte,
-      codeBanque: selectedBanque.code_banque,
+      numeroCompte: selectedBanquecheque.numero_Compte,
+      codeBanque: selectedBanquecheque.code_banque,
+    });
+  };
+  //banque effet
+    const handleBanqueeffetChange = (event) => {
+    const banqueId = event.target.value;
+    const selectedBanqueeffet = banques.find((banque) => banque._id === banqueId);
+    setSelectedBanqueeffet(banqueId);
+  
+    // Mettre à jour les champs automatiquement
+    setPaiementDetails({
+      ...paiementDetails,
+      numeroCompte: selectedBanqueeffet.numero_Compte,
+      codeBanque: selectedBanqueeffet.code_banque,
     });
   };
   // Ajout d'un paiement à la liste d'attente
@@ -599,16 +615,15 @@ const handleValiderPaiement = async () => {
           .map(cheque => ({
             numeroChèque: cheque.numeroChèque,
             montant: parseFloat(cheque.montantChiffres),
-            dateEcheance: cheque.dateEcheance,
-            banque: selectedBanque
+            banque: selectedBanquecheque
           })),
         effets: paiementsEnAttente
           .filter(p => p.modePaiement === "EFFET")
           .map(effet => ({
             titreDocument: effet.titreDocument,
             montant: parseFloat(effet.montantChiffres),
-            dateEcheance: effet.echeance,
-            banque: selectedBanque
+            dateEcheance: effet.dateEcheance,
+            banque: selectedBanqueeffet
           })),
         especes: paiementsEnAttente
           .filter(p => p.modePaiement === "ESPECE")
@@ -655,8 +670,8 @@ const handleValiderPaiement = async () => {
         <FormControl fullWidth>
           <InputLabel>Banque</InputLabel>
           <Select
-            value={selectedBanque}
-            onChange={handleBanqueChange}
+            value={selectedBanquecheque}
+            onChange={handleBanquechequeChange}
             label="Banque"
           >
             {banques.map((banque) => (
@@ -713,8 +728,8 @@ const handleValiderPaiement = async () => {
         <FormControl fullWidth>
           <InputLabel>Banque</InputLabel>
           <Select
-            value={selectedBanque}
-            onChange={handleBanqueChange}
+            value={selectedBanqueeffet}
+            onChange={handleBanqueeffetChange}
             label="Banque"
           >
             {banques.map((banque) => (
@@ -758,8 +773,8 @@ const handleValiderPaiement = async () => {
                 type="date"
                 label="Échéance"
                 InputLabelProps={{ shrink: true }}
-                value={paiementDetails.echeance || ""}
-                onChange={(e) => setPaiementDetails({...paiementDetails, echeance: e.target.value})}
+                value={paiementDetails.dateEcheance || ""}
+                onChange={(e) => setPaiementDetails({...paiementDetails, dateEcheance: e.target.value})}
               />
             </Grid>
           </Grid>
@@ -924,8 +939,7 @@ const handleValiderPaiement = async () => {
             .map(cheque => ({
               numeroChèque: cheque.numeroChèque,
               montant: parseFloat(cheque.montantChiffres),
-              dateEcheance: cheque.dateEcheance,
-              banque: selectedBanque
+              banque: selectedBanquecheque
             })),
           // Détails des effets
           effets: paiementsEnAttente
@@ -933,8 +947,8 @@ const handleValiderPaiement = async () => {
             .map(effet => ({
               titreDocument: effet.titreDocument,
               montant: parseFloat(effet.montantChiffres),
-              dateEcheance: effet.echeance,
-              banque: selectedBanque
+              dateEcheance: effet.dateEcheance,
+              banque: selectedBanqueeffet
             })),
           // Détails des espèces
           especes: paiementsEnAttente

@@ -109,45 +109,139 @@ export default function ListeBonCommandeFournisseur() {
   }; 
   */}
 
-  const handleDownload = (bonCommande) => {
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text("Bon de Commande", 10, 10);
-    doc.setFontSize(12);
-    doc.text(`Date: ${new Date(bonCommande.dateCommande).toLocaleDateString()}`, 10, 20);
-    doc.text(`Bon de Commande: ${bonCommande.numero_Bon}`, 10, 30);
+  const handleDownload= (bonCommande) => {
+  // Vérifications initiales
+  if (!bonCommande.numero_Bon) {
+    console.error("numero_Bon is undefined in bonCommande:", bonCommande);
+    return;
+  }
+  if (!bonCommande.fournisseur) {
+    console.error("Fournisseur is undefined in bonCommande:", bonCommande);
+    return;
+  }
 
-    const fournisseur = fournisseurs.find(f => f._id === bonCommande.fournisseur._id);
-    doc.text(`${fournisseur.raison_sociale}`, 10, 50);
-    doc.text(`${fournisseur.adresse || 'N/A'}`, 10, 60);
-    doc.text(`Tel: ${fournisseur.telephone || 'N/A'}`, 10, 70);
-    //doc.text(`Email: ${fournisseur.email || 'N/A'}`, 10, 80);
+  const doc = new jsPDF();
+  const fournisseur = bonCommande.fournisseur;
+  const dateFormatted = new Date(bonCommande.dateCommande).toLocaleDateString('fr-FR');
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 15;
   
-    doc.text(`Objet : Commande`  , 10, 90);
+  // Couleurs professionnelles
+  const primaryColor = '#2c3e50'; // Bleu foncé professionnel
+  const secondaryColor = '#3498db'; // Bleu plus clair
+  const accentColor = '#e74c3c'; // Rouge pour les accents
   
-    // Tableau des articles commandés
-    doc.autoTable({
-      startY: 100,
-      head: [['Description', 'Unité', 'Quantité', 'Prix Unitaire HT', 'Total Net']],
-      body: bonCommande.lignes.map(ligne => [
-        ligne.article.libelle,
-        'DT',
-        ligne.quantite,
-        `${ligne.prix_unitaire.toFixed(2)} DT`,
-        `${(ligne.quantite * ligne.prix_unitaire).toFixed(2)} DT`
-      ]),
-    });
+  // En-tête avec logo et informations
+  doc.setFillColor(primaryColor);
+  doc.rect(0, 0, pageWidth, 20, 'F');
   
-    // Totaux
-    const totalHT = bonCommande.lignes.reduce((acc, ligne) => acc + (ligne.quantite * ligne.prix_unitaire), 0);
-    const totalTTC = totalHT * 1.2;
+  // Texte en-tête en blanc
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text("BON DE COMMANDE", margin, 15);
   
-    doc.text(`Montant Total HT: ${totalHT.toFixed(2)} DT`, 10, doc.autoTable.previous.finalY + 10);
-    doc.text(`Total TTC (20%): ${totalTTC.toFixed(2)} DT`, 10, doc.autoTable.previous.finalY + 20);
-    doc.text(`Montant Total TTC: ${totalTTC.toFixed(2)} DT`, 10, doc.autoTable.previous.finalY + 30);
+  // Réinitialisation des couleurs
+  doc.setTextColor(0, 0, 0);
+  doc.setFont('helvetica', 'normal');
   
-    doc.save(`bon_de_commande_${bonCommande.numero_Bon}.pdf`);
-  };
+  // Section informations commande
+  doc.setFontSize(12);
+  doc.setTextColor(primaryColor);
+  doc.setFont('helvetica', 'bold');
+  doc.text("Informations de la commande", margin, 45);
+  
+  doc.setDrawColor(secondaryColor);
+  doc.line(margin, 47, 60, 47);
+  
+  doc.setTextColor(0, 0, 0);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  
+  // Colonne gauche - informations commande
+  doc.text(`Commande N°: ${bonCommande.numero_Bon}`, margin, 55);
+  doc.text(`Date Commande: ${dateFormatted}`, margin, 60);
+  
+  // Colonne droite - informations fournisseur
+  doc.text(`Fournisseur: ${fournisseur.raison_sociale}`, pageWidth/2, 55);
+  doc.text(`Adresse: ${fournisseur.adresse || 'N/A'}`, pageWidth/2, 60);
+  doc.text(`Téléphone: ${fournisseur.telephone || 'N/A'}`, pageWidth/2, 65);
+  
+  // Tableau des articles
+  doc.setFontSize(12);
+  doc.setTextColor(primaryColor);
+  doc.setFont('helvetica', 'bold');
+  doc.text("Détails de la commande", margin, 80);
+  doc.setDrawColor(secondaryColor);
+  doc.line(margin, 82, 60, 82);
+  
+  doc.autoTable({
+    startY: 85,
+    head: [
+      [
+        { 
+          content: 'Article',
+          styles: { fillColor: primaryColor, textColor: 255, fontStyle: 'bold' }
+        },
+        { 
+          content: 'Quantité',
+          styles: { fillColor: primaryColor, textColor: 255, fontStyle: 'bold' }
+        },
+        { 
+          content: 'Prix Unitaire',
+          styles: { fillColor: primaryColor, textColor: 255, fontStyle: 'bold' }
+        },
+        { 
+          content: 'Total',
+          styles: { fillColor: primaryColor, textColor: 255, fontStyle: 'bold' }
+        }
+      ]
+    ],
+    body: bonCommande.lignes.map(ligne => [
+      ligne.article.libelle,
+      ligne.quantite,
+      `${ligne.prix_unitaire.toFixed(2)} DT`,
+      `${(ligne.quantite * ligne.prix_unitaire).toFixed(2)} DT`
+    ]),
+    styles: {
+      cellPadding: 5,
+      fontSize: 10,
+      valign: 'middle',
+      halign: 'center'
+    },
+    columnStyles: {
+      0: { halign: 'left' }, // Article aligné à gauche
+      1: { halign: 'center' }, // Quantité centrée
+      2: { halign: 'right' }, // Prix à droite
+      3: { halign: 'right' } // Total à droite
+    },
+    margin: { top: 10 }
+  });
+  
+  // Calcul du total
+  const total = bonCommande.lignes.reduce((sum, ligne) => sum + (ligne.quantite * ligne.prix_unitaire), 0);
+  
+  // Ajout du total
+  doc.setFontSize(12);
+  doc.setTextColor(primaryColor);
+  doc.setFont('helvetica', 'bold');
+  doc.text("Total général:", pageWidth - 130, doc.autoTable.previous.finalY + 20);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`${total.toFixed(2)} DT`, pageWidth - margin, doc.autoTable.previous.finalY + 20, { align: 'right' });
+  
+  // Pied de page
+  const footerY = doc.internal.pageSize.getHeight() - 15;
+  doc.setFontSize(8);
+  doc.setTextColor(100, 100, 100);
+  doc.text("Merci pour votre confiance", pageWidth/2, footerY, { align: 'center' });
+  doc.text(`Document généré le ${new Date().toLocaleDateString('fr-FR')}`, pageWidth - margin, footerY, { align: 'right' });
+  
+  // Ligne de séparation pied de page
+  doc.setDrawColor(200, 200, 200);
+  doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
+     doc.save(`bon_de_commande_${bonCommande.numero_Bon}.pdf`);
+
+};
   // Filtrage des bons de commande
   const filteredBonsCommande = useMemo(() => {
     return bonsCommande.filter((bonCommande) => {

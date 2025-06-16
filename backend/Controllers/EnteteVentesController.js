@@ -79,7 +79,7 @@ const createDevis = async (req, res) => {
        // Calcul du total TTC en tenant compte de la TVA pour chaque ligne
         const total_ttc = lignes.reduce((acc, ligne) => {
         const totalLigneHT = ligne.quantite * ligne.prix_unitaire;
-        const totalLigneTTC = totalLigneHT * (1 + ligne.tva / 100); // Supposons que la TVA est en pourcentage
+        const totalLigneTTC = totalLigneHT * (1 + ligne.tva / 100); 
         return acc + totalLigneTTC;
         }, 0);
         // Création du devis
@@ -110,7 +110,7 @@ const createDevis = async (req, res) => {
             tva: ligne.tva,
             prix_uTTC: ligne.prix_uTTC,
             total_ht: ligne.quantite * ligne.prix_unitaire,
-            total_ttc: ligne.quantite * ligne.prix_unitaire * (1 + ligne.tva),
+            total_ttc: (ligne.quantite * ligne.prix_unitaire) * (1 + ligne.tva),
         }));
 
        // await LigneVentes.insertMany(lignesDevis);
@@ -2140,4 +2140,3 @@ const getBonLivraisonNonFacturesAll = async (req, res) => {
 };
 
 module.exports={createDevis,getDevis,getDevisByID,deleteDevis,updateDevis, generateBonCommandeClient, getAllBonCommandes, generateBonLivraisonClient, getAllBonLivraisons, createBCC, getBCCByID, deleteBCC , createBL,generateFactureClient,getAllFacture,deleteFacture,getFacturesParClient,getBonLivraisonNonFactures,getBonLivraisonNonFacturesAll,generateFacturesClientsGroupes};
-

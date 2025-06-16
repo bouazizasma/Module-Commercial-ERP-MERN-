@@ -1,12 +1,12 @@
 const CategorieArticle = require('../Models/Article/CategorieArticle');
 const mongoose = require('mongoose');
-const familleArticle = require('../Models/Article/FamilleArticle')
+const FamilleArticle = require('../Models/Article/FamilleArticle')
 const CounterModel=require ("../Models/counters");
 
 // Create a new CategorieArticle
 const createCategorieArticle = async (req, res) => {
   const { code, designationCategorie , famillearticle} = req.body;
- const FamilleExists = await familleArticle.findById(famillearticle);
+ const FamilleExists = await FamilleArticle.findById(famillearticle);
     if (!FamilleExists) {
       return res.status(400).json({ message: 'famille non trouvé' });
     }
@@ -69,39 +69,49 @@ const getCategorieArticleByID = async (req, res) => {
 
 // Update a CategorieArticle
 
-const updateCategorieArticle= async (req, res) => {
-  const { id } = req.params;
-  const {  designationCategorie , famillearticle } = req.body;
-
+const updateCategorieArticle = async (req, res) => {
   try {
-    let updateData = { designationCategorie , famillearticle };
+    const { id } = req.params;
+    const { designationCategorie, familleArticle } = req.body;
 
-    // Si un nouveau secteur est fourni, vérifier qu'il existe et mettre à jour les infos
-    if (famillearticle) {
-      const FamilleExists= await familleArticle.findById(famillearticle);
-      if (!FamilleExists){
-        return res.status(400).json({ message: 'familleArticle non trouvé' });
+    console.log('Updating category:', id, req.body); // Debug log
+
+    const updateData = { designationCategorie };
+    
+    if (familleArticle) {
+      const familleExists = await FamilleArticle.findById(familleArticle);
+      if (!familleExists) {
+        return res.status(400).json({ 
+          message: 'Famille Article non trouvée',
+          details: `ID ${familleArticle} introuvable`
+        });
       }
 
-      updateData.famillearticle =famillearticle;
-      updateData.famillearticleInfo = {
-        designationFamille:FamilleExists.designationFamille
+      updateData.familleArticle = familleArticle;
+      updateData.familleArticleInfo = {
+        designationFamille: familleExists.designationFamille,
+        code: familleExists.code
       };
     }
 
     const updatedCategorie = await CategorieArticle.findByIdAndUpdate(
       id,
       updateData,
-      { new: true }
-    ).populate('famillearticle ');
+      { new: true, runValidators: true }
+    ).populate('familleArticle');
 
-    if (!updatedCategorie ) {
-      return res.status(404).json({ message: 'Catégorie not found' });
+    if (!updatedCategorie) {
+      return res.status(404).json({ message: 'Catégorie non trouvée' });
     }
 
-    res.status(200).json(updatedCategorie );
+    res.status(200).json(updatedCategorie);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Update error:', error);
+    res.status(500).json({
+      message: 'Erreur serveur',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 // Delete a CategorieArticle

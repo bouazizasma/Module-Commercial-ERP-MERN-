@@ -97,4 +97,66 @@ const lister = async (req, res) => {
         });
     }
 }
-module.exports = {signup,login,lister,};
+const getCurrentUser = async (req, res) => {
+    try {
+        // Récupérer le token du header Authorization
+        const token = req.headers.authorization?.split(' ')[1];
+        
+        if (!token) {
+            return res.status(401).json({
+                success: false,
+                message: "Aucun token fourni, accès non autorisé"
+            });
+        }
+
+        // Vérifier et décoder le token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        // Récupérer l'utilisateur sans le mot de passe
+        const user = await UserModel.findById(decoded._id).select('-password');
+        
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "Utilisateur non trouvé"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                // Ajoutez ici d'autres champs si nécessaire
+            }
+        });
+
+    } catch (error) {
+        console.error("Get current user error:", error);
+        
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({
+                success: false,
+                message: "Token invalide",
+                error: error.message
+            });
+        }
+        
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({
+                success: false,
+                message: "Token expiré",
+                error: error.message
+            });
+        }
+
+        res.status(500).json({
+            success: false,
+            message: "Erreur serveur lors de la récupération de l'utilisateur",
+            error: error.message
+        });
+    }
+}
+
+module.exports = { signup, login, lister, getCurrentUser };

@@ -501,7 +501,7 @@ const createPaiement = async (req, res) => {
 
        montantTotalI += montantRestant,
 
-       console.log(montantTotalI , montantRestant , facture.montantTTC  , facture.paiementEffectuee , "check ");
+       console.log(montantTotalI , montantRestant , facture.montantTTC  , facture.paiementEffectuee , "check valeuuuuuuuuuur");
 
       if (montantPaye1 <= 0) break;
 

@@ -63,12 +63,11 @@ app.use('/ReglementClient', ReglementClient);
 app.use('/stockRouter', stockRouter);
 app.use('/notifications', NotificationsRouter);
 
+module.exports = app;
 
 
-
-
-
-
-app.listen(PORT, () => {
-    console.log(`Server is running on ${PORT}`)
-})
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server is running on ${PORT}`);
+  });
+}

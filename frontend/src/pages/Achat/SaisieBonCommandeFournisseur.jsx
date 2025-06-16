@@ -187,7 +187,6 @@ export default function BonCommandeFournisseur() {
 
 const handleSubmit = async (e) => {
   e.preventDefault();
-
   // Vérifiez que les champs requis sont remplis
   if (!selectedFournisseur || lignes.length === 0 || !selectedDepot) {
     alert("Veuillez remplir tous les champs.");
@@ -199,7 +198,6 @@ const handleSubmit = async (e) => {
     alert("Veuillez ajouter au moins une ligne de commande.");
     return;
   }
-
   // Vérifiez que la date est valide
   if (!dateCommande || isNaN(dateCommande.getTime())) {
     alert("Date de commande invalide.");
@@ -272,44 +270,137 @@ const handleSuccessModalClose = () => {
 */
 
 const generatePDF = (bonCommande) => {
-  const doc = new jsPDF();
-  doc.setFontSize(18);
-  doc.text("Bon de Commande", 10, 10);
-  doc.setFontSize(12);
-
-  // Check if numero_Bon exists
+  // Vérifications initiales
   if (!bonCommande.numero_Bon) {
-      console.error("numero_Bon is undefined in bonCommande:", bonCommande);
-      return;
+    console.error("numero_Bon is undefined in bonCommande:", bonCommande);
+    return;
   }
-  doc.setFontSize(12);
-  doc.text(`Commande N°: ${bonCommande.numero_Bon}`, 10, 20);
-  doc.text(`Date Commande: ${new Date(bonCommande.dateCommande).toLocaleDateString()}`, 10, 30);
-  // Ensure fournisseur is defined
   if (!bonCommande.fournisseur) {
-      console.error("Fournisseur is undefined in bonCommande:", bonCommande);
-      return;
+    console.error("Fournisseur is undefined in bonCommande:", bonCommande);
+    return;
   }
 
+  const doc = new jsPDF();
   const fournisseur = bonCommande.fournisseur;
-  doc.text(`À l'intention de: ${fournisseur.raison_sociale}`, 10, 40);
-  doc.text(`Adresse: ${fournisseur.adresse || 'N/A'}`, 10, 50);
-  doc.text(`Téléphone: ${fournisseur.telephone || 'N/A'}`, 10, 60);
-
-  // Add table for lignes
+  const dateFormatted = new Date(bonCommande.dateCommande).toLocaleDateString('fr-FR');
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 15;
+  
+  // Couleurs professionnelles
+  const primaryColor = '#2c3e50'; // Bleu foncé professionnel
+  const secondaryColor = '#3498db'; // Bleu plus clair
+  const accentColor = '#e74c3c'; // Rouge pour les accents
+  
+  // En-tête avec logo et informations
+  doc.setFillColor(primaryColor);
+  doc.rect(0, 0, pageWidth, 20, 'F');
+  
+  // Texte en-tête en blanc
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text("BON DE COMMANDE", margin, 15);
+  
+  // Réinitialisation des couleurs
+  doc.setTextColor(0, 0, 0);
+  doc.setFont('helvetica', 'normal');
+  
+  // Section informations commande
+  doc.setFontSize(12);
+  doc.setTextColor(primaryColor);
+  doc.setFont('helvetica', 'bold');
+  doc.text("Informations de la commande", margin, 45);
+  
+  doc.setDrawColor(secondaryColor);
+  doc.line(margin, 47, 60, 47);
+  
+  doc.setTextColor(0, 0, 0);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  
+  // Colonne gauche - informations commande
+  doc.text(`Commande N°: ${bonCommande.numero_Bon}`, margin, 55);
+  doc.text(`Date Commande: ${dateFormatted}`, margin, 60);
+  
+  // Colonne droite - informations fournisseur
+  doc.text(`Fournisseur: ${fournisseur.raison_sociale}`, pageWidth/2, 55);
+  doc.text(`Adresse: ${fournisseur.adresse || 'N/A'}`, pageWidth/2, 60);
+  doc.text(`Téléphone: ${fournisseur.telephone || 'N/A'}`, pageWidth/2, 65);
+  
+  // Tableau des articles
+  doc.setFontSize(12);
+  doc.setTextColor(primaryColor);
+  doc.setFont('helvetica', 'bold');
+  doc.text("Détails de la commande", margin, 80);
+  doc.setDrawColor(secondaryColor);
+  doc.line(margin, 82, 60, 82);
+  
   doc.autoTable({
-    startY: 80,
-    head: [['Article', 'Quantité', 'Prix Unitaire', 'Total']],
+    startY: 85,
+    head: [
+      [
+        { 
+          content: 'Article',
+          styles: { fillColor: primaryColor, textColor: 255, fontStyle: 'bold' }
+        },
+        { 
+          content: 'Quantité',
+          styles: { fillColor: primaryColor, textColor: 255, fontStyle: 'bold' }
+        },
+        { 
+          content: 'Prix Unitaire',
+          styles: { fillColor: primaryColor, textColor: 255, fontStyle: 'bold' }
+        },
+        { 
+          content: 'Total',
+          styles: { fillColor: primaryColor, textColor: 255, fontStyle: 'bold' }
+        }
+      ]
+    ],
     body: bonCommande.lignes.map(ligne => [
       ligne.article.libelle,
       ligne.quantite,
       `${ligne.prix_unitaire.toFixed(2)} DT`,
       `${(ligne.quantite * ligne.prix_unitaire).toFixed(2)} DT`
     ]),
+    styles: {
+      cellPadding: 5,
+      fontSize: 10,
+      valign: 'middle',
+      halign: 'center'
+    },
+    columnStyles: {
+      0: { halign: 'left' }, // Article aligné à gauche
+      1: { halign: 'center' }, // Quantité centrée
+      2: { halign: 'right' }, // Prix à droite
+      3: { halign: 'right' } // Total à droite
+    },
+    margin: { top: 10 }
   });
-
+  
+  // Calcul du total
+  const total = bonCommande.lignes.reduce((sum, ligne) => sum + (ligne.quantite * ligne.prix_unitaire), 0);
+  
+  // Ajout du total
+  doc.setFontSize(12);
+  doc.setTextColor(primaryColor);
+  doc.setFont('helvetica', 'bold');
+  doc.text("Total général:", pageWidth - 130, doc.autoTable.previous.finalY + 20);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`${total.toFixed(2)} DT`, pageWidth - margin, doc.autoTable.previous.finalY + 20, { align: 'right' });
+  
+  // Pied de page
+  const footerY = doc.internal.pageSize.getHeight() - 15;
+  doc.setFontSize(8);
+  doc.setTextColor(100, 100, 100);
+  doc.text("Merci pour votre confiance", pageWidth/2, footerY, { align: 'center' });
+  doc.text(`Document généré le ${new Date().toLocaleDateString('fr-FR')}`, pageWidth - margin, footerY, { align: 'right' });
+  
+  // Ligne de séparation pied de page
+  doc.setDrawColor(200, 200, 200);
+  doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
+  
   const pdfBlob = doc.output('blob');
-  console.log("PDF Blob:", pdfBlob); // Vérifiez le Blob dans la console
   return pdfBlob;
 };
   const handleCloseModal = () => {

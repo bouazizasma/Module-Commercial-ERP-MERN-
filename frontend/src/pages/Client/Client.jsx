@@ -892,10 +892,12 @@ export default function Client() {
         }}
       >
         <DialogTitle sx={{
-          background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
-          color: 'white',
-          textAlign: 'center',
-          py: 3
+          fontWeight: '700',
+          color: '#1e293b',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          pb: 1
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
             <Delete sx={{ fontSize: 32 }} />

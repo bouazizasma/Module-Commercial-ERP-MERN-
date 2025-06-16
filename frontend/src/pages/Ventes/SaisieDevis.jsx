@@ -223,7 +223,10 @@ export default function SaisieDevis() {
       setSnackbarSeverity("success");
       setSnackbarMessage("Devis créé avec succès");
       setOpenSnackbar(true);
-      navigate("/ventes/liste-devis");
+      setTimeout(() => {
+ navigate("/ListeDevisClient");
+      }, 1500);
+     
     } catch (error) {
       console.error("Erreur lors de la création du devis:", error);
       setSnackbarSeverity("error");

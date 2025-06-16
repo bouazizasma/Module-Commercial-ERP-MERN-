@@ -167,32 +167,148 @@ const handleSuccessModalClose = () => {
   }
 };
 
-  const generatePDF = (bonRception) => {
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text("Bon de Reception", 10, 10);
-    doc.setFontSize(12);
-    // Vérifier si le numéro de bon existe
-    const numeroBon = bonRception.numero_Bon || 'Non assigné';
-    doc.text(`Bon de réception N°: ${numeroBon}`, 10, 20);
-    doc.text(`Date Reception: ${new Date(bonRception.dateReception).toLocaleDateString()}`, 10, 30);
-    const fournisseur = fournisseurs.find(f => f._id === bonRception.fournisseur);
-    doc.text(`À l'intention de: ${fournisseur?.raison_sociale || 'N/A'}`, 10, 40);
-    doc.text(`Adresse: ${fournisseur?.adresse || 'N/A'}`, 10, 50);
-    doc.text(`Téléphone: ${fournisseur?.telephone || 'N/A'}`, 10, 60);
-    doc.autoTable({
-      startY: 70,
-      head: [['Article', 'Quantité', 'Prix Unitaire', 'Total']],
-      body: bonRception.lignes.map(ligne => [
-        ligne.libelle || '',
-        ligne.quantite || 0,
-        `${(ligne.prix_unitaire || 0).toFixed(2)} TND`,
-        `${((ligne.quantite || 0) * (ligne.prix_unitaire || 0)).toFixed(2)} TND`
-      ]),
-    });
-    const pdfBlob = doc.output('blob');
-    return pdfBlob;
-  };
+const generatePDF = (bonReception) => {
+  // Vérifications initiales
+  if (!bonReception?.numero_Bon) {
+    console.error("Numéro de bon non défini:", bonReception);
+    return;
+  }
+
+  const doc = new jsPDF();
+  const dateFormatted = new Date(bonReception.dateReception).toLocaleDateString('fr-FR');
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 15;
+  
+  // Couleurs professionnelles
+  const primaryColor = '#27ae60'; // Vert professionnel pour réception
+  const secondaryColor = '#2ecc71'; // Vert plus clair
+  const accentColor = '#e74c3c'; // Rouge pour les accents
+  
+  // En-tête avec logo et informations
+  doc.setFillColor(primaryColor);
+  doc.rect(0, 0, pageWidth, 20, 'F');
+  
+  // Texte en-tête en blanc
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text("BON DE RÉCEPTION", margin, 15);
+  
+  // Réinitialisation des couleurs
+  doc.setTextColor(0, 0, 0);
+  doc.setFont('helvetica', 'normal');
+  
+  // Section informations réception
+  doc.setFontSize(12);
+  doc.setTextColor(primaryColor);
+  doc.setFont('helvetica', 'bold');
+  doc.text("Informations de la réception", margin, 45);
+  
+  doc.setDrawColor(secondaryColor);
+  doc.line(margin, 47, 70, 47);
+  
+  doc.setTextColor(0, 0, 0);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  
+  // Colonne gauche - informations réception
+  doc.text(`Bon N°: ${bonReception.numero_Bon}`, margin, 55);
+  doc.text(`Date Réception: ${dateFormatted}`, margin, 60);
+  
+  // Colonne droite - informations fournisseur
+  const fournisseur = bonReception.fournisseur || {};
+  doc.text(`Fournisseur: ${fournisseur.raison_sociale || 'N/A'}`, pageWidth/2, 55);
+  doc.text(`Adresse: ${fournisseur.adresse || 'N/A'}`, pageWidth/2, 60);
+  doc.text(`Téléphone: ${fournisseur.telephone || 'N/A'}`, pageWidth/2, 65);
+  
+  // Tableau des articles
+  doc.setFontSize(12);
+  doc.setTextColor(primaryColor);
+  doc.setFont('helvetica', 'bold');
+  doc.text("Articles reçus", margin, 80);
+  doc.setDrawColor(secondaryColor);
+  doc.line(margin, 82, 50, 82);
+  
+  doc.autoTable({
+    startY: 85,
+    head: [
+      [
+        { 
+          content: 'Article',
+          styles: { fillColor: primaryColor, textColor: 255, fontStyle: 'bold' }
+        },
+        { 
+          content: 'Quantité',
+          styles: { fillColor: primaryColor, textColor: 255, fontStyle: 'bold' }
+        },
+        { 
+          content: 'Prix Unitaire',
+          styles: { fillColor: primaryColor, textColor: 255, fontStyle: 'bold' }
+        },
+        { 
+          content: 'Total',
+          styles: { fillColor: primaryColor, textColor: 255, fontStyle: 'bold' }
+        }
+      ]
+    ],
+    body: bonReception.lignes.map(ligne => [
+      ligne.libelle || 'Non spécifié',
+      ligne.quantite || 0,
+      `${(ligne.prix_unitaire || 0).toFixed(2)} TND`,
+      `${((ligne.quantite || 0) * (ligne.prix_unitaire || 0)).toFixed(2)} TND`
+    ]),
+    styles: {
+      cellPadding: 5,
+      fontSize: 10,
+      valign: 'middle',
+      halign: 'center'
+    },
+    columnStyles: {
+      0: { halign: 'left' },
+      1: { halign: 'center' },
+      2: { halign: 'right' },
+      3: { halign: 'right' }
+    },
+    margin: { top: 10 }
+  });
+  
+  // Calcul du total
+  const total = bonReception.lignes.reduce((sum, ligne) => {
+    return sum + ((ligne.quantite || 0) * (ligne.prix_unitaire || 0));
+  }, 0);
+  
+  // Section validation
+  const finalY = doc.autoTable.previous.finalY + 20;
+  
+  // Total général
+  doc.setFontSize(12);
+  doc.setTextColor(primaryColor);
+  doc.setFont('helvetica', 'bold');
+  doc.text("Total général:", pageWidth - 130, finalY);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`${total.toFixed(2)} TND`, pageWidth - margin, finalY, { align: 'right' });
+  
+  // Signature
+  const signatureY = finalY + 30;
+  doc.setFontSize(10);
+  doc.setTextColor(100, 100, 100);
+  doc.text("Signature du responsable:", margin, signatureY);
+  doc.line(margin, signatureY + 5, margin + 100, signatureY + 5);
+  
+  // Pied de page
+  const footerY = doc.internal.pageSize.getHeight() - 15;
+  doc.setFontSize(8);
+  doc.text("Document certifié conforme", pageWidth/2, footerY, { align: 'center' });
+  doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')}`, pageWidth - margin, footerY, { align: 'right' });
+  
+  // Ligne de séparation
+  doc.setDrawColor(200, 200, 200);
+  doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
+
+  // Retourner le Blob ou sauvegarder
+  const pdfBlob = doc.output('blob');
+  return pdfBlob;
+};
   const handleCloseModal = () => {
     setOpenModal(false);
     URL.revokeObjectURL(pdfUrl);

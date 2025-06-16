@@ -36,7 +36,6 @@ import ListeBonCommandeFournisseur from './pages/Achat/ListeBonCommandeFournisse
 import BonReceptionFournisseur from './pages/Achat/SaisieBonReceptionFournisseur';
 import ListeBonReceptionFournisseur from './pages/Achat/ListeBonReceptionFournisseur';
 import UpdateBonCommande from './pages/Achat/UpdateBonCommande';
-import UpdateBonReception from './pages/Achat/UpdateBonReception';
 import ListeFactures from './pages/Achat/ListeFacturesFournisseur';
 import FactureParFournisseur from './pages/Achat/FactureParFournisseur';
 import PaiementFournisseur from './pages/Achat/PaiementFournisseur';
@@ -64,8 +63,6 @@ import ListeRegelement from './pages/Ventes/ListeRegelement';
 import ConsulterStock from './pages/Stock/ConsulterStock';
 /////////LKOL//////////////
 import Depot from './pages/Depot/Depot';
-import ProfilePage from './pages/ProfilePage';
-import SettingsPage from './pages/SettingsPage';
 import { useState } from 'react';
 import RefrshHandler from './RefrshHandler';
 import { lightTheme, darkTheme } from './theme';
@@ -113,7 +110,6 @@ function App() {
         <Route path='/BonReceptionFournisseur' element={<PrivateRoute element={<BonReceptionFournisseur/>} />} />
         <Route path='/ListeBonCommandeFournisseur' element={<PrivateRoute element={<ListeBonCommandeFournisseur/>} />} />
         <Route path='/ListeBonReceptionFournisseur' element={<PrivateRoute element={<ListeBonReceptionFournisseur/>} />} />
-        <Route path='/updateBonReception/:id' element={<PrivateRoute element={<UpdateBonReception/>} />} />                     
         <Route path='/ListeBonCommandeFournisseur/update/:id' element={<PrivateRoute element={<UpdateBonCommande/>} />} />
         <Route path='/ListeFactures' element={<PrivateRoute element={<ListeFactures/>} />} />
         <Route path='/FactureParFournisseur' element={<PrivateRoute element={<FactureParFournisseur/>} />} />
@@ -139,9 +135,7 @@ function App() {
         {/* Stock */}
         <Route path='/ConsulterStock' element={<PrivateRoute element={<ConsulterStock/>} />} /> 
 
-        <Route path="/profile" element={<ProfilePage />} />  
 
-<Route path="/settings" element={<SettingsPage />} />
 
 
 

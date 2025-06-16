@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Sidenav from "../../navbar/Sidenav";
 import Box from "@mui/material/Box";
@@ -8,12 +8,9 @@ import {
   CardContent,
   Typography,
   Grid,
-  Button,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
+  Button,
+  IconButton,
   Table,
   TableBody,
   TableCell,
@@ -21,26 +18,28 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Radio,
+  Autocomplete,
+  FormControl,
+  FormLabel,
   RadioGroup,
   FormControlLabel,
-  Checkbox,
-  Stack,
-  Autocomplete,
-  Divider,
-  IconButton,
-  useTheme,
-  Snackbar,
+  Radio,
+  Select,
+  MenuItem,
+  InputLabel,
   Alert,
+  Snackbar,
+  Divider,
+  Stack,
+  useTheme,
   FormGroup,
+  Checkbox,
+  Chip,
   Fade,
   Zoom,
   Slide,
-  Avatar,
-  Chip,
   LinearProgress,
   Tooltip,
-  Badge
 } from "@mui/material";
 import {
   Payment,
@@ -53,16 +52,8 @@ import {
   AttachMoney,
   CreditCard,
   AccountBalanceWallet,
-  TrendingUp,
   Schedule,
   CheckCircleOutline,
-  ErrorOutline,
-  WarningAmber,
-  Add,
-  Save,
-  Refresh,
-  FilterList,
-  Search
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 
@@ -95,7 +86,7 @@ export default function ReglementClient() {
   const [selectedCaisse, setSelectedCaisse] = useState("");
   const [paiementDetails, setPaiementDetails] = useState({});
   const [historiquePaiements, setHistoriquePaiements] = useState([]);
-  const [documentType, setDocumentType] = useState("factures"); // "factures" ou "bonsLivraison"
+  const [documentType, setDocumentType] = useState("factures");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -123,33 +114,27 @@ export default function ReglementClient() {
   }, [selectedFactures, selectedBonsLivraison, paiementsEnAttente]);
 
   const calculateAmounts = () => {
-    // Réinitialisation des totaux
     let total = 0;
     let totalPaye = 0;
     let montantRestantTotal = 0;
   
-    // Calcul pour les factures sélectionnées
     if (selectedFactures.length > 0) {
       selectedFactures.forEach(factureId => {
-      const facture = factures.find(f => f._id === factureId);
-      if (facture) {
+        const facture = factures.find(f => f._id === factureId);
+        if (facture) {
           const montantTTC = parseFloat(facture.total_ttc) || 0;
           const montantPaye = parseFloat(facture.montantPaye) || 0;
-          
           total += montantTTC;
           totalPaye += montantPaye;
           montantRestantTotal += Math.max(montantTTC - montantPaye, 0);
         }
       });
-    }
-    // Calcul pour les bons de livraison sélectionnés
-    else if (selectedBonsLivraison.length > 0) {
+    } else if (selectedBonsLivraison.length > 0) {
       selectedBonsLivraison.forEach(bonId => {
         const bon = bonsLivraison.find(b => b._id === bonId);
         if (bon && !bon.estFacture) {
           const montantTTC = parseFloat(bon.total_ttc) || 0;
           const montantPaye = parseFloat(bon.montantPaye) || 0;
-          
           total += montantTTC;
           totalPaye += montantPaye;
           montantRestantTotal += Math.max(montantTTC - montantPaye, 0);
@@ -157,13 +142,11 @@ export default function ReglementClient() {
       });
     }
   
-    // Soustraire les paiements en attente
     const montantPaiementsEnAttente = paiementsEnAttente.reduce(
       (sum, paiement) => sum + parseFloat(paiement.montantChiffres || 0), 
       0
     );
 
-    // Limiter à 3 décimales pour éviter les erreurs d'arrondi
     total = parseFloat(total.toFixed(3));
     montantRestantTotal = parseFloat(Math.max(montantRestantTotal - montantPaiementsEnAttente, 0).toFixed(3));
     const montantPayeTotal = parseFloat((total - montantRestantTotal).toFixed(3));
@@ -172,7 +155,7 @@ export default function ReglementClient() {
     setMontantRestant(montantRestantTotal);
   };
 
-const fetchClients = async () => {
+  const fetchClients = async () => {
     try {
       const response = await axios.get("http://localhost:5000/client/clients");
       setClients(response.data);
@@ -210,14 +193,9 @@ const fetchClients = async () => {
         axios.get(`http://localhost:5000/ventes/factures/client/${selectedClient._id}`),
         axios.get(`http://localhost:5000/ventes/bonslivraison/non-factures/${selectedClient._id}`)
       ]);
-  
       setFactures(facturesRes.data);
       setBonsLivraison(bonsLivraisonRes.data);
-      
-      // Ajout de logs pour vérification
-      console.log("Factures reçues:", facturesRes.data);
-      console.log("BL reçus:", bonsLivraisonRes.data);
-        } catch (error) {
+    } catch (error) {
       console.error("Erreur lors de la récupération des documents:", error);
       setSnackbar({
         open: true,
@@ -264,11 +242,10 @@ const fetchClients = async () => {
           `http://localhost:5000/ReglementClient/client/${selectedClient._id}`,
           {
             validateStatus: function (status) {
-              return status < 500; // Résoudre seulement si le code d'état est inférieur à 500
+              return status < 500;
             }
           }
         );
-        
         if (response.status === 200) {
           setHistoriquePaiements(response.data);
         } else {
@@ -301,7 +278,6 @@ const fetchClients = async () => {
       const newSelection = prev.includes(factureId)
         ? prev.filter(id => id !== factureId)
         : [...prev, factureId];
-      // Désélectionner les bons de livraison si on sélectionne une facture
       if (newSelection.length > 0) {
         setSelectedBonsLivraison([]);
       }
@@ -314,7 +290,6 @@ const fetchClients = async () => {
       const newSelection = prev.includes(bonId)
         ? prev.filter(id => id !== bonId)
         : [...prev, bonId];
-      // Désélectionner les factures si on sélectionne un bon de livraison
       if (newSelection.length > 0) {
         setSelectedFactures([]);
       }
@@ -336,9 +311,9 @@ const fetchClients = async () => {
     setSelectedCompte(newValue);
     setPaiementDetails({
       ...paiementDetails,
-      RIB: newValue?.RIB, // Utilisez RIB comme numéro de compte
+      RIB: newValue?.RIB,
       codeBanque: selectedBanque?.code_banque
-  });
+    });
   };
 
   const handleCaisseChange = (event, newValue) => {
@@ -362,22 +337,17 @@ const fetchClients = async () => {
       alert("Veuillez saisir un montant");
       return;
     }
-
     if (!paiementDetails.date) {
       alert("Veuillez sélectionner une date");
       return;
     }
-
     const montantPaiement = parseFloat(paiementDetails.montantChiffres);
-   
-
     const nouveauPaiement = {
       id: Date.now(),
       ...paiementDetails,
       modePaiement,
       dateCreation: new Date(paiementDetails.date),
     };
-
     setPaiementsEnAttente([...paiementsEnAttente, nouveauPaiement]);
     setMontantRestant(prev => prev - montantPaiement);
     setPaiementDetails({ date: paiementDetails.date });
@@ -394,14 +364,8 @@ const fetchClients = async () => {
   const handleValiderPaiement = async () => {
     try {
       setLoading(true);
-      
-      // 1. RAFRAÎCHIR LES DONNÉES AVANT TOUT CALCUL
-      await fetchDocumentsClient(); // Recharge les factures et BL depuis le serveur
-      
-      // 2. RECALCULER LES MONTANTS AVEC LES DONNÉES FRAÎCHES
+      await fetchDocumentsClient();
       calculateAmounts();
-
-      // Vérification des données requises
       if (!selectedClient?._id) {
         throw new Error("Veuillez sélectionner un client");
       }
@@ -414,14 +378,6 @@ const fetchClients = async () => {
       if (selectedFactures.length > 0 && selectedBonsLivraison.length > 0) {
         throw new Error("Vous ne pouvez pas sélectionner des factures et des bons de livraison en même temps");
       }
-
-      // Ajouter des logs pour vérifier les valeurs
-      console.log("Montants avant envoi:", {
-        total: totalMontant,
-        restant: montantRestant,
-        paye: totalMontant - montantRestant
-      });
-
       const paiementData = {
         clientId: selectedClient._id,
         facturesIds: selectedFactures,
@@ -453,16 +409,12 @@ const fetchClients = async () => {
           }] : []
         }
       };
-
       const response = await axios.post("http://localhost:5000/ReglementClient/create", paiementData);
-  
       setSnackbar({
         open: true,
         message: "Paiement enregistré avec succès",
         severity: "success"
       });
-
-      // Réinitialiser les sélections
       setSelectedFactures([]);
       setSelectedBonsLivraison([]);
       setPaiementsEnAttente([]);
@@ -486,79 +438,186 @@ const fetchClients = async () => {
       case "CHEQUE":
         return (
           <Grid container spacing={2}>
-            <Grid item xs={12} md={12}>
+            <Grid item xs={12} md={6}>
               <Autocomplete
                 options={banques}
                 getOptionLabel={option => option.libelle || ""}
                 value={selectedBanque}
                 onChange={handleBanqueChange}
-                renderInput={params => <TextField {...params} label="Banque" fullWidth />}
+                renderInput={params => (
+                  <TextField 
+                    {...params} 
+                    label="🏦 Banque" 
+                    variant="outlined"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 3,
+                        background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                        '&:hover': {
+                          boxShadow: '0 4px 12px rgba(52, 73, 94, 0.2)'
+                        },
+                        '&.Mui-focused': {
+                          boxShadow: '0 4px 12px rgba(52, 73, 94, 0.3)'
+                        }
+                      }
+                    }}
+                  />
+                )}
               />
             </Grid>
-            <Grid item xs={12} md={12}>
-    <TextField
-        fullWidth
-        label="Code de banque"
-        value={selectedBanque?.code_banque || ""}
-        InputProps={{ readOnly: true }}
-    />
-</Grid>
-            <Grid item xs={12} md={12}>
-    <Autocomplete
-        options={comptesBancaires}
-        getOptionLabel={option => option.RIB || ""}
-        value={selectedCompte}
-        onChange={handleCompteChange}
-        renderInput={params => <TextField {...params} label="Compte Bancaire" fullWidth />}
-        disabled={!selectedBanque}
-    />
-</Grid>
             <Grid item xs={12} md={6}>
               <TextField
-                label="Numéro de Chèque"
+                fullWidth
+                label="🔢 Code de banque"
+                value={selectedBanque?.code_banque || ""}
+                InputProps={{ readOnly: true }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 3,
+                    background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                    '&:hover': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.2)'
+                    },
+                    '&.Mui-focused': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.3)'
+                    }
+                  }
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Autocomplete
+                options={comptesBancaires}
+                getOptionLabel={option => option.RIB || ""}
+                value={selectedCompte}
+                onChange={handleCompteChange}
+                renderInput={params => (
+                  <TextField 
+                    {...params} 
+                    label="🏧 Compte Bancaire" 
+                    variant="outlined"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 3,
+                        background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                        '&:hover': {
+                          boxShadow: '0 4px 12px rgba(52, 73, 94, 0.2)'
+                        },
+                        '&.Mui-focused': {
+                          boxShadow: '0 4px 12px rgba(52, 73, 94, 0.3)'
+                        }
+                      }
+                    }}
+                  />
+                )}
+                disabled={!selectedBanque}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                label="📝 Numéro de Chèque"
                 value={paiementDetails.numeroChèque || ""}
                 onChange={e => setPaiementDetails({...paiementDetails, numeroChèque: e.target.value})}
                 fullWidth
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 3,
+                    background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                    '&:hover': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.2)'
+                    },
+                    '&.Mui-focused': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.3)'
+                    }
+                  }
+                }}
               />
             </Grid>
             <Grid item xs={12} md={6}>
               <TextField
-                label="Montant en chiffres"
+                label="💰 Montant en chiffres"
                 type="number"
                 value={paiementDetails.montantChiffres || ""}
                 onChange={e => setPaiementDetails({...paiementDetails, montantChiffres: e.target.value})}
                 fullWidth
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 3,
+                    background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                    '&:hover': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.2)'
+                    },
+                    '&.Mui-focused': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.3)'
+                    }
+                  }
+                }}
               />
             </Grid>
             <Grid item xs={12} md={6}>
               <TextField
-                label="Nom du bénéficiaire"
+                label="👤 Nom du bénéficiaire"
                 value={paiementDetails.beneficiaire || ""}
                 onChange={e => setPaiementDetails({...paiementDetails, beneficiaire: e.target.value})}
                 fullWidth
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 3,
+                    background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                    '&:hover': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.2)'
+                    },
+                    '&.Mui-focused': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.3)'
+                    }
+                  }
+                }}
               />
             </Grid>
             <Grid item xs={12} md={6}>
               <TextField
-                label="Lieu"
+                label="📍 Lieu"
                 value={paiementDetails.lieu || ""}
                 onChange={e => setPaiementDetails({...paiementDetails, lieu: e.target.value})}
                 fullWidth
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 3,
+                    background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                    '&:hover': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.2)'
+                    },
+                    '&.Mui-focused': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.3)'
+                    }
+                  }
+                }}
               />
             </Grid>
             <Grid item xs={12} md={6}>
               <TextField
-                label="Date d'Échéance"
+                label="📅 Date d'Échéance"
                 type="date"
                 InputLabelProps={{ shrink: true }}
                 value={paiementDetails.dateEcheance || ""}
                 onChange={e => setPaiementDetails({...paiementDetails, dateEcheance: e.target.value})}
                 fullWidth
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 3,
+                    background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                    '&:hover': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.2)'
+                    },
+                    '&.Mui-focused': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.3)'
+                    }
+                  }
+                }}
               />
             </Grid>
           </Grid>
         );
-
       case "EFFET":
         return (
           <Grid container spacing={2}>
@@ -568,87 +627,205 @@ const fetchClients = async () => {
                 getOptionLabel={option => option.libelle || ""}
                 value={selectedBanque}
                 onChange={handleBanqueChange}
-                renderInput={params => <TextField {...params} label="Banque" fullWidth />}
+                renderInput={params => (
+                  <TextField 
+                    {...params} 
+                    label="🏦 Banque" 
+                    variant="outlined"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 3,
+                        background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                        '&:hover': {
+                          boxShadow: '0 4px 12px rgba(52, 73, 94, 0.2)'
+                        },
+                        '&.Mui-focused': {
+                          boxShadow: '0 4px 12px rgba(52, 73, 94, 0.3)'
+                        }
+                      }
+                    }}
+                  />
+                )}
               />
             </Grid>
             <Grid item xs={12} md={6}>
-    <TextField
-        fullWidth
-        label="Code de banque"
-        value={selectedBanque?.code_banque || ""}
-        InputProps={{ readOnly: true }}
-    />
-</Grid>
+              <TextField
+                fullWidth
+                label="🔢 Code de banque"
+                value={selectedBanque?.code_banque || ""}
+                InputProps={{ readOnly: true }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 3,
+                    background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                    '&:hover': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.2)'
+                    },
+                    '&.Mui-focused': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.3)'
+                    }
+                  }
+                }}
+              />
+            </Grid>
             <Grid item xs={12} md={6}>
-    <Autocomplete
-        options={comptesBancaires}
-        getOptionLabel={option => option.RIB || ""}
-        value={selectedCompte}
-        onChange={handleCompteChange}
-        renderInput={params => <TextField {...params} label="Compte Bancaire" fullWidth />}
-        disabled={!selectedBanque}
-    />
-</Grid>
+              <Autocomplete
+                options={comptesBancaires}
+                getOptionLabel={option => option.RIB || ""}
+                value={selectedCompte}
+                onChange={handleCompteChange}
+                renderInput={params => (
+                  <TextField 
+                    {...params} 
+                    label="🏧 Compte Bancaire" 
+                    variant="outlined"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 3,
+                        background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                        '&:hover': {
+                          boxShadow: '0 4px 12px rgba(52, 73, 94, 0.2)'
+                        },
+                        '&.Mui-focused': {
+                          boxShadow: '0 4px 12px rgba(52, 73, 94, 0.3)'
+                        }
+                      }
+                    }}
+                  />
+                )}
+                disabled={!selectedBanque}
+              />
+            </Grid>
             <Grid item xs={12} md={6}>
               <TextField
-                label="Titre du document"
+                label="📄 Titre du document"
                 value={paiementDetails.titreDocument || ""}
                 onChange={e => setPaiementDetails({...paiementDetails, titreDocument: e.target.value})}
                 fullWidth
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 3,
+                    background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                    '&:hover': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.2)'
+                    },
+                    '&.Mui-focused': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.3)'
+                    }
+                  }
+                }}
               />
             </Grid>
             <Grid item xs={12} md={6}>
               <TextField
-                label="Nom du tiré"
+                label="👤 Nom du tiré"
                 value={paiementDetails.tire || ""}
                 onChange={e => setPaiementDetails({...paiementDetails, tire: e.target.value})}
                 fullWidth
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 3,
+                    background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                    '&:hover': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.2)'
+                    },
+                    '&.Mui-focused': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.3)'
+                    }
+                  }
+                }}
               />
             </Grid>
             <Grid item xs={12} md={6}>
               <TextField
-                label="Lieu"
+                label="📍 Lieu"
                 value={paiementDetails.lieu || ""}
                 onChange={e => setPaiementDetails({...paiementDetails, lieu: e.target.value})}
                 fullWidth
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 3,
+                    background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                    '&:hover': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.2)'
+                    },
+                    '&.Mui-focused': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.3)'
+                    }
+                  }
+                }}
               />
             </Grid>
             <Grid item xs={12} md={6}>
               <TextField
-                label="Échéance"
+                label="📅 Échéance"
                 type="date"
                 InputLabelProps={{ shrink: true }}
                 value={paiementDetails.echeance || ""}
                 onChange={e => setPaiementDetails({...paiementDetails, echeance: e.target.value})}
                 fullWidth
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 3,
+                    background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                    '&:hover': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.2)'
+                    },
+                    '&.Mui-focused': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.3)'
+                    }
+                  }
+                }}
               />
             </Grid>
           </Grid>
         );
-
       case "ESPECE":
         return (
           <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
               <TextField
-                label="Montant en chiffres"
+                label="💰 Montant en chiffres"
                 type="number"
                 value={paiementDetails.montantChiffres || ""}
                 onChange={e => setPaiementDetails({...paiementDetails, montantChiffres: e.target.value})}
                 fullWidth
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 3,
+                    background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                    '&:hover': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.2)'
+                    },
+                    '&.Mui-focused': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.3)'
+                    }
+                  }
+                }}
               />
             </Grid>
             <Grid item xs={12} md={6}>
               <TextField
-                label="Nom du bénéficiaire"
+                label="👤 Nom du bénéficiaire"
                 value={paiementDetails.beneficiaire || ""}
                 onChange={e => setPaiementDetails({...paiementDetails, beneficiaire: e.target.value})}
                 fullWidth
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 3,
+                    background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                    '&:hover': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.2)'
+                    },
+                    '&.Mui-focused': {
+                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.3)'
+                    }
+                  }
+                }}
               />
             </Grid>
           </Grid>
         );
-
       default:
         return null;
     }
@@ -656,18 +833,6 @@ const fetchClients = async () => {
 
   const handleRetourListe = () => {
     navigate("/ListeReglementsClients");
-  };
-
-  // Fonction pour réinitialiser la page
-  const resetPage = () => {
-    setSelectedFactures([]);
-    setFactures([]);
-    setBonsLivraison([]);
-    setSelectedBonsLivraison([]);
-    setPaiementsEnAttente([]);
-    setPaiementDetails({});
-    setTotalMontant(0);
-    setMontantRestant(0);
   };
 
   return (
@@ -698,7 +863,6 @@ const fetchClients = async () => {
             backgroundColor: "rgba(0,0,0,0.05)"
           }
         }}>
-          {/* Header moderne avec animation */}
           <Fade in={true} timeout={800}>
             <Box sx={{
               mb: 4,
@@ -710,7 +874,6 @@ const fetchClients = async () => {
               position: 'relative',
               overflow: 'hidden'
             }}>
-              {/* Effet de particules en arrière-plan */}
               <Box sx={{
                 position: 'absolute',
                 top: 0,
@@ -720,7 +883,6 @@ const fetchClients = async () => {
                 background: 'radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%)',
                 animation: 'pulse 3s ease-in-out infinite alternate'
               }} />
-
               <Box sx={{ position: 'relative', zIndex: 1 }}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
                   <Stack direction="row" alignItems="center" spacing={3}>
@@ -746,7 +908,7 @@ const fetchClients = async () => {
                         Règlement Client
                       </Typography>
                       <Typography variant="h6" sx={{ opacity: 0.9 }}>
-                        Effectuer un règlement
+                        Gérer les paiements clients
                       </Typography>
                     </Box>
                   </Stack>
@@ -781,7 +943,6 @@ const fetchClients = async () => {
           </Fade>
 
           <Grid container spacing={3}>
-            {/* Section Sélection Client */}
             <Grid item xs={12}>
               <Zoom in={true} timeout={600}>
                 <Card sx={{
@@ -796,7 +957,6 @@ const fetchClients = async () => {
                   },
                   transition: 'all 0.3s ease'
                 }}>
-
                   <Typography variant="h6" sx={{
                     mb: 3,
                     fontWeight: 'bold',
@@ -808,22 +968,17 @@ const fetchClients = async () => {
                     <Business sx={{ color: '#495057' }} />
                     Informations de Règlement
                   </Typography>
-
                   <Stack direction="row" spacing={3} alignItems="center" mb={3}>
-                    {/* Client avec icône */}
                     <FormControl fullWidth sx={{ flex: 1 }}>
                       <Autocomplete
                         options={clients}
-                        getOptionLabel={(option) => option.nom_prenom}
-                        value={clients.find((c) => c._id === selectedClient) || null}
-                        onChange={(event, newValue) => {
-                          setSelectedClient(newValue ? newValue._id : "");
-                          resetPage();
-                        }}
-                        renderInput={(params) => (
+                        getOptionLabel={option => option.nom_prenom || ""}
+                        value={selectedClient}
+                        onChange={handleClientChange}
+                        renderInput={params => (
                           <TextField
                             {...params}
-                            label="🏢 Sélectionner un client"
+                            label="👤 Sélectionner un client"
                             variant="outlined"
                             sx={{
                               '& .MuiOutlinedInput-root': {
@@ -841,17 +996,13 @@ const fetchClients = async () => {
                         )}
                       />
                     </FormControl>
-
-                    {/* Caisse avec icône */}
                     <FormControl fullWidth sx={{ flex: 1 }}>
                       <Autocomplete
                         options={caisses}
-                        getOptionLabel={(option) => option.libelle}
-                        value={caisses.find((c) => c._id === selectedCaisse) || null}
-                        onChange={(event, newValue) => {
-                          setSelectedCaisse(newValue ? newValue._id : "");
-                        }}
-                        renderInput={(params) => (
+                        getOptionLabel={option => option.libelle || ""}
+                        value={caisses.find(c => c._id === selectedCaisse) || null}
+                        onChange={handleCaisseChange}
+                        renderInput={params => (
                           <TextField
                             {...params}
                             label="💰 Sélectionner une caisse"
@@ -872,15 +1023,13 @@ const fetchClients = async () => {
                         )}
                       />
                     </FormControl>
-
-                    {/* Date avec style moderne */}
                     <TextField
                       fullWidth
                       type="date"
-                      label="📅 Date"
+                      label="📅 Date de Règlement"
                       InputLabelProps={{ shrink: true }}
                       value={paiementDetails.date || dateReglement}
-                      onChange={(e) => setPaiementDetails({...paiementDetails, date: e.target.value})}
+                      onChange={e => setPaiementDetails({...paiementDetails, date: e.target.value})}
                       sx={{
                         flex: 1,
                         '& .MuiOutlinedInput-root': {
@@ -900,7 +1049,6 @@ const fetchClients = async () => {
               </Zoom>
             </Grid>
 
-            {/* Section Liste des Factures */}
             <Grid item xs={12} md={8}>
               <Slide direction="up" in={true} timeout={800}>
                 <Card sx={{
@@ -924,61 +1072,44 @@ const fetchClients = async () => {
                     gap: 1
                   }}>
                     <Receipt sx={{ color: '#495057' }} />
-                    Liste des Factures
+                    Documents à Régler
                   </Typography>
-                  {/* Tableau des Factures */}
-                  <Typography variant="h6" sx={{
-                    mb: 3,
-                    color: '#2c3e50',
+                  <Typography variant="subtitle1" sx={{
+                    mt: 2,
+                    mb: 1,
                     fontWeight: 'bold',
-                    display: 'flex',
-                    alignItems: 'center'
+                    color: '#2c3e50'
                   }}>
-                    <MonetizationOn sx={{ mr: 1, color: '#52c41a' }} />
-                    Factures ({factures.length})
+                    Factures
                   </Typography>
-
                   <TableContainer component={Paper} sx={{
-                    borderRadius: 2,
+                    borderRadius: 3,
                     boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                    overflow: 'hidden',
-                    mb: 4
+                    overflow: 'hidden'
                   }}>
                     <Table>
                       <TableHead sx={{
-                        background: 'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)'
+                        background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)'
                       }}>
                         <TableRow>
                           <TableCell padding="checkbox" sx={{ color: 'white' }}>
                             <Checkbox
-                              indeterminate={selectedFactures.length > 0 && selectedFactures.length < factures.length}
-                              checked={factures.length > 0 && selectedFactures.length === factures.length}
-                              onChange={(e) => setSelectedFactures(e.target.checked ? factures.map(f => f._id) : [])}
                               sx={{ color: 'white' }}
+                              indeterminate={selectedFactures.length > 0 && selectedFactures.length < factures.length}
+                              checked={selectedFactures.length === factures.length}
+                              onChange={(e) => setSelectedFactures(e.target.checked ? factures.map(f => f._id) : [])}
                             />
                           </TableCell>
-                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
-                            N° Facture
-                          </TableCell>
-                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
-                            Date
-                          </TableCell>
-                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
-                            Montant TTC
-                          </TableCell>
-                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
-                            Montant Payé
-                          </TableCell>
-                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
-                            Montant Restant
-                          </TableCell>
-                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
-                            Statut
-                          </TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>N° Facture</TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Date</TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Montant TTC</TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Montant Payé</TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Montant Restant</TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Statut</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {factures.map((facture) => {
+                        {factures.map((facture, index) => {
                           const montantPaye = facture.montantPaye || 0;
                           const montantRestant = Math.max(facture.total_ttc - montantPaye, 0);
                           let statut = "non_paye";
@@ -988,225 +1119,233 @@ const fetchClients = async () => {
                             statut = "partiellement_paye";
                           }
                           return (
-                            <TableRow
-                              key={facture._id}
-                              sx={{
-                                '&:nth-of-type(odd)': {
-                                  backgroundColor: '#f8f9fa',
-                                },
+                            <Fade in={true} timeout={1000 + index * 100} key={facture._id}>
+                              <TableRow sx={{
                                 '&:hover': {
-                                  backgroundColor: '#e3f2fd',
+                                  backgroundColor: 'rgba(52, 73, 94, 0.05)',
                                   transform: 'scale(1.01)',
                                   transition: 'all 0.2s ease'
                                 },
-                                transition: 'all 0.2s ease'
-                              }}
-                            >
-                              <TableCell padding="checkbox">
-                                <Checkbox
-                                  checked={selectedFactures.includes(facture._id)}
-                                  onChange={() => handleFactureSelection(facture._id)}
-                                />
-                              </TableCell>
-                              <TableCell sx={{ fontWeight: 'medium' }}>
-                                <Chip
-                                  label={facture.numero}
-                                  size="small"
-                                  sx={{
-                                    background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
-                                    color: 'white',
-                                    fontWeight: 'bold'
-                                  }}
-                                />
-                              </TableCell>
-                              <TableCell sx={{ fontWeight: 'medium' }}>
-                                {new Date(facture.dateFacture).toLocaleDateString()}
-                              </TableCell>
-                              <TableCell sx={{ fontWeight: 'medium' }}>
-                                {facture.total_ttc?.toFixed(3)} DT
-                              </TableCell>
-                              <TableCell sx={{ fontWeight: 'medium', color: '#52c41a' }}>
-                                {montantPaye.toFixed(3)} DT
-                              </TableCell>
-                              <TableCell sx={{ fontWeight: 'bold', color: '#f5222d' }}>
-                                {montantRestant.toFixed(3)} DT
-                              </TableCell>
-                              <TableCell>
-                                <Chip
-                                  label={statut === "non_paye" ? "Non payé" :
-                                         statut === "partiellement_paye" ? "Partiellement payé" : "Payé"}
-                                  color={
-                                    statut === "paye" ? "success" :
-                                    statut === "partiellement_paye" ? "warning" : "error"
-                                  }
-                                  size="small"
-                                  sx={{ fontWeight: 'bold' }}
-                                />
-                              </TableCell>
-                            </TableRow>
+                                '&:nth-of-type(even)': {
+                                  backgroundColor: 'rgba(0,0,0,0.02)'
+                                }
+                              }}>
+                                <TableCell padding="checkbox">
+                                  <Checkbox
+                                    checked={selectedFactures.includes(facture._id)}
+                                    onChange={() => handleFactureSelection(facture._id)}
+                                    sx={{
+                                      color: '#495057',
+                                      '&.Mui-checked': {
+                                        color: '#2c3e50'
+                                      }
+                                    }}
+                                  />
+                                </TableCell>
+                                <TableCell sx={{ fontWeight: 'bold', color: '#2c3e50' }}>{facture.numero}</TableCell>
+                                <TableCell>{new Date(facture.dateFacture).toLocaleDateString('fr-FR')}</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold' }}>{facture.total_ttc?.toFixed(3)} DT</TableCell>
+                                <TableCell sx={{ color: '#27ae60', fontWeight: 'bold' }}>{montantPaye.toFixed(3)} DT</TableCell>
+                                <TableCell sx={{ color: '#e74c3c', fontWeight: 'bold' }}>{montantRestant.toFixed(3)} DT</TableCell>
+                                <TableCell>
+                                  <Chip
+                                    label={statut === "paye" ? "✅ Payée" :
+                                           statut === "partiellement_paye" ? "⚠️ Partielle" : "❌ Non payée"}
+                                    size="small"
+                                    sx={{
+                                      backgroundColor: statut === "paye" ? '#27ae60' :
+                                                     statut === "partiellement_paye" ? '#f39c12' : '#e74c3c',
+                                      color: 'white',
+                                      fontWeight: 'bold',
+                                      borderRadius: 2
+                                    }}
+                                  />
+                                </TableCell>
+                              </TableRow>
+                            </Fade>
                           );
                         })}
                       </TableBody>
                     </Table>
                   </TableContainer>
-
-                  {/* Tableau des Bons de Livraison */}
-                  <Typography variant="h6" sx={{
-                    mb: 3,
-                    color: '#2c3e50',
+                  <Typography variant="subtitle1" sx={{
+                    mt: 2,
+                    mb: 1,
                     fontWeight: 'bold',
-                    display: 'flex',
-                    alignItems: 'center'
+                    color: '#2c3e50'
                   }}>
-                    <Receipt sx={{ mr: 1, color: '#1890ff' }} />
-                    Bons de Livraison Non Facturés ({bonsLivraison.length})
+                    Bons de Livraison Non Facturés
                   </Typography>
-                <TableContainer component={Paper} sx={{ boxShadow: 2 }}>
-                  <Table>
-                    <TableHead>
-                      <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                        <TableCell padding="checkbox">
-                          <Checkbox
-                            indeterminate={selectedBonsLivraison.length > 0 && selectedBonsLivraison.length < bonsLivraison.length}
-                            checked={selectedBonsLivraison.length === bonsLivraison.length}
-                            onChange={(e) => setSelectedBonsLivraison(e.target.checked ? bonsLivraison.map(b => b._id) : [])}
-                          />
+                  <TableContainer component={Paper} sx={{
+                    borderRadius: 3,
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                    overflow: 'hidden'
+                  }}>
+                    <Table>
+                      <TableHead sx={{
+                        background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)'
+                      }}>
+                        <TableRow>
+                          <TableCell padding="checkbox" sx={{ color: 'white' }}>
+                            <Checkbox
+                              sx={{ color: 'white' }}
+                              indeterminate={selectedBonsLivraison.length > 0 && selectedBonsLivraison.length < bonsLivraison.length}
+                              checked={selectedBonsLivraison.length === bonsLivraison.length}
+                              onChange={(e) => setSelectedBonsLivraison(e.target.checked ? bonsLivraison.map(b => b._id) : [])}
+                            />
                           </TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>N° Bon</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Montant TTC</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Montant Payé</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Montant Restant</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Statut</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {bonsLivraison.map((bon) => {
-                        const montantPaye = bon.montantPaye || 0;
-                        const montantRestant = Math.max(bon.total_ttc - montantPaye, 0);
-                        let statut = "non_paye";
-                        if (montantPaye >= bon.total_ttc) {
-                          statut = "paye";
-                        } else if (montantPaye > 0) {
-                          statut = "partiellement_paye";
-                        }
-                        return (
-                        <TableRow key={bon._id}>
-                            <TableCell padding="checkbox">
-                          <Checkbox
-                                checked={selectedBonsLivraison.includes(bon._id)}
-                                onChange={() => handleBonLivraisonSelection(bon._id)}
-/>
-                          </TableCell>
-                          <TableCell>{bon.numero}</TableCell>
-                          <TableCell>{new Date(bon.dateLivraison).toLocaleDateString()}</TableCell>
-                          <TableCell>{bon.total_ttc.toFixed(3)} DT</TableCell>
-                            <TableCell>{montantPaye.toFixed(3)} DT</TableCell>
-                            <TableCell>{montantRestant.toFixed(3)} DT</TableCell>
-                            <TableCell>
-                              <Chip
-                                label={statut}
-                                color={
-                                  statut === "paye"
-                                    ? "success"
-                                    : statut === "partiellement_paye"
-                                    ? "warning"
-                                    : "error"
-                                }
-                                size="small"
-                              />
-                            </TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>N° Bon</TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Date</TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Montant TTC</TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Montant Payé</TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Montant Restant</TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Statut</TableCell>
                         </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                      </TableHead>
+                      <TableBody>
+                        {bonsLivraison.map((bon, index) => {
+                          const montantPaye = bon.montantPaye || 0;
+                          const montantRestant = Math.max(bon.total_ttc - montantPaye, 0);
+                          let statut = "non_paye";
+                          if (montantPaye >= bon.total_ttc) {
+                            statut = "paye";
+                          } else if (montantPaye > 0) {
+                            statut = "partiellement_paye";
+                          }
+                          return (
+                            <Fade in={true} timeout={1000 + index * 100} key={bon._id}>
+                              <TableRow sx={{
+                                '&:hover': {
+                                  backgroundColor: 'rgba(52, 73, 94, 0.05)',
+                                  transform: 'scale(1.01)',
+                                  transition: 'all 0.2s ease'
+                                },
+                                '&:nth-of-type(even)': {
+                                  backgroundColor: 'rgba(0,0,0,0.02)'
+                                }
+                              }}>
+                                <TableCell padding="checkbox">
+                                  <Checkbox
+                                    checked={selectedBonsLivraison.includes(bon._id)}
+                                    onChange={() => handleBonLivraisonSelection(bon._id)}
+                                    sx={{
+                                      color: '#495057',
+                                      '&.Mui-checked': {
+                                        color: '#2c3e50'
+                                      }
+                                    }}
+                                  />
+                                </TableCell>
+                                <TableCell sx={{ fontWeight: 'bold', color: '#2c3e50' }}>{bon.numero}</TableCell>
+                                <TableCell>{new Date(bon.dateLivraison).toLocaleDateString('fr-FR')}</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold' }}>{bon.total_ttc.toFixed(3)} DT</TableCell>
+                                <TableCell sx={{ color: '#27ae60', fontWeight: 'bold' }}>{montantPaye.toFixed(3)} DT</TableCell>
+                                <TableCell sx={{ color: '#e74c3c', fontWeight: 'bold' }}>{montantRestant.toFixed(3)} DT</TableCell>
+                                <TableCell>
+                                  <Chip
+                                    label={statut === "paye" ? "✅ Payée" :
+                                           statut === "partiellement_paye" ? "⚠️ Partielle" : "❌ Non payée"}
+                                    size="small"
+                                    sx={{
+                                      backgroundColor: statut === "paye" ? '#27ae60' :
+                                                     statut === "partiellement_paye" ? '#f39c12' : '#e74c3c',
+                                      color: 'white',
+                                      fontWeight: 'bold',
+                                      borderRadius: 2
+                                    }}
+                                  />
+                                </TableCell>
+                              </TableRow>
+                            </Fade>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
                 </Card>
               </Slide>
             </Grid>
 
-            {/* Section Récapitulatif */}
             <Grid item xs={12} md={4}>
-              <Fade in={true} timeout={1000}>
+              <Slide direction="left" in={true} timeout={1000}>
                 <Card sx={{
                   p: 3,
                   borderRadius: 3,
-                  background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-                  border: '1px solid rgba(255,255,255,0.2)',
+                  background: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)',
+                  color: 'white',
+                  boxShadow: '0 8px 32px rgba(52, 73, 94, 0.3)',
+                  position: 'relative',
+                  overflow: 'hidden',
                   '&:hover': {
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
+                    transform: 'translateY(-4px) scale(1.02)',
+                    boxShadow: '0 12px 40px rgba(52, 73, 94, 0.4)'
                   },
                   transition: 'all 0.3s ease'
                 }}>
-                  <Typography variant="h6" sx={{
-                    mb: 3,
-                    fontWeight: 'bold',
-                    color: '#2c3e50',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1
-                  }}>
-                    <TrendingUp sx={{ color: '#495057' }} />
-                    Récapitulatif
-                  </Typography>
-
-                  <Stack spacing={2}>
-                    <Box sx={{
-                      p: 2,
-                      borderRadius: 3,
-                      background: 'linear-gradient(135deg, #27ae60 0%, #2ecc71 100%)',
-                      color: 'white',
-                      textAlign: 'center',
-                      boxShadow: '0 4px 15px rgba(39, 174, 96, 0.3)'
+                  <Box sx={{
+                    position: 'absolute',
+                    top: 0,
+                    right: 0,
+                    width: 100,
+                    height: 100,
+                    background: 'rgba(255,255,255,0.1)',
+                    borderRadius: '50%',
+                    transform: 'translate(30%, -30%)'
+                  }} />
+                  <Box sx={{ position: 'relative', zIndex: 1 }}>
+                    <Typography variant="h6" sx={{
+                      mb: 3,
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      textShadow: '1px 1px 2px rgba(0,0,0,0.3)'
                     }}>
-                      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 1 }}>
-                        {totalMontant.toFixed(2)} DT
+                      <AttachMoney sx={{ fontSize: 28 }} />
+                      Récapitulatif
+                    </Typography>
+                    <Box sx={{ mb: 2, p: 2, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 }}>
+                      <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                        Total TTC
                       </Typography>
-                      <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                        💰 Total TTC
+                      <Typography variant="h4" sx={{ fontWeight: 'bold', textShadow: '1px 1px 2px rgba(0,0,0,0.3)' }}>
+                        {totalMontant.toFixed(3)} DT
                       </Typography>
                     </Box>
-
-                    <Box sx={{
-                      p: 2,
-                      borderRadius: 3,
-                      background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
-                      color: 'white',
-                      textAlign: 'center',
-                      boxShadow: '0 4px 15px rgba(231, 76, 60, 0.3)'
-                    }}>
-                      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 1 }}>
-                        {montantRestant.toFixed(2)} DT
+                    <Box sx={{ p: 2, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 }}>
+                      <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                        Montant Restant
                       </Typography>
-                      <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                        📊 Montant Restant
+                      <Typography variant="h4" sx={{ fontWeight: 'bold', textShadow: '1px 1px 2px rgba(0,0,0,0.3)' }}>
+                        {montantRestant.toFixed(3)} DT
                       </Typography>
                     </Box>
-
-                    <Box sx={{
-                      p: 2,
-                      borderRadius: 3,
-                      background: 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)',
-                      color: 'white',
-                      textAlign: 'center',
-                      boxShadow: '0 4px 15px rgba(52, 152, 219, 0.3)'
-                    }}>
-                      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 1 }}>
-                        {paiementsEnAttente.reduce((sum, p) => sum + parseFloat(p.montantChiffres || 0), 0).toFixed(2)} DT
+                    <Box sx={{ mt: 3 }}>
+                      <Typography variant="body2" sx={{ mb: 1, opacity: 0.9 }}>
+                        Progression du paiement
                       </Typography>
-                      <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                        ⏳ En attente
+                      <LinearProgress
+                        variant="determinate"
+                        value={totalMontant > 0 ? ((totalMontant - montantRestant) / totalMontant) * 100 : 0}
+                        sx={{
+                          height: 8,
+                          borderRadius: 4,
+                          backgroundColor: 'rgba(255,255,255,0.2)',
+                          '& .MuiLinearProgress-bar': {
+                            backgroundColor: 'white',
+                            borderRadius: 4
+                          }
+                        }}
+                      />
+                      <Typography variant="caption" sx={{ mt: 1, display: 'block', opacity: 0.9 }}>
+                        {totalMontant > 0 ? Math.round(((totalMontant - montantRestant) / totalMontant) * 100) : 0}% payé
                       </Typography>
                     </Box>
-                  </Stack>
+                  </Box>
                 </Card>
-              </Fade>
+              </Slide>
             </Grid>
 
-            {/* Section Mode de Paiement */}
             <Grid item xs={12}>
               <Fade in={true} timeout={1200}>
                 <Card sx={{
@@ -1223,7 +1362,7 @@ const fetchClients = async () => {
                 }}>
                   <Typography variant="h6" sx={{
                     mb: 3,
-                    fontWeight: 'bold',
+                    fontWeight: 'medium',
                     color: '#2c3e50',
                     display: 'flex',
                     alignItems: 'center',
@@ -1232,54 +1371,75 @@ const fetchClients = async () => {
                     <CreditCard sx={{ color: '#495057' }} />
                     Mode de Paiement
                   </Typography>
-
                   <RadioGroup
+                    row
                     value={modePaiement}
                     onChange={handleModePaiementChange}
                     sx={{ mb: 3 }}
                   >
-                    <Stack direction="row" spacing={3}>
-                      <FormControlLabel
-                        value="ESPECE"
-                        control={<Radio sx={{ color: '#27ae60' }} />}
-                        label={
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <AttachMoney sx={{ color: '#27ae60' }} />
-                            💵 Espèces
-                          </Box>
-                        }
-                      />
-                      <FormControlLabel
-                        value="CHEQUE"
-                        control={<Radio sx={{ color: '#3498db' }} />}
-                        label={
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <AccountBalance sx={{ color: '#3498db' }} />
-                            🏦 Chèque
-                          </Box>
-                        }
-                      />
-                      <FormControlLabel
-                        value="EFFET"
-                        control={<Radio sx={{ color: '#f39c12' }} />}
-                        label={
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Receipt sx={{ color: '#f39c12' }} />
-                            📄 Effet
-                          </Box>
-                        }
-                      />
-                    </Stack>
+                    <FormControlLabel
+                      value="ESPECE"
+                      control={<Radio sx={{ color: '#495057', '&.Mui-checked': { color: '#2c3e50' } }} />}
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <AccountBalanceWallet sx={{ color: '#27ae60' }} />
+                          <Typography sx={{ fontWeight: 'medium' }}>Espèce</Typography>
+                        </Box>
+                      }
+                      sx={{
+                        mr: 3,
+                        p: 2,
+                        borderRadius: 2,
+                        border: modePaiement === 'ESPECE' ? '2px solid #2c3e50' : '2px solid transparent',
+                        backgroundColor: modePaiement === 'ESPECE' ? 'rgba(52, 73, 94, 0.1)' : 'transparent',
+                        transition: 'all 0.3s ease'
+                      }}
+                    />
+                    <FormControlLabel
+                      value="CHEQUE"
+                      control={<Radio sx={{ color: '#495057', '&.Mui-checked': { color: '#2c3e50' } }} />}
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Receipt sx={{ color: '#f39c12' }} />
+                          <Typography sx={{ fontWeight: 'medium' }}>Chèque</Typography>
+                        </Box>
+                      }
+                      sx={{
+                        mr: 3,
+                        p: 2,
+                        borderRadius: 2,
+                        border: modePaiement === 'CHEQUE' ? '2px solid #2c3e50' : '2px solid transparent',
+                        backgroundColor: modePaiement === 'CHEQUE' ? 'rgba(52, 73, 94, 0.1)' : 'transparent',
+                        transition: 'all 0.3s ease'
+                      }}
+                    />
+                    <FormControlLabel
+                      value="EFFET"
+                      control={<Radio sx={{ color: '#495057', '&.Mui-checked': { color: '#2c3e50' } }} />}
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Schedule sx={{ color: '#e74c3c' }} />
+                          <Typography sx={{ fontWeight: 'medium' }}>Effet</Typography>
+                        </Box>
+                      }
+                      sx={{
+                        p: 2,
+                        borderRadius: 2,
+                        border: modePaiement === 'EFFET' ? '2px solid #2c3e50' : '2px solid transparent',
+                        backgroundColor: modePaiement === 'EFFET' ? 'rgba(52, 73, 94, 0.1)' : 'transparent',
+                        transition: 'all 0.3s ease'
+                      }}
+                    />
                   </RadioGroup>
-
                   <Box sx={{
+                    mt: 3,
                     p: 3,
+                    backgroundColor: 'rgba(52, 73, 94, 0.05)',
                     borderRadius: 3,
                     border: '1px solid rgba(52, 73, 94, 0.1)'
                   }}>
                     {renderPaiementFields()}
                   </Box>
-
                   <Stack direction="row" justifyContent="center" sx={{ mt: 3 }}>
                     <Tooltip title="Ajouter ce paiement à la liste">
                       <Button
@@ -1300,7 +1460,7 @@ const fetchClients = async () => {
                           },
                           transition: 'all 0.3s ease'
                         }}
-                        startIcon={<Add />}
+                        startIcon={<CheckCircle />}
                       >
                         Ajouter Paiement
                       </Button>
@@ -1310,8 +1470,6 @@ const fetchClients = async () => {
               </Fade>
             </Grid>
 
-
-            {/* Liste des paiements en attente */}
             {paiementsEnAttente.length > 0 && (
               <Grid item xs={12}>
                 <Zoom in={true} timeout={1400}>
@@ -1329,7 +1487,6 @@ const fetchClients = async () => {
                     },
                     transition: 'all 0.3s ease'
                   }}>
-                    {/* Effet de brillance */}
                     <Box sx={{
                       position: 'absolute',
                       top: 0,
@@ -1340,7 +1497,6 @@ const fetchClients = async () => {
                       borderRadius: '50%',
                       transform: 'translate(30%, -30%)'
                     }} />
-
                     <Box sx={{ position: 'relative', zIndex: 1 }}>
                       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
                         <Typography variant="h6" sx={{
@@ -1353,7 +1509,6 @@ const fetchClients = async () => {
                           <Schedule sx={{ fontSize: 28 }} />
                           Paiements en attente ({paiementsEnAttente.length})
                         </Typography>
-
                         <Tooltip title="Valider tous les paiements en attente">
                           <Button
                             variant="contained"
@@ -1381,7 +1536,6 @@ const fetchClients = async () => {
                           </Button>
                         </Tooltip>
                       </Stack>
-
                       <TableContainer component={Paper} sx={{
                         borderRadius: 3,
                         overflow: 'hidden',
@@ -1427,7 +1581,7 @@ const fetchClients = async () => {
                                     />
                                   </TableCell>
                                   <TableCell sx={{ fontWeight: 'bold', color: '#27ae60' }}>
-                                    {paiement.montantChiffres ? parseFloat(paiement.montantChiffres).toFixed(2) : '0.00'} DT
+                                    {paiement.montantChiffres ? parseFloat(paiement.montantChiffres).toFixed(3) : '0.000'} DT
                                   </TableCell>
                                   <TableCell>
                                     <Tooltip title="Supprimer ce paiement">
@@ -1459,11 +1613,9 @@ const fetchClients = async () => {
                 </Zoom>
               </Grid>
             )}
-        </Grid>
+          </Grid>
         </Box>
       </Box>
-
-      {/* Snackbar moderne */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
@@ -1491,8 +1643,6 @@ const fetchClients = async () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-
-      {/* Styles CSS pour les animations */}
       <style jsx global>{`
         @keyframes pulse {
           0% {
@@ -1502,7 +1652,6 @@ const fetchClients = async () => {
             opacity: 1;
           }
         }
-
         @keyframes float {
           0%, 100% {
             transform: translateY(0px);
@@ -1511,7 +1660,6 @@ const fetchClients = async () => {
             transform: translateY(-10px);
           }
         }
-
         @keyframes shimmer {
           0% {
             background-position: -200px 0;
@@ -1520,11 +1668,9 @@ const fetchClients = async () => {
             background-position: calc(200px + 100%) 0;
           }
         }
-
         .floating-animation {
           animation: float 3s ease-in-out infinite;
         }
-
         .shimmer-effect {
           background: linear-gradient(
             90deg,

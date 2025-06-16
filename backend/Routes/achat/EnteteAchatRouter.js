@@ -28,10 +28,11 @@ router.get('/BEF/:id', getBonReceptionByID);
 //post BEF
 router.post('/BEF/create', checkStockLevels, createBonReception);
 
+
 //delete BEF
 router.delete('/BEF/:id', deleteBEF);
 
-//delete Multiple 
+//delete Multiple
 router.post('/BEF/deleteMultiple', deleteMultipleBEF);
 
 

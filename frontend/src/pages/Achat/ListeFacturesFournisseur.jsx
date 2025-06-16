@@ -600,27 +600,7 @@ function ListeFacturesFournisseur() {
                           <TableCell>
                             <Stack direction="row" spacing={1}>
                          
-                              <Tooltip title="Télécharger PDF">
-                                <Button
-                                  onClick={() => handleDownloadFacture(facture)}
-                                  startIcon={<FileDownloadIcon />}
-                                  size="small"
-                                  variant="outlined"
-                                  sx={{
-                                    borderColor: '#ff9800',
-                                    color: '#ff9800',
-                                    borderRadius: 2,
-                                    '&:hover': {
-                                      borderColor: '#f57c00',
-                                      backgroundColor: 'rgba(255, 152, 0, 0.1)',
-                                      transform: 'scale(1.05)'
-                                    },
-                                    transition: 'all 0.3s ease'
-                                  }}
-                                >
-                                  PDF
-                                </Button>
-                              </Tooltip>
+                              
                               <Tooltip title="Supprimer">
                                 <IconButton
                                   onClick={() => handleDeleteFacture(facture)}

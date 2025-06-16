@@ -334,24 +334,7 @@ export default function Navbar() {
                 },
               }}
             >
-              <StyledMenuItem onClick={() => { 
-                handleCloseUserMenu(); 
-                navigate('/profile'); 
-              }}>
-                <AccountCircle>
-                  <SettingsIcon fontSize="small" color=" #FFFFFF"/>
-                </AccountCircle>
-                <Typography textAlign="center">Profil</Typography>
-              </StyledMenuItem>
-              <StyledMenuItem onClick={() => { 
-                handleCloseUserMenu(); 
-                navigate('/settings'); 
-              }}>
-                <ListItemIcon>
-                  <SettingsIcon fontSize="small"  color=" #FFFFFF"/>
-                </ListItemIcon>
-                <Typography textAlign="center">Paramètres</Typography>
-              </StyledMenuItem>
+           
               <StyledMenuItem onClick={handleLogout}>
                 <ListItemIcon>
                   <LogoutIcon color=" #FFFFFF" />

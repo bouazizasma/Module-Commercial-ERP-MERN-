@@ -82,7 +82,9 @@ export default function ListeDevisClient() {
 
     fetchData();
   }, []);
-
+const handleCloseSnackbar = () => {
+  setOpenSnackbar(false);
+};
   const handleDownload = (devis) => {
     const doc = new jsPDF();
     doc.setFontSize(18);
@@ -262,23 +264,28 @@ const getStatusChip = (statut) => {
     }
   };  
   
-  const handleGenerateBonLivraison = async (devisId) => {
+ const handleGenerateBonLivraison = async (devisId) => {
     try {  
-      await axios.post(`http://localhost:5000/ventes/${devisId}/generate-bon-livraison`);
-      fetchDevis(); // Rafraîchir la liste des devis
+      const response = await axios.post(
+        `http://localhost:5000/ventes/${devisId}/generate-bon-livraison`
+      );
+      
+      console.log('Réponse du serveur:', response.data);
+      
+      fetchDevis();
       setSnackbarMessage("Le bon de livraison a été généré avec succès !");
       setOpenSnackbar(true);
+      
+      // Redirection après confirmation
       setTimeout(() => {
         navigate("/ListeBonLivraisonClient");
       }, 2000);
     } catch (error) {
-      console.error("Erreur lors de la génération du bon de livraison:", error);
+      console.error("Erreur complète:", error.response?.data || error.message);
+      setSnackbarMessage("Erreur lors de la génération: " + (error.response?.data?.message || error.message));
+      setOpenSnackbar(true);
     }
-  };
-  const handleCloseSnackbar = () => {
-    setOpenSnackbar(false);
-  };
-
+};
 
   if (error) {
     return <div>{error}</div>;
@@ -1098,8 +1105,11 @@ const getStatusChip = (statut) => {
                                 }
                               }}
                             >
-                              <TableCell>{ligne.article ? ligne.article.libelle : 'Article inconnu'}</TableCell>
-                              <TableCell>{ligne.quantite}</TableCell>
+<TableCell>
+  {ligne.article && typeof ligne.article === 'object' 
+    ? ligne.article.libelle 
+    : ligne.article || 'Article inconnu'}
+</TableCell>                              <TableCell>{ligne.quantite}</TableCell>
                               <TableCell>{ligne.prix_unitaire.toFixed(2)} TND</TableCell>
                               <TableCell>{ligne.total_ht.toFixed(2)} TND</TableCell>
                               <TableCell>{ligne.total_ttc.toFixed(2)} TND</TableCell>

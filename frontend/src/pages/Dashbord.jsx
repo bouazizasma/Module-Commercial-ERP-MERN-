@@ -1925,7 +1925,7 @@ const generatePDFReglement = () => {
              </MainContent>
         </DashboardContainer>
       </Box>
-     <Box 
+      <Box 
         sx={{ 
           position: 'fixed',
           bottom: 0,

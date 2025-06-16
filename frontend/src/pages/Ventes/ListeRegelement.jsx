@@ -432,7 +432,7 @@ export default function ListeRegelement() {
                     color: 'white'
                   }}>
                     <Payment sx={{ fontSize: 48, mb: 2 }} />
-                    <Typography variant="h3" sx={{
+                    <Typography variant="h5" sx={{
                       fontWeight: 'bold',
                       textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
                       mb: 1

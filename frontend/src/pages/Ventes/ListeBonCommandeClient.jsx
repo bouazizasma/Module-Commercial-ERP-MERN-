@@ -39,6 +39,8 @@ import {
   Autocomplete,
   Collapse,
   Tooltip,
+  Alert,
+  Snackbar
 } from "@mui/material";
 import {
   Visibility,
@@ -60,10 +62,11 @@ import {
   FilterList,
   ExpandMore,
   ExpandLess,
+  CheckCircle,
+  FileDownload as FileDownloadIcon
 } from "@mui/icons-material";
 import { InputAdornment } from "@mui/material";
 import jsPDF from "jspdf";
-import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import 'jspdf-autotable';
 import { useNavigate } from "react-router-dom";
 // Nouvelles icônes pour un design moderne
@@ -96,8 +99,11 @@ export default function ListeBonCommandeClient() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [bonCommandeToDelete, setBonCommandeToDelete] = useState(null);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
   const navigate = useNavigate();
+
   useEffect(() => {
     fetchBonCommandes();
   }, []);
@@ -107,12 +113,12 @@ export default function ListeBonCommandeClient() {
       const response = await axios.get("http://localhost:5000/ventes/bons-commande");
       setBonCommandes(response.data);
       
-     // Récupérer les Clients
+      // Récupérer les Clients
       const ClientsResponse = await axios.get("http://localhost:5000/client/clients");
       setClients(ClientsResponse.data);
 
       // Récupérer les articles
-     const articlesResponse = await axios.get("http://localhost:5000/article/articles");
+      const articlesResponse = await axios.get("http://localhost:5000/article/articles");
       setArticles(articlesResponse.data);
       
       setLoading(false);
@@ -120,57 +126,42 @@ export default function ListeBonCommandeClient() {
       console.error("Erreur lors de la récupération des bons de commande:", error);
       setError("Erreur lors de la récupération des bons de commande");
       setLoading(false);
-    }};
+    }
+  };
 
- /* const handleView = async (id) => {
+  const handleView = async (id) => {
     try {
       const response = await axios.get(`http://localhost:5000/ventes/bons-commande/${id}`);
-      console.log("Données reçues:", response.data); // Pour déboguer
-      setSelectedCommande(response.data);
+      setSelectedCommande({
+        ...response.data,
+        lignes: response.data.lignes || []
+      });
       setOpenDialog(true);
     } catch (error) {
       console.error("Erreur lors de la récupération des détails de la commande:", error);
     }
-  };*/
-
-
-  const handleView = async (id) => {
-    try {
-        const response = await axios.get(`http://localhost:5000/ventes/bons-commande/${id}`);
-        console.log("Données reçues:", response.data); // Vérifiez la structure des données
-        
-        // Assurez-vous que la réponse contient bien les données attendues
-        if (response.data) {
-            setSelectedCommande({
-                ...response.data,
-               // client: response.data.client || {},
-                lignes: response.data.lignes || []
-            });
-            setOpenDialog(true);
-        }
-    } catch (error) {
-        console.error("Erreur lors de la récupération des détails de la commande:", error);
-    }
-};
-
+  };
 
   const handleEdit = (id) => {
     navigate(`/ventes/bon-commande/edit/${id}`);
   };
 
-  //generer bon livraison 
-
   const handleGenerateBonLivraison = async (bonCommandeId) => {
-    try {
+    try {  
       await axios.post(`http://localhost:5000/ventes/${bonCommandeId}/generate-bon-livraison`);
-      fetchBonCommandes(); // Rafraîchir la liste des bons de commandes
+      fetchBonCommandes();
+      setSnackbarMessage("Le bon de livraison a été généré avec succès !");
+      setOpenSnackbar(true);
+      setTimeout(() => {
+        navigate("/ListeBonLivraisonClient");
+      }, 2000);
     } catch (error) {
       console.error("Erreur lors de la génération du bon de livraison:", error);
-      alert("Erreur lors de la génération du bon de livraison");
+      setSnackbarMessage("Erreur lors de la génération du bon de livraison");
+      setOpenSnackbar(true);
     }
   };
 
-  // Suppression moderne d'un bon de commande
   const handleDelete = (bonCommande) => {
     setBonCommandeToDelete(bonCommande);
     setDeleteDialogOpen(true);
@@ -184,13 +175,13 @@ export default function ListeBonCommandeClient() {
       setDeleteDialogOpen(false);
     } catch (error) {
       console.error("Erreur lors de la suppression:", error);
-      alert("Erreur lors de la suppression du bon de commande.");
+      setSnackbarMessage("Erreur lors de la suppression du bon de commande");
+      setOpenSnackbar(true);
     } finally {
       setDeleteLoading(false);
     }
   };
 
-  // Filtrage des bons de commande
   const filteredBonCommandes = useMemo(() => {
     return bonCommandes.filter((bonCommande) => {
       const matchesSearchTerm =
@@ -210,26 +201,22 @@ export default function ListeBonCommandeClient() {
     });
   }, [bonCommandes, searchTerm, filters]);
 
-  // Pagination
   const paginatedBonCommandes = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return filteredBonCommandes.slice(startIndex, endIndex);
   }, [filteredBonCommandes, currentPage]);
 
-  // Gestion de la recherche
   const handleSearch = (term) => {
     setSearchTerm(term);
     setCurrentPage(1);
   };
 
-  // Gestion des filtres
   const handleFilterChange = (filterName, value) => {
     setFilters((prevFilters) => ({ ...prevFilters, [filterName]: value }));
     setCurrentPage(1);
   };
 
-  // Réinitialisation des filtres
   const resetFilters = () => {
     setSearchTerm("");
     setFilters({
@@ -241,13 +228,12 @@ export default function ListeBonCommandeClient() {
     setCurrentPage(1);
   };
 
-
-const handleDownload = (bonCommande) => {
+  const handleDownload = (bonCommande) => {
     const doc = new jsPDF();
     doc.setFontSize(18);
-    doc.text("BCC", 10, 10);
+    doc.text("BON DE COMMANDE", 10, 10);
     doc.setFontSize(12);
-    doc.text(`Bon Commande N°: ${bonCommande.numero}`, 10, 20);
+    doc.text(`Commande N°: ${bonCommande.numero}`, 10, 20);
     doc.text(`Date Commande: ${new Date(bonCommande.dateCommande).toLocaleDateString()}`, 10, 30);
 
     const client = clients.find(c => c._id === bonCommande.client._id);
@@ -256,12 +242,12 @@ const handleDownload = (bonCommande) => {
     doc.text(`Matricule Fiscale: ${client.matricule_fiscale || 'N/A'}`, 10, 60);
     doc.text(`Téléphone: ${client.telephone || 'N/A'}`, 10, 70);
   
-    doc.text(`Objet : BON COMMANDE`  , 10, 90);
+    doc.text(`Objet : BON DE COMMANDE`, 10, 90);
   
     // Tableau des articles commandés
     doc.autoTable({
       startY: 100,
-      head: [['Article',  'Quantité', 'Prix Unitaire ', 'Total ']],
+      head: [['Article', 'Quantité', 'Prix Unitaire', 'Total']],
       body: bonCommande.lignes.map(ligne => [
         ligne.article.libelle,
         ligne.quantite,
@@ -284,9 +270,9 @@ const handleDownload = (bonCommande) => {
   const getStatusColor = (status) => {
     switch (status) {
       case "En attente":
-        return "#f5f5f5";
-      case "Confirmée":
         return "warning";
+      case "Confirmée":
+        return "info";
       case "Annulée":
         return "error";
       case "Livrée":
@@ -323,6 +309,10 @@ const handleDownload = (bonCommande) => {
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
+  };
+
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false);
   };
 
   return (
@@ -566,11 +556,15 @@ const handleDownload = (bonCommande) => {
                           }}
                         >
                           <MenuItem value="">Toutes les années</MenuItem>
-                          {Array.from(new Set(bonCommandes.map(bc => new Date(bc.dateCommande).getFullYear())))
+                         {Array.from(new Set(Array.isArray(bonCommandes) ? bonCommandes.map(bc => new Date(bc.dateCommande).getFullYear()) : []))
+  .sort((a, b) => b - a)
+  .map(year => (
+    <MenuItem key={year} value={year.toString()}>{year}</MenuItem>
+  ))} {Array.from(new Set(bonCommandes.map(bc => new Date(bc.dateCommande).getFullYear()))
                             .sort((a, b) => b - a)
                             .map(year => (
                               <MenuItem key={year} value={year.toString()}>{year}</MenuItem>
-                            ))}
+                            )))}
                         </TextField>
                       </Grid>
 
@@ -1120,6 +1114,42 @@ const handleDownload = (bonCommande) => {
         title="Supprimer le bon de commande"
         content={`Êtes-vous sûr de vouloir supprimer le bon de commande ${bonCommandeToDelete?.numero} ? Cette action est irréversible.`}
       />
+
+      {/* Snackbar pour les notifications */}
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={2000}
+        onClose={handleCloseSnackbar}
+        TransitionComponent={Fade}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity="success" 
+          sx={{ 
+            width: '100%',
+            backgroundColor: '#4caf50',
+            color: 'white',
+            '& .MuiAlert-icon': {
+              color: 'white',
+            },
+            '& .MuiAlert-action': {
+              color: 'white',
+            },
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            borderRadius: '8px',
+            padding: '16px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+          }}
+        >
+          <CheckCircle sx={{ fontSize: 28 }} />
+          <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+            {snackbarMessage}
+          </Typography>
+        </Alert>
+      </Snackbar>
     </>
   );
 }
