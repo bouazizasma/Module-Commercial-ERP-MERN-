@@ -30,7 +30,6 @@ import {
   ListItemText,
   TextField,
   MenuItem,
-  Select,
   FormControl,
   InputLabel,
   Modal,
@@ -260,7 +259,7 @@ export default function ListeBonCommandeClient() {
     const totalHT = bonCommande.lignes.reduce((acc, ligne) => acc + (ligne.quantite * ligne.prix_unitaire), 0);
     const totalTTC = totalHT * 1.2;
   
-    doc.text(`Montant Total HT: ${totalHT.toFixed(2)} DT`, 10, doc.autoTable.previous.finalY + 10);
+    doc.text(`Montant Total HT: ${totalHT.toFixed(2)} DT`, 10, doc.autoTable.previous.finalliasfinalY + 10);
     doc.text(`Total TTC : ${totalTTC.toFixed(2)} DT`, 10, doc.autoTable.previous.finalY + 20);
     doc.text(`Montant Total TTC: ${totalTTC.toFixed(2)} DT`, 10, doc.autoTable.previous.finalY + 30);
   
@@ -461,7 +460,7 @@ export default function ListeBonCommandeClient() {
                       sx={{
                         left: '410px',
                         height: '35px',
-                        minWidth: '20px',
+              minWidth: '20px',
                         borderRadius: 3,
                         background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
                         fontWeight: 'bold',
@@ -556,15 +555,13 @@ export default function ListeBonCommandeClient() {
                           }}
                         >
                           <MenuItem value="">Toutes les années</MenuItem>
-                         {Array.from(new Set(Array.isArray(bonCommandes) ? bonCommandes.map(bc => new Date(bc.dateCommande).getFullYear()) : []))
-  .sort((a, b) => b - a)
-  .map(year => (
-    <MenuItem key={year} value={year.toString()}>{year}</MenuItem>
-  ))} {Array.from(new Set(bonCommandes.map(bc => new Date(bc.dateCommande).getFullYear()))
-                            .sort((a, b) => b - a)
-                            .map(year => (
-                              <MenuItem key={year} value={year.toString()}>{year}</MenuItem>
-                            )))}
+                          {Array.isArray(bonCommandes) && bonCommandes.length > 0
+                            ? Array.from(new Set(bonCommandes.map(bc => new Date(bc.dateCommande).getFullYear())))
+                                .sort((a, b) => b - a)
+                                .map(year => (
+                                  <MenuItem key={year} value={year.toString()}>{year}</MenuItem>
+                                ))
+                            : null}
                         </TextField>
                       </Grid>
 

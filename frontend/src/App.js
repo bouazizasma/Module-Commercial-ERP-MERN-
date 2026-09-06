@@ -77,7 +77,7 @@ function App() {
   }
   return (
      <ThemeProvider theme={mode === 'dark' ? darkTheme : lightTheme}>
-      <NotificationProvider>
+  
         <div className="App">
           <RefrshHandler setIsAuthenticated={setIsAuthenticated} />
           <Routes>
@@ -85,7 +85,14 @@ function App() {
         <Route path='/login' element={<Login />} />
         <Route path='/signup' element={<Signup />} />
         <Route path='/signup' element={<Signup />} />
-        <Route path='/Dashbord' element={<PrivateRoute element={<Dashbord/>} />} />
+         <Route
+  path="/Dashbord"
+  element={
+    <NotificationProvider>
+      <Dashbord />
+    </NotificationProvider>
+  }
+/>
         <Route path='/Fournisseur' element={<PrivateRoute element={<Fournisseur/>} />} />
         <Route path='/createFournisseur' element={<PrivateRoute element={<CreateFournisseur/>} />} />
         <Route path='/updateFournisseur/:id' element={<PrivateRoute element={<UpdateFournisseur/>} />} />
@@ -141,7 +148,7 @@ function App() {
 
           </Routes>
         </div>
-      </NotificationProvider>
+    
     </ThemeProvider>
   );
 }

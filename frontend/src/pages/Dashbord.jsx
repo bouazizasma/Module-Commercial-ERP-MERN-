@@ -266,56 +266,13 @@ const generatePDF = () => {
   doc.setLineWidth(2);
   doc.line(15, 50, pageWidth - 15, 50);
 
-  // === SECTION RÉSUMÉ EXÉCUTIF ===
   let currentY = 65;
 
-  // Titre section
-  doc.setTextColor(...primaryColor);
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text('RÉSUMÉ EXÉCUTIF', 15, currentY);
 
   // Cadre pour les KPIs
   currentY += 10;
   doc.setFillColor(...lightGray);
   doc.roundedRect(15, currentY, pageWidth - 30, 35, 3, 3, 'F');
-
-  // Fonction pour formater les nombres avec point comme séparateur
-  const formatNumber = (number) => {
-    return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  };
-
-  // KPIs en colonnes
-  const kpiData = [
-    { label: 'Chiffre d\'Affaires', value: `${formatNumber(chiffreAffaire)} DT`, icon: '📈' },
-    { label: 'Total Encaissé', value: `${formatNumber(TotalDespaiement)} DT`, icon: '💰' },
-    { label: 'Articles Vendus', value: `${articlesVendus}`, icon: '📦' },
-    { label: 'Livraisons', value: `${filteredBonsLivraison.length}`, icon: '🚚' }
-  ];
-
-  const kpiWidth = (pageWidth - 40) / 4;
-  kpiData.forEach((kpi, index) => {
-    const x = 20 + (index * kpiWidth);
-    const y = currentY + 8;
-
-    // Icône
-    doc.setFontSize(16);
-    doc.text(kpi.icon, x, y);
-
-    // Valeur
-    doc.setTextColor(...primaryColor);
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text(kpi.value, x + 8, y);
-
-    // Label
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...textColor);
-    doc.text(kpi.label, x + 8, y + 6);
-  });
-
-  currentY += 50;
 
   // === DONNÉES DÉTAILLÉES ===
   const especes = getEspeces(filteredPaiementTable);

@@ -1,15 +1,11 @@
 const CategorieArticle = require('../Models/Article/CategorieArticle');
 const mongoose = require('mongoose');
-const FamilleArticle = require('../Models/Article/FamilleArticle')
 const CounterModel=require ("../Models/counters");
 
 // Create a new CategorieArticle
 const createCategorieArticle = async (req, res) => {
-  const { code, designationCategorie , famillearticle} = req.body;
- const FamilleExists = await FamilleArticle.findById(famillearticle);
-    if (!FamilleExists) {
-      return res.status(400).json({ message: 'famille non trouvé' });
-    }
+  const { code, designationCategorie } = req.body;
+
   try {
     const counter = await CounterModel.findOneAndUpdate(
         { model: 'categorieArticle' }, // Rechercher le compteur pour le modèle 
@@ -25,16 +21,9 @@ const createCategorieArticle = async (req, res) => {
     const newCategorieArticle = await CategorieArticle.create({
       code,
       designationCategorie,
-      famillearticle,
-      famillearticleInfo:{
-         code: FamilleExists.code,
-        designationFamille: FamilleExists.designationFamille
-      }
     });
 
-    const populatedCategorie = await CategorieArticle.findById(newCategorieArticle._id).populate('famillearticle');
-
-    res.status(201).json(populatedCategorie);
+    res.status(201).json(newCategorieArticle);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -43,7 +32,7 @@ const createCategorieArticle = async (req, res) => {
 // Get all CategorieArticles
 const getCategorieArticles = async (req, res) => {
   try {
-    const categorieArticles = await CategorieArticle.find().populate('famillearticle');
+    const categorieArticles = await CategorieArticle.find();
     res.status(200).json(categorieArticles);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -55,7 +44,7 @@ const getCategorieArticleByID = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const categorieArticle = await CategorieArticle.findById(id).populate('famillearticle');
+    const categorieArticle = await CategorieArticle.findById(id);
 
     if (!categorieArticle) {
       return res.status(404).json({ message: 'CategorieArticle not found' });
@@ -68,52 +57,27 @@ const getCategorieArticleByID = async (req, res) => {
 };
 
 // Update a CategorieArticle
-
 const updateCategorieArticle = async (req, res) => {
+  const { id } = req.params;
+  const {   designationCategorie } = req.body;
+
   try {
-    const { id } = req.params;
-    const { designationCategorie, familleArticle } = req.body;
-
-    console.log('Updating category:', id, req.body); // Debug log
-
-    const updateData = { designationCategorie };
-    
-    if (familleArticle) {
-      const familleExists = await FamilleArticle.findById(familleArticle);
-      if (!familleExists) {
-        return res.status(400).json({ 
-          message: 'Famille Article non trouvée',
-          details: `ID ${familleArticle} introuvable`
-        });
-      }
-
-      updateData.familleArticle = familleArticle;
-      updateData.familleArticleInfo = {
-        designationFamille: familleExists.designationFamille,
-        code: familleExists.code
-      };
-    }
-
-    const updatedCategorie = await CategorieArticle.findByIdAndUpdate(
+    const updatedCategorieArticle = await CategorieArticle.findByIdAndUpdate(
       id,
-      updateData,
-      { new: true, runValidators: true }
-    ).populate('familleArticle');
+      {   designationCategorie },
+      { new: true }
+    );
 
-    if (!updatedCategorie) {
-      return res.status(404).json({ message: 'Catégorie non trouvée' });
+    if (!updatedCategorieArticle) {
+      return res.status(404).json({ message: 'CategorieArticle not found' });
     }
 
-    res.status(200).json(updatedCategorie);
+    res.status(200).json(updatedCategorieArticle);
   } catch (error) {
-    console.error('Update error:', error);
-    res.status(500).json({
-      message: 'Erreur serveur',
-      error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
+    res.status(500).json({ message: error.message });
   }
 };
+
 // Delete a CategorieArticle
 const deleteCategorieArticle = async (req, res) => {
   const { id } = req.params;
